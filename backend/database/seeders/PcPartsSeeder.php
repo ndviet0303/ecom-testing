@@ -33,6 +33,7 @@ class PcPartsSeeder extends Seeder
                     'category' => $item['category'],
                     'brand' => $item['brand'] ?? 'Generic',
                     'base_price_cents' => $item['base_price_cents'] ?? 5000000,
+                    'image_url' => $item['image_url'] ?? null,
                     'specs' => $item['specs'],
                     'warranty_months' => $item['warranty_months'] ?? 24,
                 ]

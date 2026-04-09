@@ -62,6 +62,7 @@ Route::middleware(['throttle:120,1'])->prefix('v1')->group(function (): void {
 
     Route::get('cart', [CartController::class, 'show']);
     Route::post('cart/items', [CartController::class, 'addItem']);
+    Route::post('cart/items/bulk', [CartController::class, 'addBulkItems']);
     Route::put('cart/items/{productId}', [CartController::class, 'updateItem']);
     Route::delete('cart/items/{productId}', [CartController::class, 'removeItem']);
 
@@ -95,12 +96,19 @@ Route::middleware(['throttle:120,1'])->prefix('v1')->group(function (): void {
     });
 
     Route::middleware(['auth:sanctum', 'staff'])->prefix('admin')->group(function (): void {
+        Route::get('orders', [OrderAdminController::class, 'index']);
         Route::patch('orders/{order}/status', [OrderAdminController::class, 'updateStatus']);
         Route::patch('orders/{order}/fulfillment', [OrderAdminController::class, 'updateFulfillment']);
         Route::get('inventory/low-stock', [LowStockInventoryController::class, 'index']);
         Route::get('audit-logs', [AdminAuditLogController::class, 'index']);
         Route::get('return-requests', [ReturnRequestAdminController::class, 'index']);
         Route::patch('return-requests/{returnRequest}', [ReturnRequestAdminController::class, 'update']);
+
+        Route::prefix('analytics')->group(function () {
+            Route::get('/sales', [\App\Http\Controllers\Api\Admin\AnalyticsController::class, 'salesReport']);
+            // Đảm bảo dùng class import cho gọn
+            Route::get('/top-products', [\App\Http\Controllers\Api\Admin\AnalyticsController::class, 'topProducts']);
+        });
     });
 
     Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function (): void {

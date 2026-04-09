@@ -15,6 +15,16 @@ class OrderAdminController extends Controller
         private readonly OrderTransitionService $orderTransitionService
     ) {}
 
+    public function index(Request $request): JsonResponse
+    {
+        $orders = Order::query()
+            ->with(['orderItems.product', 'user'])
+            ->orderByDesc('id')
+            ->paginate(min((int) $request->query('per_page', 15), 100));
+
+        return response()->json($orders);
+    }
+
     public function updateStatus(Request $request, Order $order): JsonResponse
     {
         $validated = $request->validate([
