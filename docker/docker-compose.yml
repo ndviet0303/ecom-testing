@@ -6,8 +6,6 @@ services:
     build:
       context: ../backend
       dockerfile: ../docker/backend.Dockerfile
-    extra_hosts:
-      - "bt-server:100.64.0.15"
     ports:
       - "8000:8000"
     volumes:

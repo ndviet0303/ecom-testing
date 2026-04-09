@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\ShippingZone;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -15,7 +16,15 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        ShippingZone::query()->firstOrCreate(
+            ['code' => 'VN-STD'],
+            [
+                'name' => 'Nội địa (mặc định)',
+                'rate_per_kg_cents' => 5_000,
+                'free_shipping_from_subtotal_cents' => 0,
+                'is_active' => true,
+            ]
+        );
 
         User::factory()->create([
             'name' => 'Test User',
