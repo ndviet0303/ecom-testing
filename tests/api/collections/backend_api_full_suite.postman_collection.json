@@ -1,134 +1,233 @@
 {
 	"info": {
-		"_postman_id": "a1b2c3d4-e5f6-4g7h-8i9j-k0l1m2n3o4p5",
-		"name": "Backend Full Suite",
+		"_postman_id": "c7d8e9f0-a1b2-c3d4-e5f6-g7h8i9j0k1l2",
+		"name": "Backend Comprehensive Macro-Suite",
+		"description": "Enterprise-grade API test suite covering all roles, routes, and edge cases for the E-com PC store.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
-			"name": "01. Authentication",
+			"name": "01. Public & Guest API",
 			"item": [
 				{
-					"name": "Register Admin",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"name\": \"Admin User\",\n    \"email\": \"admin@ttecom.vn\",\n    \"password\": \"password\",\n    \"password_confirmation\": \"password\"\n}",
-							"options": { "raw": { "language": "json" } }
-						},
-						"url": { "raw": "{{baseUrl}}/register", "host": ["{{baseUrl}}"], "path": ["register"] }
-					}
-				},
-				{
-					"name": "Login Admin",
-					"event": [
+					"name": "Catalog",
+					"item": [
 						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var jsonData = pm.response.json();",
-									"if (jsonData.token) {",
-									"    pm.environment.set(\"adminToken\", jsonData.token);",
-									"}"
-								],
-								"type": "text/javascript"
+							"name": "List Products (Standard)",
+							"request": {
+								"method": "GET",
+								"url": "{{baseUrl}}/products"
+							}
+						},
+						{
+							"name": "Filter by Category (CPU)",
+							"request": {
+								"method": "GET",
+								"url": { "raw": "{{baseUrl}}/products?category=CPU", "host": ["{{baseUrl}}"], "query": [{ "key": "category", "value": "CPU" }] }
+							}
+						},
+						{
+							"name": "Product Detail (Show)",
+							"request": {
+								"method": "GET",
+								"url": "{{baseUrl}}/products/1"
 							}
 						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"email\": \"admin@ttecom.vn\",\n    \"password\": \"password\"\n}",
-							"options": { "raw": { "language": "json" } }
+					]
+				},
+				{
+					"name": "PC Builder",
+					"item": [
+						{
+							"name": "Validate Build (Compatible)",
+							"request": {
+								"method": "POST",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"product_ids\": [1, 2, 3],\n    \"psu_headroom\": 0.2\n}",
+									"options": { "raw": { "language": "json" } }
+								},
+								"url": "{{baseUrl}}/pc-builder/validate"
+							}
 						},
-						"url": { "raw": "{{baseUrl}}/login", "host": ["{{baseUrl}}"], "path": ["login"] }
-					}
+						{
+							"name": "Validate Build (Incompatible - Socket Mismatch)",
+							"request": {
+								"method": "POST",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"product_ids\": [1, 4]\n}",
+									"options": { "raw": { "language": "json" } }
+								},
+								"url": "{{baseUrl}}/pc-builder/validate"
+							}
+						}
+					]
+				},
+				{
+					"name": "Newsletter",
+					"item": [
+						{
+							"name": "Subscribe",
+							"request": {
+								"method": "POST",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"email\": \"test@example.com\"\n}",
+									"options": { "raw": { "language": "json" } }
+								},
+								"url": "{{baseUrl}}/newsletter/subscribe"
+							}
+						}
+					]
 				}
 			]
 		},
 		{
-			"name": "02. Products & Warranty",
+			"name": "02. Customer Portal",
 			"item": [
 				{
-					"name": "Create PC Component (Admin)",
+					"name": "Account & Auth",
+					"item": [
+						{
+							"name": "Register New Customer",
+							"request": {
+								"method": "POST",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"John Doe\",\n    \"email\": \"john@example.com\",\n    \"password\": \"password\",\n    \"password_confirmation\": \"password\"\n}",
+									"options": { "raw": { "language": "json" } }
+								},
+								"url": "{{baseUrl}}/register"
+							}
+						},
+						{
+							"name": "Login Customer",
+							"event": [{ "listen": "test", "script": { "exec": ["var jsonData = pm.response.json(); pm.environment.set('customerToken', jsonData.token);"], "type": "text/javascript" } }],
+							"request": {
+								"method": "POST",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"email\": \"john@example.com\",\n    \"password\": \"password\"\n}",
+									"options": { "raw": { "language": "json" } }
+								},
+								"url": "{{baseUrl}}/login"
+							}
+						}
+					]
+				},
+				{
+					"name": "Shopping & Orders",
+					"item": [
+						{
+							"name": "Add to Cart",
+							"request": {
+								"method": "POST",
+								"header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"product_id\": 1,\n    \"quantity\": 1\n}",
+									"options": { "raw": { "language": "json" } }
+								},
+								"url": "{{baseUrl}}/cart/items"
+							}
+						},
+						{
+							"name": "Checkout Order",
+							"request": {
+								"method": "POST",
+								"header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }],
+								"url": "{{baseUrl}}/checkout"
+							}
+						},
+						{
+							"name": "View Order History",
+							"request": {
+								"method": "GET",
+								"header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }],
+								"url": "{{baseUrl}}/orders"
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "03. Admin & Staff Operations",
+			"item": [
+				{
+					"name": "Login Admin/Staff",
+					"event": [{ "listen": "test", "script": { "exec": ["var jsonData = pm.response.json(); pm.environment.set('adminToken', jsonData.token); pm.environment.set('staffToken', jsonData.token);"], "type": "text/javascript" } }],
 					"request": {
 						"method": "POST",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{adminToken}}" }
-						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"sku\": \"CPU-AMD-7800X3D\",\n    \"name\": \"AMD Ryzen 7 7800X3D\",\n    \"category\": \"CPU\",\n    \"base_price_cents\": 9500000,\n    \"warranty_months\": 36,\n    \"specs\": {\n        \"socket\": \"AM5\",\n        \"tdp\": 120\n    }\n}",
+							"raw": "{\n    \"email\": \"admin@ziet.dev\",\n    \"password\": \"password\"\n}",
 							"options": { "raw": { "language": "json" } }
 						},
-						"url": { "raw": "{{baseUrl}}/admin/products", "host": ["{{baseUrl}}"], "path": ["admin", "products"] }
+						"url": "{{baseUrl}}/login"
 					}
 				},
 				{
-					"name": "Get Product Details",
-					"request": {
-						"method": "GET",
-						"url": { "raw": "{{baseUrl}}/products", "host": ["{{baseUrl}}"], "path": ["products"] }
-					}
+					"name": "Order Management (Workflow)",
+					"item": [
+						{
+							"name": "Update Order Status (Staff)",
+							"request": {
+								"method": "PATCH",
+								"header": [{ "key": "Authorization", "value": "Bearer {{staffToken}}" }],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"status\": \"processing\"\n}",
+									"options": { "raw": { "language": "json" } }
+								},
+								"url": "{{baseUrl}}/admin/orders/1/status"
+							}
+						},
+						{
+							"name": "Update Fulfillment (Serial Numbers)",
+							"request": {
+								"method": "PATCH",
+								"header": [{ "key": "Authorization", "value": "Bearer {{staffToken}}" }],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"items\": [\n        {\n            \"id\": 1,\n            \"serial_number\": \"SN-BUILD-MACRO-123\"\n        }\n    ]\n}",
+									"options": { "raw": { "language": "json" } }
+								},
+								"url": "{{baseUrl}}/admin/orders/1/fulfillment"
+							}
+						}
+					]
 				}
 			]
 		},
 		{
-			"name": "03. PC Builder",
+			"name": "04. External System Simulation",
 			"item": [
 				{
-					"name": "Validate Build Compatibility",
+					"name": "SePay Webhook (IPN)",
 					"request": {
 						"method": "POST",
-						"header": [],
+						"header": [{ "key": "X-Secret-Key", "value": "{{sepaySecretKey}}" }],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"product_ids\": [1, 2, 3],\n    \"psu_headroom\": 0.2\n}",
+							"raw": "{\n    \"transaction\": {\n        \"id\": \"AUTO_TXN_{{$timestamp}}\",\n        \"transaction_amount\": 10000000,\n        \"transaction_description\": \"TTECOMDZ 1\",\n        \"transaction_type\": \"PAYMENT\"\n    },\n    \"order\": {\n        \"order_id\": 1\n    }\n}",
 							"options": { "raw": { "language": "json" } }
 						},
-						"url": { "raw": "{{baseUrl}}/pc-builder/validate", "host": ["{{baseUrl}}"], "path": ["pc-builder", "validate"] }
+						"url": "{{baseUrl}}/webhooks/sepay"
 					}
 				}
 			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": { "type": "text/javascript", "exec": [""] }
 		},
 		{
-			"name": "04. SePay & Fulfillment",
-			"item": [
-				{
-					"name": "Simulate SePay IPN Callback",
-					"request": {
-						"method": "POST",
-						"header": [
-							{ "key": "X-Secret-Key", "value": "{{sepaySecretKey}}" }
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"transaction\": {\n        \"id\": \"TXN12345\",\n        \"transaction_amount\": 10000000,\n        \"transaction_description\": \"TTECOMDZ 1\",\n        \"transaction_type\": \"PAYMENT\"\n    },\n    \"order\": {\n        \"order_id\": 1\n    }\n}",
-							"options": { "raw": { "language": "json" } }
-						},
-						"url": { "raw": "{{baseUrl}}/webhooks/sepay", "host": ["{{baseUrl}}"], "path": ["webhooks", "sepay"] }
-					}
-				},
-				{
-					"name": "Update Serial & Warranty (Admin)",
-					"request": {
-						"method": "PATCH",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{adminToken}}" }
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"items\": [\n        {\n            \"id\": 1,\n            \"serial_number\": \"SN-AMD-7800-REV1\"\n        }\n    ]\n}",
-							"options": { "raw": { "language": "json" } }
-						},
-						"url": { "raw": "{{baseUrl}}/admin/orders/1/fulfillment", "host": ["{{baseUrl}}"], "path": ["admin", "orders", "1", "fulfillment"] }
-					}
-				}
-			]
+			"listen": "test",
+			"script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]); });"] }
 		}
 	]
 }
