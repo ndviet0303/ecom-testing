@@ -1,0 +1,134 @@
+{
+	"info": {
+		"_postman_id": "a1b2c3d4-e5f6-4g7h-8i9j-k0l1m2n3o4p5",
+		"name": "Backend Full Suite",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "01. Authentication",
+			"item": [
+				{
+					"name": "Register Admin",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Admin User\",\n    \"email\": \"admin@ttecom.vn\",\n    \"password\": \"password\",\n    \"password_confirmation\": \"password\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": { "raw": "{{baseUrl}}/register", "host": ["{{baseUrl}}"], "path": ["register"] }
+					}
+				},
+				{
+					"name": "Login Admin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.token) {",
+									"    pm.environment.set(\"adminToken\", jsonData.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"admin@ttecom.vn\",\n    \"password\": \"password\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": { "raw": "{{baseUrl}}/login", "host": ["{{baseUrl}}"], "path": ["login"] }
+					}
+				}
+			]
+		},
+		{
+			"name": "02. Products & Warranty",
+			"item": [
+				{
+					"name": "Create PC Component (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{adminToken}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"sku\": \"CPU-AMD-7800X3D\",\n    \"name\": \"AMD Ryzen 7 7800X3D\",\n    \"category\": \"CPU\",\n    \"base_price_cents\": 9500000,\n    \"warranty_months\": 36,\n    \"specs\": {\n        \"socket\": \"AM5\",\n        \"tdp\": 120\n    }\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": { "raw": "{{baseUrl}}/admin/products", "host": ["{{baseUrl}}"], "path": ["admin", "products"] }
+					}
+				},
+				{
+					"name": "Get Product Details",
+					"request": {
+						"method": "GET",
+						"url": { "raw": "{{baseUrl}}/products", "host": ["{{baseUrl}}"], "path": ["products"] }
+					}
+				}
+			]
+		},
+		{
+			"name": "03. PC Builder",
+			"item": [
+				{
+					"name": "Validate Build Compatibility",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"product_ids\": [1, 2, 3],\n    \"psu_headroom\": 0.2\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": { "raw": "{{baseUrl}}/pc-builder/validate", "host": ["{{baseUrl}}"], "path": ["pc-builder", "validate"] }
+					}
+				}
+			]
+		},
+		{
+			"name": "04. SePay & Fulfillment",
+			"item": [
+				{
+					"name": "Simulate SePay IPN Callback",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "X-Secret-Key", "value": "{{sepaySecretKey}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"transaction\": {\n        \"id\": \"TXN12345\",\n        \"transaction_amount\": 10000000,\n        \"transaction_description\": \"TTECOMDZ 1\",\n        \"transaction_type\": \"PAYMENT\"\n    },\n    \"order\": {\n        \"order_id\": 1\n    }\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": { "raw": "{{baseUrl}}/webhooks/sepay", "host": ["{{baseUrl}}"], "path": ["webhooks", "sepay"] }
+					}
+				},
+				{
+					"name": "Update Serial & Warranty (Admin)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{adminToken}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"items\": [\n        {\n            \"id\": 1,\n            \"serial_number\": \"SN-AMD-7800-REV1\"\n        }\n    ]\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": { "raw": "{{baseUrl}}/admin/orders/1/fulfillment", "host": ["{{baseUrl}}"], "path": ["admin", "orders", "1", "fulfillment"] }
+					}
+				}
+			]
+		}
+	]
+}

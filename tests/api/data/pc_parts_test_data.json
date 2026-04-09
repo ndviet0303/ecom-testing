@@ -1,0 +1,64 @@
+[
+  {
+    "category": "CPU",
+    "name": "Intel Core i9-14900K",
+    "sku": "CPU-INTEL-14900K",
+    "specs": {
+      "socket": "LGA1700",
+      "tdp": 253
+    }
+  },
+  {
+    "category": "CPU",
+    "name": "AMD Ryzen 9 7950X",
+    "sku": "CPU-AMD-7950X",
+    "specs": {
+      "socket": "AM5",
+      "tdp": 170
+    }
+  },
+  {
+    "category": "Motherboard",
+    "name": "ASUS ROG STRIX Z790-E",
+    "sku": "MB-ASUS-Z790E",
+    "specs": {
+      "socket": "LGA1700",
+      "ram_type": "DDR5"
+    }
+  },
+  {
+    "category": "Motherboard",
+    "name": "MSI MAG B650 TOMAHAWK",
+    "sku": "MB-MSI-B650",
+    "specs": {
+      "socket": "AM5",
+      "ram_type": "DDR5"
+    }
+  },
+  {
+    "category": "RAM",
+    "name": "Corsair Vengeance 32GB (2x16GB)",
+    "sku": "RAM-CORSAIR-DDR5-6000",
+    "specs": {
+      "ram_type": "DDR5"
+    }
+  },
+  {
+    "category": "GPU",
+    "name": "NVIDIA GeForce RTX 4090",
+    "sku": "GPU-NV-RTX4090",
+    "specs": {
+      "tbp": 450,
+      "length_mm": 336
+    }
+  },
+  {
+    "category": "Case",
+    "name": "NZXT H7 Flow",
+    "sku": "CASE-NZXT-H7F",
+    "specs": {
+      "gpu_clearance_mm": 400,
+      "cooler_clearance_mm": 185
+    }
+  }
+]
