@@ -118,4 +118,6 @@ Route::middleware(['throttle:120,1'])->prefix('v1')->group(function (): void {
         Route::put('shipping-zones/{shipping_zone}', [ShippingZoneAdminController::class, 'update']);
         Route::delete('shipping-zones/{shipping_zone}', [ShippingZoneAdminController::class, 'destroy']);
     });
+    // PC Builder
+    Route::post('/pc-builder/validate', [App\Http\Controllers\Api\PcBuilderController::class, 'validateBuild']);
 });
