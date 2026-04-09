@@ -181,8 +181,8 @@ const inStock = computed(() => (props.product.inventory?.on_hand || 0) > 0)
   display: flex;
   flex-direction: column;
   transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
-  background: rgba(15, 15, 20, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: #ffffff;
+  border: 1px solid var(--border-color);
   position: relative;
   overflow: hidden;
   cursor: pointer;
@@ -195,15 +195,15 @@ const inStock = computed(() => (props.product.inventory?.on_hand || 0) > 0)
   left: 0;
   right: 0;
   bottom: 0;
-  background: radial-gradient(circle at top right, rgba(99, 102, 241, 0.1), transparent 60%);
+  background: radial-gradient(circle at top right, rgba(37, 99, 235, 0.05), transparent 60%);
   opacity: 0;
   transition: opacity 0.5s ease;
 }
 
 .product-card:hover {
   transform: translateY(-8px);
-  border-color: rgba(99, 102, 241, 0.4);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 20px rgba(99, 102, 241, 0.05);
+  border-color: var(--accent-primary);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
 }
 
 .product-card:hover::before {
@@ -218,11 +218,12 @@ const inStock = computed(() => (props.product.inventory?.on_hand || 0) > 0)
 .product-image {
   height: 200px;
   position: relative;
-  background: radial-gradient(circle at center, rgba(30, 30, 35, 0.8), rgba(15, 15, 18, 1));
+  background: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 24px;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .product-image img {
@@ -230,7 +231,7 @@ const inStock = computed(() => (props.product.inventory?.on_hand || 0) > 0)
   max-height: 100%;
   object-fit: contain;
   transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.5));
+  filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.1));
 }
 
 .product-card:hover .product-image img {
@@ -311,9 +312,9 @@ const inStock = computed(() => (props.product.inventory?.on_hand || 0) > 0)
 .stock-indicator .dot {
   width: 6px;
   height: 6px;
-  background: #22c55e;
+  background: #10b981;
   border-radius: 50%;
-  box-shadow: 0 0 8px #22c55e;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
   animation: pulse 2s infinite;
 }
 
@@ -357,10 +358,10 @@ const inStock = computed(() => (props.product.inventory?.on_hand || 0) > 0)
   display: flex;
   align-items: center;
   gap: 8px;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--bg-secondary);
   padding: 8px;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
 }
 
 .spec-icon {
@@ -395,7 +396,7 @@ const inStock = computed(() => (props.product.inventory?.on_hand || 0) > 0)
   justify-content: space-between;
   align-items: flex-end;
   padding-top: 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 1px solid var(--border-color);
 }
 
 .price-section {
@@ -412,7 +413,7 @@ const inStock = computed(() => (props.product.inventory?.on_hand || 0) > 0)
 .product-price {
   font-size: 1.2rem;
   font-weight: 800;
-  color: #fff;
+  color: var(--text-primary);
   letter-spacing: -0.5px;
 }
 
@@ -420,22 +421,23 @@ const inStock = computed(() => (props.product.inventory?.on_hand || 0) > 0)
   width: 48px;
   height: 48px;
   border-radius: 12px;
-  background: var(--bg-secondary);
-  border: 1px solid var(--glass-border);
-  color: #fff;
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .action-btn:hover:not(:disabled) {
   background: var(--accent-primary);
   border-color: var(--accent-primary);
+  color: #ffffff;
   transform: scale(1.1);
-  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.2);
 }
 
 .action-btn:active:not(:disabled) {

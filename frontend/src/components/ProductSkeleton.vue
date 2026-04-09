@@ -23,7 +23,7 @@
 
 .skeleton-image {
   height: 200px;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.05);
 }
 
 .skeleton-info {
@@ -34,7 +34,7 @@
 .skeleton-tag {
   width: 60px;
   height: 12px;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.05);
   margin-bottom: 12px;
   border-radius: 4px;
 }
@@ -42,7 +42,7 @@
 .skeleton-title {
   width: 100%;
   height: 20px;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.05);
   margin-bottom: 8px;
   border-radius: 4px;
 }
@@ -61,14 +61,14 @@
 .skeleton-price {
   width: 100px;
   height: 24px;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.05);
   border-radius: 4px;
 }
 
 .skeleton-btn {
   width: 40px;
   height: 40px;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.05);
   border-radius: 10px;
 }
 

@@ -129,12 +129,12 @@ onMounted(() => {
 .user-card { padding: 40px; text-align: center; }
 .user-avatar { 
     width: 80px; height: 80px; border-radius: 20px; 
-    background: rgba(99, 102, 241, 0.1); color: var(--accent-primary);
+    background: rgba(37, 99, 235, 0.1); color: var(--accent-primary);
     display: flex; align-items: center; justify-content: center;
     margin: 0 auto 24px;
 }
 
-.user-meta { display: flex; flex-direction: column; gap: 12px; text-align: left; background: rgba(255, 255, 255, 0.02); padding: 16px; border-radius: 12px; }
+.user-meta { display: flex; flex-direction: column; gap: 12px; text-align: left; background: var(--bg-secondary); padding: 16px; border-radius: 12px; }
 .meta-item { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; color: var(--text-secondary); }
 
 .order-history { padding: 40px; }
@@ -142,7 +142,7 @@ onMounted(() => {
     border: 1px solid var(--border-color); border-radius: 16px; 
     padding: 24px; margin-bottom: 20px; transition: all 0.3s ease;
 }
-.order-card:hover { border-color: var(--accent-primary); background: rgba(99, 102, 241, 0.02); }
+.order-card:hover { border-color: var(--accent-primary); background: rgba(37, 99, 235, 0.02); }
 
 .order-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
 .order-id { font-weight: 700; font-size: 1.1rem; }
@@ -154,7 +154,7 @@ onMounted(() => {
 .s-delivered { background: #22c55e; color: white; }
 .s-cancelled { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
 
-.order-preview { padding: 16px; background: rgba(255, 255, 255, 0.02); border-radius: 12px; margin-bottom: 20px; }
+.order-preview { padding: 16px; background: var(--bg-secondary); border-radius: 12px; margin-bottom: 20px; }
 .mini-item { font-size: 0.9rem; margin-bottom: 4px; color: var(--text-secondary); }
 
 .order-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 20px; }

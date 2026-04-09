@@ -1,16 +1,16 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
 
 :root {
-  --bg-primary: #0a0a0c;
-  --bg-secondary: #141418;
-  --accent-primary: #6366f1;
-  --accent-secondary: #a855f7;
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --border-color: #27272a;
-  --glass-bg: rgba(20, 20, 24, 0.8);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --success: #22c55e;
+  --bg-primary: #f8fafc;
+  --bg-secondary: #f1f5f9;
+  --accent-primary: #2563eb;
+  --accent-secondary: #0ea5e9;
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --border-color: #e2e8f0;
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(0, 0, 0, 0.05);
+  --success: #10b981;
   --error: #ef4444;
 }
 
@@ -39,6 +39,7 @@ body {
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--glass-border);
   border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
 }
 
 .gradient-text {

@@ -48,13 +48,13 @@ const toastStore = useToastStore()
   align-items: center;
   gap: 12px;
   border-left: 4px solid var(--accent-primary);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  background: #ffffff;
   animation: slideIn 0.3s ease forwards;
 }
 
 .toast-item.success {
-  border-left-color: #22c55e;
-  background: rgba(34, 197, 94, 0.1);
+  border-left-color: var(--success);
 }
 
 .toast-item.success .toast-icon {

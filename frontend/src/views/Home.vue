@@ -146,13 +146,13 @@ const startBuilding = () => {
   position: absolute;
   width: 500px;
   height: 500px;
-  background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.1) 0%, rgba(255, 255, 255, 0) 70%);
   filter: blur(80px);
   z-index: -1;
   border-radius: 50%;
 }
 .blob-1 { top: -100px; left: -100px; }
-.blob-2 { top: 400px; right: -100px; background: radial-gradient(circle, rgba(168, 85, 247, 0.1) 0%, rgba(0, 0, 0, 0) 70%); }
+.blob-2 { top: 400px; right: -100px; background: radial-gradient(circle, rgba(14, 165, 233, 0.08) 0%, rgba(255, 255, 255, 0) 70%); }
 
 /* Hero Section */
 .hero-section {
@@ -169,8 +169,8 @@ const startBuilding = () => {
 .badge {
   display: inline-block;
   padding: 8px 16px;
-  background: rgba(99, 102, 241, 0.1);
-  border: 1px solid rgba(99, 102, 241, 0.2);
+  background: rgba(37, 99, 235, 0.08);
+  border: 1px solid rgba(37, 99, 235, 0.15);
   border-radius: 30px;
   color: var(--accent-primary);
   font-size: 0.85rem;
@@ -187,7 +187,7 @@ const startBuilding = () => {
 }
 
 .text-glow {
-  text-shadow: 0 0 30px rgba(99, 102, 241, 0.3);
+  text-shadow: none;
 }
 
 .hero-subtitle {
@@ -236,7 +236,8 @@ const startBuilding = () => {
   padding: 12px;
   border-radius: 32px;
   transform: perspective(1000px) rotateY(-10deg) rotateX(5deg);
-  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.08);
+  background: #ffffff;
 }
 
 .hero-img {
@@ -248,15 +249,17 @@ const startBuilding = () => {
 .floating-badge {
   position: absolute;
   padding: 12px 20px;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(15px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.05);
   border-radius: 16px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
   display: flex;
   align-items: center;
   gap: 10px;
   font-weight: 600;
   font-size: 0.9rem;
+  color: var(--text-primary);
 }
 
 .floating-badge.top { top: 30px; right: -30px; animation: float 6s infinite ease-in-out; }
@@ -285,7 +288,7 @@ const startBuilding = () => {
   width: 56px;
   height: 56px;
   border-radius: 16px;
-  background: rgba(99, 102, 241, 0.1);
+  background: rgba(37, 99, 235, 0.08);
   color: var(--accent-primary);
   display: flex;
   align-items: center;

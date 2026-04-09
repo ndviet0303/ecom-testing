@@ -236,8 +236,9 @@ onUnmounted(() => {
   padding: 0 20px;
   height: 54px;
   width: 320px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
 }
 
 .search-bar input {
@@ -258,12 +259,13 @@ onUnmounted(() => {
   gap: 10px;
   padding: 0 24px;
   height: 54px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #ffffff;
+  border: 1px solid var(--border-color);
   color: var(--text-primary);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
 }
 
 .filter-toggle:hover {
@@ -342,8 +344,10 @@ onUnmounted(() => {
   align-items: center;
   gap: 8px;
   padding: 8px;
-  background: rgba(23, 23, 28, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  border-radius: 12px;
 }
 
 .page-numbers {
