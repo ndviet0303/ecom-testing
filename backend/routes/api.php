@@ -6,7 +6,6 @@ use App\Http\Controllers\Api\Admin\CouponAdminController;
 use App\Http\Controllers\Api\Admin\LowStockInventoryController;
 use App\Http\Controllers\Api\Admin\OrderAdminController;
 use App\Http\Controllers\Api\Admin\ReturnRequestAdminController;
-use App\Http\Controllers\Api\Admin\ShippingZoneAdminController;
 use App\Http\Controllers\Api\BuildCompatibilityController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\CheckoutController;
@@ -22,7 +21,6 @@ use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\RecentViewController;
 use App\Http\Controllers\Api\ReturnRequestController;
 use App\Http\Controllers\Api\ReviewController;
-use App\Http\Controllers\Api\ShippingZoneController;
 use App\Http\Controllers\Api\WishlistController;
 use App\Http\Controllers\AuthController;
 use Illuminate\Http\Request;
@@ -34,6 +32,7 @@ Route::prefix('auth')->group(function () {
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/me', [AuthController::class, 'me']);
+        Route::patch('/me', [AuthController::class, 'updateMe']);
         Route::post('/logout', [AuthController::class, 'logout']);
     });
 });
@@ -49,8 +48,6 @@ Route::middleware(['throttle:120,1'])->prefix('v1')->group(function (): void {
 
     Route::get('coupons', [CouponController::class, 'index']);
     Route::get('coupons/{code}/preview', [CouponController::class, 'preview']);
-
-    Route::get('shipping-zones', [ShippingZoneController::class, 'index']);
 
     Route::post('build/validate', [BuildCompatibilityController::class, 'validateBuild']);
 
@@ -121,10 +118,6 @@ Route::middleware(['throttle:120,1'])->prefix('v1')->group(function (): void {
         Route::put('coupons/{coupon}', [CouponAdminController::class, 'update']);
         Route::delete('coupons/{coupon}', [CouponAdminController::class, 'destroy']);
 
-        Route::get('shipping-zones', [ShippingZoneAdminController::class, 'index']);
-        Route::post('shipping-zones', [ShippingZoneAdminController::class, 'store']);
-        Route::put('shipping-zones/{shipping_zone}', [ShippingZoneAdminController::class, 'update']);
-        Route::delete('shipping-zones/{shipping_zone}', [ShippingZoneAdminController::class, 'destroy']);
     });
     // PC Builder
     Route::post('/pc-builder/validate', [App\Http\Controllers\Api\PcBuilderController::class, 'validateBuild']);

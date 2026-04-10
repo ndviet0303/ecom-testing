@@ -1,5 +1,5 @@
 <script setup>
-import { ShoppingBag, Box, History, LayoutDashboard } from 'lucide-vue-next'
+import { ShoppingBag, Box, History, LayoutDashboard, Undo2, Ticket } from 'lucide-vue-next'
 import { RouterLink } from 'vue-router'
 </script>
 
@@ -28,6 +28,18 @@ import { RouterLink } from 'vue-router'
 
       <RouterLink to="/admin/audit-logs" class="nav-item" active-class="active">
         <History :size="20" /> Nhật ký hệ thống
+      </RouterLink>
+
+      <RouterLink to="/admin/return-requests" class="nav-item" active-class="active">
+        <Undo2 :size="20" /> Yêu cầu trả hàng
+      </RouterLink>
+
+      <RouterLink to="/admin/coupons" class="nav-item" active-class="active">
+        <Ticket :size="20" /> Mã giảm giá
+      </RouterLink>
+
+      <RouterLink to="/admin/products" class="nav-item" active-class="active">
+        <ShoppingBag :size="20" /> Sản phẩm
       </RouterLink>
     </nav>
   </aside>

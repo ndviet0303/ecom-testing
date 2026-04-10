@@ -13,10 +13,8 @@ const authStore = useAuthStore()
 const toastStore = useToastStore()
 const router = useRouter()
 
-const zones = ref([])
 const addresses = ref([])
 const fulfillmentMethod = ref('shipping')
-const selectedZoneId = ref(null)
 const selectedAddressId = ref(null)
 const note = ref('')
 const loading = ref(false)
@@ -33,7 +31,6 @@ const newAddress = ref({
   is_default: true
 })
 const selectedProvinceCode = ref('')
-const selectedWardCode = ref('')
 
 const fetchData = async () => {
   if (!authStore.isLoggedIn) {
@@ -42,14 +39,9 @@ const fetchData = async () => {
   }
   
   try {
-    const [zResp, aResp] = await Promise.all([
-      axios.get('/api/v1/shipping-zones'),
-      axios.get('/api/v1/addresses')
-    ])
-    zones.value = zResp.data.data || zResp.data
+    const aResp = await axios.get('/api/v1/addresses')
     addresses.value = aResp.data.data || aResp.data
-    
-    if (zones.value.length > 0) selectedZoneId.value = zones.value[0].id
+
     if (addresses.value.length > 0) {
         const def = addresses.value.find(a => a.is_default) || addresses.value[0]
         selectedAddressId.value = def.id
@@ -59,23 +51,72 @@ const fetchData = async () => {
   }
 }
 
-const selectedZone = computed(() => zones.value.find(z => z.id === selectedZoneId.value))
+const INNER_CITY_PROVINCE = 'Thành phố Hà Nội'
+const DEFAULT_SHIPPING_FEE = 30_000
+const HANOI_INNER_DISTRICTS = [
+  'Ba Đình',
+  'Hoàn Kiếm',
+  'Đống Đa',
+  'Hai Bà Trưng',
+  'Hoàng Mai',
+  'Thanh Xuân',
+  'Cầu Giấy',
+  'Tây Hồ',
+  'Long Biên',
+  'Hà Đông',
+  'Nam Từ Liêm',
+  'Bắc Từ Liêm',
+]
+
+const selectedAddress = computed(() => addresses.value.find(a => a.id === selectedAddressId.value) || null)
 const provinceOptions = administrativeUnits
-const wardOptions = computed(() => {
+const districtOptions = computed(() => {
   const province = provinceOptions.find((item) => item.Code === selectedProvinceCode.value)
-  return province?.Wards || []
+  const fromDataset = (province?.Wards || []).map((item) => item.FullName)
+
+  if (fromDataset.length > 0) {
+    return fromDataset
+  }
+
+  const fromAddresses = addresses.value
+    .map((addr) => String(addr?.district || '').trim())
+    .filter((v) => v !== '')
+
+  return [...new Set(fromAddresses)]
 })
+
+const normalizeText = (value) => {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+}
+
+const isInnerCityAddress = (address) => {
+  if (!address?.province || !address?.district) return false
+
+  const isHanoi = normalizeText(address.province) === normalizeText(INNER_CITY_PROVINCE)
+  if (!isHanoi) return false
+
+  const district = normalizeText(address.district)
+  return HANOI_INNER_DISTRICTS
+    .map((item) => normalizeText(item))
+    .includes(district)
+}
+
 const shippingFee = computed(() => {
-    if (fulfillmentMethod.value === 'pickup' || !selectedZone.value) return 0
-    const weightKg = 15
-    return selectedZone.value.rate_per_kg_cents * weightKg
+    if (fulfillmentMethod.value === 'pickup') return 0
+    if (!selectedAddress.value) return DEFAULT_SHIPPING_FEE
+
+    return isInnerCityAddress(selectedAddress.value) ? 0 : DEFAULT_SHIPPING_FEE
 })
 
 const total = computed(() => cartStore.subtotal + shippingFee.value)
 const canPlaceOrder = computed(() => {
   if (loading.value || cartStore.loading || cartStore.items.length === 0) return false
   if (fulfillmentMethod.value === 'pickup') return true
-  return !!selectedAddressId.value && !!selectedZoneId.value
+  return !!selectedAddressId.value
 })
 
 const resetAddressForm = () => {
@@ -90,36 +131,31 @@ const resetAddressForm = () => {
     is_default: true
   }
   selectedProvinceCode.value = ''
-  selectedWardCode.value = ''
 }
 
 const syncAddressSelection = () => {
   const province = provinceOptions.find((item) => item.Code === selectedProvinceCode.value)
-  const ward = wardOptions.value.find((item) => item.Code === selectedWardCode.value)
 
   newAddress.value.province = province?.FullName || ''
-  newAddress.value.ward = ward?.FullName || ''
-  // Dataset 2025 uses 2 administrative tiers. Keep backend compatibility by mirroring ward into district.
-  newAddress.value.district = ward?.FullName || ''
+  newAddress.value.district = String(newAddress.value.district || '').trim()
 }
 
 const handleProvinceChange = (event) => {
   selectedProvinceCode.value = event.target.value
-  selectedWardCode.value = ''
-  syncAddressSelection()
-}
-
-const handleWardChange = (event) => {
-  selectedWardCode.value = event.target.value
+  newAddress.value.district = ''
   syncAddressSelection()
 }
 
 const submitNewAddress = async () => {
   syncAddressSelection()
 
-  if (!newAddress.value.province || !newAddress.value.ward) {
-    toastStore.error('Chọn Tỉnh/Thành phố và Phường/Xã trước khi lưu địa chỉ.')
+  if (!newAddress.value.province || !newAddress.value.district) {
+    toastStore.error('Chọn Tỉnh/Thành phố và Quận/Huyện trước khi lưu địa chỉ.')
     return
+  }
+
+  if (!newAddress.value.ward) {
+    newAddress.value.ward = newAddress.value.district
   }
 
   savingAddress.value = true
@@ -152,7 +188,6 @@ const placeOrder = async () => {
     const response = await axios.post('/api/v1/checkout', {
       fulfillment_method: fulfillmentMethod.value,
       shipping_address_id: fulfillmentMethod.value === 'shipping' ? selectedAddressId.value : null,
-      shipping_zone_id: fulfillmentMethod.value === 'shipping' ? selectedZoneId.value : null,
       weight_grams: fulfillmentMethod.value === 'shipping' ? 15000 : 0,
       tax_rate_basis_points: 0,
       payment_method: 'sepay_qr',
@@ -185,6 +220,14 @@ const formatPrice = (cents) => {
   }).format(cents || 0)
 }
 
+const formatAddressLine = (addr) => {
+  const parts = [addr?.line1, addr?.ward, addr?.district, addr?.province]
+    .map((v) => String(v || '').trim())
+    .filter((v) => v !== '')
+
+  return [...new Set(parts)].join(', ')
+}
+
 onMounted(async () => {
     await cartStore.fetchCart()
     await fetchData()
@@ -214,7 +257,7 @@ onMounted(async () => {
               <div class="check-mark"><CheckCircle :size="16" /></div>
               <div>
                 <strong>Giao hàng tận nơi</strong>
-                <p>Chọn địa chỉ và khu vực vận chuyển.</p>
+                <p>Nội thành Hà Nội (theo quận) miễn phí, còn lại phí mặc định 30.000đ.</p>
               </div>
             </div>
             <div
@@ -267,10 +310,10 @@ onMounted(async () => {
                 {{ province.FullName }}
               </option>
             </select>
-            <select :value="selectedWardCode" @change="handleWardChange" :disabled="!selectedProvinceCode">
-              <option value="">Chọn Phường/Xã</option>
-              <option v-for="ward in wardOptions" :key="ward.Code" :value="ward.Code">
-                {{ ward.FullName }}
+            <select v-model="newAddress.district" :disabled="!selectedProvinceCode">
+              <option value="">Chọn Quận/Huyện</option>
+              <option v-for="district in districtOptions" :key="district" :value="district">
+                {{ district }}
               </option>
             </select>
             <button
@@ -302,7 +345,7 @@ onMounted(async () => {
               <div class="check-mark"><CheckCircle :size="16" /></div>
               <div>
                 <strong>{{ addr.recipient_name }}</strong> ({{ addr.phone }})
-                <p>{{ addr.line1 }}, {{ addr.ward }}, {{ addr.district }}, {{ addr.province }}</p>
+                <p>{{ formatAddressLine(addr) }}</p>
               </div>
             </div>
           </div>

@@ -5,7 +5,6 @@ namespace App\Services\Ecommerce;
 use App\Domain\Ecommerce\Checkout\OrderTotalCalculator;
 use App\Domain\Ecommerce\Order\OrderStatus;
 use App\Domain\Ecommerce\Promotion\CouponApplicator;
-use App\Domain\Ecommerce\Shipping\ShippingCalculator;
 use App\Domain\Ecommerce\Tax\TaxCalculator;
 use App\Models\Address;
 use App\Models\Cart;
@@ -13,24 +12,23 @@ use App\Models\Coupon;
 use App\Models\CouponRedemption;
 use App\Models\Order;
 use App\Models\OrderItem;
-use App\Models\ShippingZone;
 use App\Models\User;
 use App\Notifications\OrderPlacedNotification;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class CheckoutService
 {
     public function __construct(
         private readonly CouponApplicator $couponApplicator,
-        private readonly ShippingCalculator $shippingCalculator,
         private readonly TaxCalculator $taxCalculator,
         private readonly OrderTotalCalculator $orderTotalCalculator,
         private readonly OrderStatusEventRecorder $orderStatusEventRecorder,
     ) {}
 
     /**
-     * @param  array{fulfillment_method?: string, shipping_address_id?: int|null, shipping_zone_id?: int|null, weight_grams: int, tax_rate_basis_points: int, coupon_code?: string|null, customer_note?: string|null, payment_method?: string}  $options
+     * @param  array{fulfillment_method?: string, shipping_address_id?: int|null, weight_grams: int, tax_rate_basis_points: int, coupon_code?: string|null, customer_note?: string|null, payment_method?: string}  $options
      */
     public function checkout(User $user, Cart $cart, array $options): Order
     {
@@ -54,15 +52,9 @@ class CheckoutService
         }
 
         $address = null;
-        $zone = null;
-
         if ($fulfillmentMethod === 'shipping') {
             if (empty($options['shipping_address_id'])) {
                 throw ValidationException::withMessages(['shipping_address_id' => ['Shipping address is required.']]);
-            }
-
-            if (empty($options['shipping_zone_id'])) {
-                throw ValidationException::withMessages(['shipping_zone_id' => ['Shipping zone is required.']]);
             }
 
             $address = Address::query()
@@ -72,15 +64,6 @@ class CheckoutService
 
             if ($address === null) {
                 throw ValidationException::withMessages(['shipping_address_id' => ['Invalid shipping address.']]);
-            }
-
-            $zone = ShippingZone::query()
-                ->where('id', $options['shipping_zone_id'])
-                ->where('is_active', true)
-                ->first();
-
-            if ($zone === null) {
-                throw ValidationException::withMessages(['shipping_zone_id' => ['Invalid shipping zone.']]);
             }
         }
 
@@ -120,12 +103,7 @@ class CheckoutService
 
         $shippingCents = $fulfillmentMethod === 'pickup'
             ? 0
-            : $this->shippingCalculator->quoteCents(
-                $weightGrams,
-                $zone->rate_per_kg_cents,
-                $subtotal,
-                $zone->free_shipping_from_subtotal_cents
-            );
+            : $this->shippingFeeByAddress($address);
 
         $taxable = $subtotal - $discountCents;
 
@@ -160,7 +138,6 @@ class CheckoutService
             $totalCents,
             $couponCode,
             $address,
-            $zone,
             $weightGrams,
             $snapshot,
             $coupon,
@@ -209,7 +186,7 @@ class CheckoutService
                 'shipping_address_id' => $address?->id,
                 'shipping_address_snapshot' => $snapshot,
                 'weight_grams' => $weightGrams,
-                'shipping_zone_id' => $zone?->id,
+                'shipping_zone_id' => null,
                 'status' => $initialStatus->value,
                 'subtotal_cents' => $subtotal,
                 'discount_cents' => $discountCents,
@@ -260,5 +237,42 @@ class CheckoutService
 
             return $placed;
         });
+    }
+
+    private function shippingFeeByAddress(?Address $address): int
+    {
+        $defaultShipping = (int) config('vn.default_shipping_cents', 30_000);
+        if ($address === null) {
+            return $defaultShipping;
+        }
+
+        $innerCityProvince = (string) config('vn.inner_city_province', 'Thành phố Hà Nội');
+        /** @var array<int, string> $innerCityDistricts */
+        $innerCityDistricts = (array) config('vn.inner_city_districts', []);
+        $incomingProvince = trim((string) ($address->province ?? ''));
+        $incomingDistrict = trim((string) ($address->district ?? ''));
+
+        $isHanoi = $incomingProvince !== ''
+            && $this->normalizeText($incomingProvince) === $this->normalizeText($innerCityProvince);
+
+        if (! $isHanoi || $incomingDistrict === '') {
+            return $defaultShipping;
+        }
+
+        $normalizedDistrict = $this->normalizeText($incomingDistrict);
+        $isInnerDistrict = collect($innerCityDistricts)
+            ->map(fn (string $district): string => $this->normalizeText($district))
+            ->contains($normalizedDistrict);
+
+        if ($isInnerDistrict) {
+            return 0;
+        }
+
+        return $defaultShipping;
+    }
+
+    private function normalizeText(string $value): string
+    {
+        return Str::lower(trim(Str::ascii($value)));
     }
 }

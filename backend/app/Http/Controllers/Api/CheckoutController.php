@@ -21,7 +21,6 @@ class CheckoutController extends Controller
         $validated = $request->validate([
             'fulfillment_method' => ['nullable', 'in:shipping,pickup'],
             'shipping_address_id' => ['nullable', 'integer', 'exists:addresses,id'],
-            'shipping_zone_id' => ['nullable', 'integer', 'exists:shipping_zones,id'],
             'weight_grams' => ['nullable', 'integer', 'min:0'],
             'tax_rate_basis_points' => ['required', 'integer', 'min:0', 'max:10000'],
             'coupon_code' => ['nullable', 'string', 'max:32'],
@@ -50,7 +49,6 @@ class CheckoutController extends Controller
         $order = $this->checkoutService->checkout($request->user(), $cart, [
             'fulfillment_method' => $fulfillmentMethod,
             'shipping_address_id' => $validated['shipping_address_id'] ?? null,
-            'shipping_zone_id' => $validated['shipping_zone_id'] ?? null,
             'weight_grams' => (int) ($validated['weight_grams'] ?? 0),
             'tax_rate_basis_points' => (int) $validated['tax_rate_basis_points'],
             'coupon_code' => $validated['coupon_code'] ?? null,

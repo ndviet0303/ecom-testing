@@ -37,14 +37,14 @@ onMounted(fetchInventory)
     </div>
 
     <div v-else class="inventory-grid">
-        <div v-for="product in lowStockItems" :key="product.id" class="inventory-card glass-panel">
+        <div v-for="row in lowStockItems" :key="row.id" class="inventory-card glass-panel">
             <div class="card-header">
-                <span class="sku">{{ product.sku }}</span>
-                <span class="stock-badge">Còn lại: {{ product.inventory?.quantity || 0 }}</span>
+                <span class="sku">{{ row.product?.sku || 'N/A' }}</span>
+                <span class="stock-badge">Khả dụng: {{ Math.max(0, (row.on_hand || 0) - (row.reserved || 0)) }}</span>
             </div>
-            <h3 class="name">{{ product.name }}</h3>
+            <h3 class="name">{{ row.product?.name || 'Sản phẩm không xác định' }}</h3>
             <div class="warning-box">
-                <AlertCircle :size="16" /> Cần nhập hàng ngay
+                <AlertCircle :size="16" /> Cần nhập hàng ngay (on_hand: {{ row.on_hand || 0 }}, ngưỡng: {{ row.low_stock_threshold || 0 }})
             </div>
         </div>
     </div>

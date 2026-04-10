@@ -1,12 +1,13 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
-import { Eye, Edit3, CheckCircle, Package } from 'lucide-vue-next'
+import { Eye, CheckCircle } from 'lucide-vue-next'
 
 const orders = ref([])
 const loading = ref(true)
 const selectedOrder = ref(null)
 const isUpdating = ref(false)
+const isSavingFulfillment = ref(false)
 
 const fetchOrders = async () => {
   loading.value = true
@@ -30,6 +31,31 @@ const updateStatus = async (orderId, status) => {
     alert('Không thể cập nhật trạng thái: ' + (err.response?.data?.message || err.message))
   } finally {
     isUpdating.value = false
+  }
+}
+
+const saveFulfillment = async () => {
+  if (!selectedOrder.value) return
+
+  isSavingFulfillment.value = true
+  try {
+    const payload = {
+      tracking_number: selectedOrder.value.tracking_number || null,
+      tracking_carrier: selectedOrder.value.tracking_carrier || null,
+      internal_note: selectedOrder.value.internal_note || null,
+      items: (selectedOrder.value.order_items || []).map((item) => ({
+        id: item.id,
+        serial_number: item.serial_number || null,
+      })),
+    }
+
+    const response = await axios.patch(`/api/v1/admin/orders/${selectedOrder.value.id}/fulfillment`, payload)
+    selectedOrder.value = response.data
+    await fetchOrders()
+  } catch (err) {
+    alert('Không thể cập nhật fulfillment: ' + (err.response?.data?.message || err.message))
+  } finally {
+    isSavingFulfillment.value = false
   }
 }
 
@@ -116,7 +142,7 @@ onMounted(fetchOrders)
             </div>
             <div>
               <label>Số điện thoại:</label>
-              <div class="v">{{ selectedOrder.shipping_address?.phone || 'N/A' }}</div>
+              <div class="v">{{ selectedOrder.shipping_address?.phone || selectedOrder.shipping_address_snapshot?.phone || 'N/A' }}</div>
             </div>
           </section>
 
@@ -127,6 +153,25 @@ onMounted(fetchOrders)
               <span class="n">{{ item.product?.name }}</span>
               <span class="p">{{ formatPrice(item.unit_price_cents) }}</span>
             </div>
+          </div>
+
+          <div class="status-actions">
+            <label>Fulfillment:</label>
+            <div class="fulfillment-grid">
+              <input v-model="selectedOrder.tracking_number" class="f-input" placeholder="Tracking number" />
+              <input v-model="selectedOrder.tracking_carrier" class="f-input" placeholder="Carrier" />
+              <textarea v-model="selectedOrder.internal_note" class="f-input" rows="2" placeholder="Internal note"></textarea>
+            </div>
+
+            <h4 style="margin: 16px 0 8px;">Serial theo từng item</h4>
+            <div v-for="item in selectedOrder.order_items" :key="`serial-${item.id}`" class="serial-row">
+              <span>#{{ item.id }} - {{ item.product?.name || 'Item' }}</span>
+              <input v-model="item.serial_number" class="f-input" placeholder="Serial number" />
+            </div>
+
+            <button class="btn btn-sm" @click="saveFulfillment" :disabled="isSavingFulfillment">
+              {{ isSavingFulfillment ? 'Đang lưu...' : 'Lưu fulfillment' }}
+            </button>
           </div>
 
           <div class="status-actions">
@@ -170,6 +215,29 @@ onMounted(fetchOrders)
 
 .status-actions { margin-top: 40px; border-top: 1px solid var(--border-color); padding-top: 24px; }
 .btn-sm { padding: 8px 16px; font-size: 0.85rem; border: 1px solid var(--border-color); background: none; color: var(--text-primary); cursor: pointer; border-radius: 8px; }
+
+.fulfillment-grid {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.serial-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.f-input {
+  width: 100%;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-primary);
+  padding: 8px 10px;
+}
 
 .state-msg { text-align: center; padding: 80px; color: var(--text-secondary); }
 </style>

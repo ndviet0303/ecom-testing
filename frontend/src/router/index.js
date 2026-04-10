@@ -45,6 +45,26 @@ const router = createRouter({
           path: 'analytics',
           name: 'admin-analytics',
           component: () => import('../views/admin/SalesAnalytics.vue')
+        },
+        {
+          path: 'audit-logs',
+          name: 'admin-audit-logs',
+          component: () => import('../views/admin/AuditLogs.vue')
+        },
+        {
+          path: 'return-requests',
+          name: 'admin-return-requests',
+          component: () => import('../views/admin/ReturnRequestsAdmin.vue')
+        },
+        {
+          path: 'coupons',
+          name: 'admin-coupons',
+          component: () => import('../views/admin/CouponsAdmin.vue')
+        },
+        {
+          path: 'products',
+          name: 'admin-products',
+          component: () => import('../views/admin/ProductsAdmin.vue')
         }
       ]
     }

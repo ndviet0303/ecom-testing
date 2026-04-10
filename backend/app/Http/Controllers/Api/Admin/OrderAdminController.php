@@ -18,7 +18,7 @@ class OrderAdminController extends Controller
     public function index(Request $request): JsonResponse
     {
         $orders = Order::query()
-            ->with(['orderItems.product', 'user'])
+            ->with(['orderItems.product', 'user', 'shippingAddress'])
             ->orderByDesc('id')
             ->paginate(min((int) $request->query('per_page', 15), 100));
 
@@ -44,7 +44,7 @@ class OrderAdminController extends Controller
             $request->ip()
         );
 
-        return response()->json($order->load(['orderItems', 'statusEvents']));
+        return response()->json($order->load(['orderItems.product', 'statusEvents', 'shippingAddress', 'user']));
     }
 
     public function updateFulfillment(Request $request, Order $order): JsonResponse
@@ -88,6 +88,6 @@ class OrderAdminController extends Controller
             }
         }
 
-        return response()->json($order->fresh()->load(['orderItems.product', 'statusEvents']));
+        return response()->json($order->fresh()->load(['orderItems.product', 'statusEvents', 'shippingAddress', 'user']));
     }
 }
