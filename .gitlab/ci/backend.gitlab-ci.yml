@@ -42,6 +42,7 @@ ecm_build:
         --build-arg BUILDKIT_INLINE_CACHE=1 \
         -t $ECM_IMAGE_NAME:$DOCKER_TAG \
         -t $ECM_IMAGE_NAME:$CI_COMMIT_SHORT_SHA \
+        -f docker/backend.Dockerfile \
         $BACKEND_PATH
 
     - echo "Pushing Docker image to registry..."
@@ -59,7 +60,7 @@ server_build:
   script:
     - echo "Logging into GitLab Registry..."
     - echo "$DEPLOY_PASSWORD" | docker login -u "$DEPLOY_USERNAME" --password-stdin $DOCKER_REGISTRY
-    - docker build -t $SERVER_IMAGE_NAME:$DOCKER_TAG -f devops/build/ptb.prod.Dockerfile ./devops
+    - docker build -t $SERVER_IMAGE_NAME:$DOCKER_TAG -f docker/build/ecm.prod.Dockerfile docker
     - echo "Pushing Docker image to registry..."
     - docker push $SERVER_IMAGE_NAME:$DOCKER_TAG
 
