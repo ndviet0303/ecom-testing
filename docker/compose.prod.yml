@@ -1,0 +1,37 @@
+name: ecom_app
+
+services:
+  ptb-app:
+    image: registry.gitlab.com/bantool/ziet-projects/ecom/server:latest
+    container_name: ecom-app
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "exit 0"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - production
+
+  frontend:
+    image: registry.gitlab.com/bantool/ziet-projects/ecom/frontend:latest
+    container_name: ecom-frontend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - production
+
+volumes:
+  caddy_data:
+  caddy_config:
+
+networks:
+  production:
+    external: true
