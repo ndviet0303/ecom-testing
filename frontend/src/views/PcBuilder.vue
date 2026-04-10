@@ -14,9 +14,10 @@ const openSelector = (category) => {
   isModalOpen.value = true
 }
 
-const handleSelect = (product) => {
-  store.selectPart(activeCategory.value, product)
+const handleSelect = ({ slotKey, product }) => {
+  store.selectPart(slotKey || activeCategory.value || product?.category, product)
   isModalOpen.value = false
+  activeCategory.value = null
 }
 </script>
 
@@ -50,6 +51,12 @@ const handleSelect = (product) => {
           @remove="store.removePart('RAM')"
         />
         <BuilderSlot 
+          name="Ổ lưu trữ (SSD)" 
+          :selected-product="store.slots.Storage" 
+          @open-selector="openSelector('Storage')" 
+          @remove="store.removePart('Storage')"
+        />
+        <BuilderSlot 
           name="Card đồ họa (GPU)" 
           :selected-product="store.slots.GPU" 
           @open-selector="openSelector('GPU')" 
@@ -78,7 +85,7 @@ const handleSelect = (product) => {
       :is-open="isModalOpen"
       :category="activeCategory"
       @close="isModalOpen = false"
-      @select="handleSelect"
+      @choose="handleSelect"
     />
   </div>
 </template>
@@ -100,5 +107,11 @@ const handleSelect = (product) => {
 
 .slots-container {
   flex-grow: 1;
+}
+
+@media (max-width: 1024px) {
+  .builder-layout {
+    flex-direction: column;
+  }
 }
 </style>

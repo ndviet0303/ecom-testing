@@ -7,6 +7,7 @@ export const useBuilderStore = defineStore('builder', {
       CPU: null,
       Motherboard: null,
       RAM: null,
+      Storage: null,
       GPU: null,
       PSU: null,
       Case: null
@@ -33,9 +34,18 @@ export const useBuilderStore = defineStore('builder', {
   },
 
   actions: {
+    resolveSlotKey(category) {
+      if (!category) return null
+
+      if (Object.prototype.hasOwnProperty.call(this.slots, category)) {
+        return category
+      }
+
+      return this.findSlotKey(category)
+    },
+
     selectPart(category, product) {
-      // Vì mapping tên: 'Motherboard' vs 'Mainboard'
-      const slotKey = this.findSlotKey(category)
+      const slotKey = this.resolveSlotKey(category || product?.category)
       if (slotKey) {
         this.slots[slotKey] = product
         this.validateBuild()
@@ -52,6 +62,7 @@ export const useBuilderStore = defineStore('builder', {
       if (category.toLowerCase().includes('cpu')) return 'CPU'
       if (category.toLowerCase().includes('gpu') || category.toLowerCase().includes('vga')) return 'GPU'
       if (category.toLowerCase().includes('ram')) return 'RAM'
+      if (category.toLowerCase().includes('storage') || category.toLowerCase().includes('ssd') || category.toLowerCase().includes('hdd')) return 'Storage'
       if (category.toLowerCase().includes('psu') || category.toLowerCase().includes('power supply')) return 'PSU'
       if (category.toLowerCase().includes('case') || category.toLowerCase().includes('chassis')) return 'Case'
       return null

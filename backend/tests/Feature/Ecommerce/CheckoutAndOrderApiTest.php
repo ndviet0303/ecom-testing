@@ -214,6 +214,36 @@ class CheckoutAndOrderApiTest extends TestCase
         $this->assertSame('save10k', strtolower((string) $res->json('order.coupon_code')));
     }
 
+    public function test_checkout_with_pickup_requires_no_shipping_address_or_zone(): void
+    {
+        Notification::fake();
+
+        $user = User::factory()->create();
+        $product = Product::factory()->create(['base_price_cents' => 80_000]);
+        $product->inventory->update(['on_hand' => 5, 'reserved' => 0]);
+
+        Sanctum::actingAs($user);
+        $this->postJson('/api/v1/cart/items', [
+            'product_id' => $product->id,
+            'quantity' => 1,
+        ])->assertCreated();
+
+        $res = $this->postJson('/api/v1/checkout', [
+            'fulfillment_method' => 'pickup',
+            'shipping_address_id' => null,
+            'shipping_zone_id' => null,
+            'weight_grams' => 0,
+            'tax_rate_basis_points' => 0,
+            'payment_method' => 'sepay_qr',
+        ]);
+
+        $res->assertCreated()
+            ->assertJsonPath('order.shipping_cents', 0)
+            ->assertJsonPath('order.shipping_address_id', null)
+            ->assertJsonPath('order.shipping_zone_id', null)
+            ->assertJsonPath('order.status', 'pending');
+    }
+
     public function test_user_lists_and_cannot_see_other_users_order(): void
     {
         Notification::fake();

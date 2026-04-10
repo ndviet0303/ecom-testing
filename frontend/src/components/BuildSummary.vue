@@ -1,12 +1,16 @@
 <script setup>
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useBuilderStore } from '@/stores/builderStore'
 import { useCartStore } from '@/stores/cartStore'
-import { AlertTriangle, CheckCircle, Zap, Wallet, ShoppingCart } from 'lucide-vue-next'
+import { useToastStore } from '@/stores/toastStore'
+import { AlertTriangle, CheckCircle, Zap, Wallet, ShoppingCart, RefreshCcw } from 'lucide-vue-next'
 
 const store = useBuilderStore()
 const cartStore = useCartStore()
+const toastStore = useToastStore()
 const router = useRouter()
+const addingToCart = ref(false)
 
 const formatPrice = (cents) => {
   return new Intl.NumberFormat('vi-VN', {
@@ -16,8 +20,20 @@ const formatPrice = (cents) => {
 }
 
 const addToCart = async () => {
-    await cartStore.addBuildToCart(store.slots)
+  if (addingToCart.value || store.selectedIds.length === 0 || !store.validation.isValid) return
+
+  addingToCart.value = true
+  try {
+    const added = await cartStore.addBuildToCart(store.slots)
+    if (!added) return
+
+    toastStore.success('Đã thêm bộ máy vào giỏ hàng.')
     router.push('/cart')
+  } catch (err) {
+    toastStore.error('Không thể thêm bộ máy vào giỏ hàng.')
+  } finally {
+    addingToCart.value = false
+  }
 }
 </script>
 
@@ -68,9 +84,11 @@ const addToCart = async () => {
       @click="addToCart"
       class="btn btn-primary w-100" 
       style="margin-top: 32px; display: flex; align-items: center; justify-content: center; gap: 8px;" 
-      :disabled="!store.validation.isValid || store.selectedIds.length === 0"
+      :disabled="addingToCart || store.validation.loading || !store.validation.isValid || store.selectedIds.length === 0"
     >
-      <ShoppingCart :size="18" /> Thêm bộ máy vào giỏ
+      <RefreshCcw v-if="addingToCart" class="animate-spin" :size="18" />
+      <ShoppingCart v-else :size="18" />
+      {{ addingToCart ? 'Đang thêm vào giỏ...' : 'Thêm bộ máy vào giỏ' }}
     </button>
   </div>
 </template>

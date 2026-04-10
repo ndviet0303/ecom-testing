@@ -261,16 +261,18 @@ const inStock = computed(() => (props.product.inventory?.on_hand || 0) > 0)
 }
 
 .badge.warranty {
-  background: rgba(34, 197, 94, 0.15);
-  color: #4ade80;
-  border: 1px solid rgba(34, 197, 94, 0.2);
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #10b981;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.1);
 }
 
 .badge.out-stock {
-  background: rgba(239, 68, 68, 0.15);
-  color: #f87171;
-  border: 1px solid rgba(239, 68, 68, 0.2);
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #ef4444;
   margin-left: auto;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.1);
 }
 
 .product-info {

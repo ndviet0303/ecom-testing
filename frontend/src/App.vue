@@ -11,6 +11,7 @@ const authStore = useAuthStore()
 
 onMounted(() => {
   cartStore.fetchCart()
+  authStore.applyAuthHeader()
   authStore.fetchUser()
 })
 </script>

@@ -1,10 +1,12 @@
 <script setup>
 import { onMounted } from 'vue'
 import { useCartStore } from '@/stores/cartStore'
+import { useToastStore } from '@/stores/toastStore'
 import { Trash2, ShoppingBag, ArrowRight } from 'lucide-vue-next'
 import { RouterLink } from 'vue-router'
 
 const cartStore = useCartStore()
+const toastStore = useToastStore()
 
 onMounted(() => {
   cartStore.fetchCart()
@@ -15,6 +17,22 @@ const formatPrice = (cents) => {
     style: 'currency',
     currency: 'VND'
   }).format(cents || 0)
+}
+
+const changeQuantity = async (productId, nextQuantity) => {
+  try {
+    await cartStore.updateQuantity(productId, nextQuantity)
+  } catch (err) {
+    toastStore.error(err?.response?.data?.message || 'Không thể cập nhật số lượng.')
+  }
+}
+
+const removeItem = async (productId) => {
+  try {
+    await cartStore.removeItem(productId)
+  } catch (err) {
+    toastStore.error(err?.response?.data?.message || 'Không thể xóa sản phẩm khỏi giỏ.')
+  }
 }
 </script>
 
@@ -44,11 +62,21 @@ const formatPrice = (cents) => {
           
           <div class="item-actions">
             <div class="quantity-controls">
-              <button @click="cartStore.updateQuantity(item.product_id, item.quantity - 1)" :disabled="item.quantity <= 1">-</button>
-              <span>{{ item.quantity }}</span>
-              <button @click="cartStore.updateQuantity(item.product_id, item.quantity + 1)">+</button>
+              <button
+                @click="changeQuantity(item.product_id, item.quantity - 1)"
+                :disabled="item.quantity <= 1 || cartStore.isItemPending(item.product_id)"
+              >-</button>
+              <span :class="{ pending: cartStore.isItemPending(item.product_id) }">{{ item.quantity }}</span>
+              <button
+                @click="changeQuantity(item.product_id, item.quantity + 1)"
+                :disabled="cartStore.isItemPending(item.product_id)"
+              >+</button>
             </div>
-            <button class="remove-btn" @click="cartStore.removeItem(item.product_id)">
+            <button
+              class="remove-btn"
+              @click="removeItem(item.product_id)"
+              :disabled="cartStore.isItemPending(item.product_id)"
+            >
               <Trash2 :size="18" />
             </button>
           </div>
@@ -157,6 +185,16 @@ const formatPrice = (cents) => {
   width: 40px;
   text-align: center;
   font-weight: 600;
+}
+
+.quantity-controls span.pending {
+  opacity: 0.55;
+}
+
+.quantity-controls button:disabled,
+.remove-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .remove-btn {

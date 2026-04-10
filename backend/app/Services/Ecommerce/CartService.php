@@ -133,7 +133,7 @@ class CartService
                 $quantity = (int) ($itemData['quantity'] ?? 1);
                 
                 $product = Product::query()->findOrFail($productId);
-                $this->addOrUpdateLine($cart, $product, $quantity);
+                $this->addOrUpdateLine($cart, $product, $quantity, true);
                 $productIds[] = $productId;
             }
             // addOrUpdateLine already calls syncProduct, 

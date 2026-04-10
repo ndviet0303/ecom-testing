@@ -30,15 +30,19 @@ class CheckoutService
     ) {}
 
     /**
-     * @param  array{shipping_address_id: int, shipping_zone_id: int, weight_grams: int, tax_rate_basis_points: int, coupon_code?: string|null, customer_note?: string|null, payment_method?: string}  $options
+     * @param  array{fulfillment_method?: string, shipping_address_id?: int|null, shipping_zone_id?: int|null, weight_grams: int, tax_rate_basis_points: int, coupon_code?: string|null, customer_note?: string|null, payment_method?: string}  $options
      */
     public function checkout(User $user, Cart $cart, array $options): Order
     {
         $cart->load(['items.product.inventory']);
 
         $paymentMethod = $options['payment_method'] ?? 'immediate';
+        $fulfillmentMethod = $options['fulfillment_method'] ?? 'shipping';
         if (! in_array($paymentMethod, ['immediate', 'sepay_qr'], true)) {
             throw ValidationException::withMessages(['payment_method' => ['Phương thức thanh toán không hợp lệ.']]);
+        }
+        if (! in_array($fulfillmentMethod, ['shipping', 'pickup'], true)) {
+            throw ValidationException::withMessages(['fulfillment_method' => ['Hình thức nhận hàng không hợp lệ.']]);
         }
 
         if ($cart->items->isEmpty()) {
@@ -49,22 +53,35 @@ class CheckoutService
             abort(403, 'Cart does not belong to this user.');
         }
 
-        $address = Address::query()
-            ->where('id', $options['shipping_address_id'])
-            ->where('user_id', $user->id)
-            ->first();
+        $address = null;
+        $zone = null;
 
-        if ($address === null) {
-            throw ValidationException::withMessages(['shipping_address_id' => ['Invalid shipping address.']]);
-        }
+        if ($fulfillmentMethod === 'shipping') {
+            if (empty($options['shipping_address_id'])) {
+                throw ValidationException::withMessages(['shipping_address_id' => ['Shipping address is required.']]);
+            }
 
-        $zone = ShippingZone::query()
-            ->where('id', $options['shipping_zone_id'])
-            ->where('is_active', true)
-            ->first();
+            if (empty($options['shipping_zone_id'])) {
+                throw ValidationException::withMessages(['shipping_zone_id' => ['Shipping zone is required.']]);
+            }
 
-        if ($zone === null) {
-            throw ValidationException::withMessages(['shipping_zone_id' => ['Invalid shipping zone.']]);
+            $address = Address::query()
+                ->where('id', $options['shipping_address_id'])
+                ->where('user_id', $user->id)
+                ->first();
+
+            if ($address === null) {
+                throw ValidationException::withMessages(['shipping_address_id' => ['Invalid shipping address.']]);
+            }
+
+            $zone = ShippingZone::query()
+                ->where('id', $options['shipping_zone_id'])
+                ->where('is_active', true)
+                ->first();
+
+            if ($zone === null) {
+                throw ValidationException::withMessages(['shipping_zone_id' => ['Invalid shipping zone.']]);
+            }
         }
 
         $subtotal = 0;
@@ -101,12 +118,14 @@ class CheckoutService
         $taxBps = (int) $options['tax_rate_basis_points'];
         $customerNote = $options['customer_note'] ?? null;
 
-        $shippingCents = $this->shippingCalculator->quoteCents(
-            $weightGrams,
-            $zone->rate_per_kg_cents,
-            $subtotal,
-            $zone->free_shipping_from_subtotal_cents
-        );
+        $shippingCents = $fulfillmentMethod === 'pickup'
+            ? 0
+            : $this->shippingCalculator->quoteCents(
+                $weightGrams,
+                $zone->rate_per_kg_cents,
+                $subtotal,
+                $zone->free_shipping_from_subtotal_cents
+            );
 
         $taxable = $subtotal - $discountCents;
 
@@ -127,7 +146,7 @@ class CheckoutService
             throw ValidationException::withMessages(['totals' => [$e->getMessage()]]);
         }
 
-        $snapshot = $address->toSnapshotArray();
+        $snapshot = $address?->toSnapshotArray();
 
         $initialStatus = $paymentMethod === 'sepay_qr' ? OrderStatus::Pending : OrderStatus::Paid;
 
@@ -187,10 +206,10 @@ class CheckoutService
 
             $order = Order::query()->create([
                 'user_id' => $user->id,
-                'shipping_address_id' => $address->id,
+                'shipping_address_id' => $address?->id,
                 'shipping_address_snapshot' => $snapshot,
                 'weight_grams' => $weightGrams,
-                'shipping_zone_id' => $zone->id,
+                'shipping_zone_id' => $zone?->id,
                 'status' => $initialStatus->value,
                 'subtotal_cents' => $subtotal,
                 'discount_cents' => $discountCents,
