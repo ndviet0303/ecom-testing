@@ -432,10 +432,7 @@ onMounted(refreshProfile);
             <div class="meta-item"><MapPin :size="16" /> {{ roleLabel }}</div>
           </div>
 
-          <button
-            @click="auth.logout()"
-            class="btn btn-logout w-100"
-          >
+          <button @click="auth.logout()" class="btn btn-logout w-100">
             Đăng xuất
           </button>
         </div>
@@ -1015,35 +1012,35 @@ onMounted(refreshProfile);
   flex-wrap: wrap;
 }
 
-  .form-actions .btn-sm:first-child {
-    background: var(--accent-primary);
-    color: white;
-    border-color: var(--accent-primary);
-    font-weight: 600;
-  }
+.form-actions .btn-sm:first-child {
+  background: var(--accent-primary);
+  color: white;
+  border-color: var(--accent-primary);
+  font-weight: 600;
+}
 
-  .form-actions .btn-sm:first-child:hover:not(:disabled) {
-    background: #1d4ed8;
-    border-color: #1d4ed8;
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
-  }
+.form-actions .btn-sm:first-child:hover:not(:disabled) {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
 
-  .address-actions .btn-sm {
-    flex: 1;
-    min-width: 100px;
-  }
+.address-actions .btn-sm {
+  flex: 1;
+  min-width: 100px;
+}
 
-  .address-actions .btn-sm:nth-child(2) {
-    background: rgba(34, 197, 94, 0.08);
-    border-color: rgba(34, 197, 94, 0.3);
-    color: #22c55e;
-  }
+.address-actions .btn-sm:nth-child(2) {
+  background: rgba(34, 197, 94, 0.08);
+  border-color: rgba(34, 197, 94, 0.3);
+  color: #22c55e;
+}
 
-  .address-actions .btn-sm:nth-child(2):hover:not(:disabled) {
-    background: rgba(34, 197, 94, 0.15);
-    border-color: #22c55e;
-    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.15);
-  }
+.address-actions .btn-sm:nth-child(2):hover:not(:disabled) {
+  background: rgba(34, 197, 94, 0.15);
+  border-color: #22c55e;
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.15);
+}
 
 .default-pill {
   font-size: 0.74rem;
@@ -1129,24 +1126,24 @@ onMounted(refreshProfile);
   gap: 6px;
 }
 
-  .btn-logout {
-    margin-top: 24px;
-    border: 1px solid rgba(239, 68, 68, 0.3);
-    background: rgba(239, 68, 68, 0.08);
-    color: #ef4444;
-    font-weight: 600;
-  }
+.btn-logout {
+  margin-top: 24px;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.08);
+  color: #ef4444;
+  font-weight: 600;
+}
 
-  .btn-logout:hover {
-    border-color: #ef4444;
-    background: rgba(239, 68, 68, 0.15);
-    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);
-    transform: translateY(-2px);
-  }
+.btn-logout:hover {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.15);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);
+  transform: translateY(-2px);
+}
 
-  .btn-logout:active {
-    transform: translateY(0);
-  }
+.btn-logout:active {
+  transform: translateY(0);
+}
 .btn-sm:hover:not(:disabled) {
   background: var(--bg-secondary);
   border-color: var(--accent-primary);
@@ -1205,7 +1202,6 @@ onMounted(refreshProfile);
     color: var(--text-secondary);
     padding: 40px 20px;
   }
-
 
   .profile-aside {
     width: 100%;
