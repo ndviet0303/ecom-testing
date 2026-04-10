@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useProductStore } from '@/stores/productStore'
 import { Cpu, Zap, ShieldCheck, ArrowRight, ShoppingCart, MousePointer2 } from 'lucide-vue-next'
 import ProductCard from '@/components/ProductCard.vue'
+import heroImage from '@/assets/pc-builder-hero.png'
 
 const router = useRouter()
 const productStore = useProductStore()
@@ -66,7 +67,7 @@ const startBuilding = () => {
 
       <div class="hero-visual">
         <div class="image-wrapper glass-panel">
-          <img src="/Users/ziet/.gemini/antigravity/brain/f2b07089-5961-493e-8921-27544de00702/pc_builder_hero_1775706154294.png" alt="Ziet PC Premium Build" class="hero-img" />
+          <img :src="heroImage" alt="Ziet PC Premium Build" class="hero-img" />
           <div class="floating-badge top">
              <Cpu :size="18" /> Intel Core i9-14900K
           </div>
