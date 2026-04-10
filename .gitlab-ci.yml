@@ -1,0 +1,26 @@
+stages:
+  - fake
+  - app_build
+  - server_build
+  - deploy
+
+.if-mr-to-dev-main: &if-mr-to-dev-main
+  if: '$CI_PIPELINE_SOURCE == "merge_request_event" &&
+    ($CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "dev" ||
+    $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main")'
+
+include:
+  - local: .gitlab/ci/backend.gitlab-ci.yml
+    rules:
+      - <<: *if-mr-to-dev-main
+      - when: never
+  - local: .gitlab/ci/frontend.gitlab-ci.yml
+    rules:
+      - <<: *if-mr-to-dev-main
+      - when: never
+
+fake_job:
+  stage: fake
+  script: echo
+  rules:
+    - if: $EMPTY_VAR

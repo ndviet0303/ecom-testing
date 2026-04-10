@@ -434,12 +434,7 @@ onMounted(refreshProfile);
 
           <button
             @click="auth.logout()"
-            class="btn w-100"
-            style="
-              margin-top: 32px;
-              border: 1px solid var(--border-color);
-              color: var(--error);
-            "
+            class="btn btn-logout w-100"
           >
             Đăng xuất
           </button>
@@ -883,18 +878,28 @@ onMounted(refreshProfile);
   background: transparent;
   color: var(--text-secondary);
   border-radius: 10px;
-  padding: 10px 12px;
+  padding: 10px 16px;
   display: inline-flex;
   align-items: center;
   gap: 8px;
   cursor: pointer;
   white-space: nowrap;
+  font-weight: 500;
+  font-size: 0.95rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tab-btn:hover:not(.active) {
+  background: var(--bg-secondary);
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
 }
 
 .tab-btn.active {
-  color: var(--text-primary);
+  color: #fff;
   border-color: var(--accent-primary);
-  background: rgba(37, 99, 235, 0.08);
+  background: var(--accent-primary);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
 }
 
 .panel {
@@ -1010,6 +1015,36 @@ onMounted(refreshProfile);
   flex-wrap: wrap;
 }
 
+  .form-actions .btn-sm:first-child {
+    background: var(--accent-primary);
+    color: white;
+    border-color: var(--accent-primary);
+    font-weight: 600;
+  }
+
+  .form-actions .btn-sm:first-child:hover:not(:disabled) {
+    background: #1d4ed8;
+    border-color: #1d4ed8;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  }
+
+  .address-actions .btn-sm {
+    flex: 1;
+    min-width: 100px;
+  }
+
+  .address-actions .btn-sm:nth-child(2) {
+    background: rgba(34, 197, 94, 0.08);
+    border-color: rgba(34, 197, 94, 0.3);
+    color: #22c55e;
+  }
+
+  .address-actions .btn-sm:nth-child(2):hover:not(:disabled) {
+    background: rgba(34, 197, 94, 0.15);
+    border-color: #22c55e;
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.15);
+  }
+
 .default-pill {
   font-size: 0.74rem;
   border-radius: 999px;
@@ -1058,6 +1093,19 @@ onMounted(refreshProfile);
 .empty-orders {
   text-align: center;
   color: var(--text-secondary);
+  .order-footer .btn-sm {
+    background: var(--bg-secondary);
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+    font-weight: 500;
+  }
+
+  .order-footer .btn-sm:hover:not(:disabled) {
+    background: var(--accent-primary);
+    color: white;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+  }
+
   padding: 40px 20px;
 }
 
@@ -1069,14 +1117,63 @@ onMounted(refreshProfile);
   border: 1px solid var(--border-color);
   background: transparent;
   color: var(--text-primary);
-  padding: 7px 10px;
+  padding: 7px 12px;
   border-radius: 8px;
   cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+  .btn-logout {
+    margin-top: 24px;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    background: rgba(239, 68, 68, 0.08);
+    color: #ef4444;
+    font-weight: 600;
+  }
+
+  .btn-logout:hover {
+    border-color: #ef4444;
+    background: rgba(239, 68, 68, 0.15);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);
+    transform: translateY(-2px);
+  }
+
+  .btn-logout:active {
+    transform: translateY(0);
+  }
+.btn-sm:hover:not(:disabled) {
+  background: var(--bg-secondary);
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.12);
+}
+
+.btn-sm:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn-sm:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .btn-sm.danger {
   border-color: rgba(239, 68, 68, 0.5);
   color: #ef4444;
+}
+
+.btn-sm.danger:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: #ef4444;
+  color: #ef4444;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.12);
 }
 
 .modal-overlay {
@@ -1102,25 +1199,13 @@ onMounted(refreshProfile);
   justify-content: space-between;
   align-items: center;
   gap: 10px;
-  margin-bottom: 14px;
-}
-
-.detail-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.cancel-box {
-  margin-top: 14px;
-  border-top: 1px solid var(--border-color);
-  padding-top: 12px;
-}
-
-@media (max-width: 980px) {
-  .profile-layout {
-    flex-direction: column;
+  .state-msg,
+  .empty-orders {
+    text-align: center;
+    color: var(--text-secondary);
+    padding: 40px 20px;
   }
+
 
   .profile-aside {
     width: 100%;

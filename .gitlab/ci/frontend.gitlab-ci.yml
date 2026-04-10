@@ -1,0 +1,42 @@
+variables:
+  DOCKER_REGISTRY: "$CI_REGISTRY"
+  BASE_IMAGE_NAME: "$CI_REGISTRY/$CI_PROJECT_PATH"
+  FRONTEND_IMAGE_NAME: "$BASE_IMAGE_NAME/frontend"
+  DOCKER_TAG: "latest"
+  DOCKER_BUILDKIT: "1"
+  FRONTEND_PATH: "frontend/"
+
+.if-mr-to-dev-main: &if-mr-to-dev-main
+  if: '$CI_PIPELINE_SOURCE == "merge_request_event" &&
+    ($CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "dev" ||
+    $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main")'
+
+frontend_build:
+  image: docker:latest
+  stage: app_build
+  services:
+    - docker:dind
+  rules:
+    - <<: *if-mr-to-dev-main
+      when: manual
+  allow_failure: true
+  before_script:
+    - mkdir -p .docker/cache
+  script:
+    - echo "Logging into Docker Registry..."
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin $DOCKER_REGISTRY
+    - echo "Building Frontend Docker image..."
+    
+    # Build frontend image with cache
+    - |
+      docker build \
+        --cache-from=$FRONTEND_IMAGE_NAME:$DOCKER_TAG \
+        --build-arg BUILDKIT_INLINE_CACHE=1 \
+        -t $FRONTEND_IMAGE_NAME:$DOCKER_TAG \
+        -t $FRONTEND_IMAGE_NAME:$CI_COMMIT_SHORT_SHA \
+        -f docker/frontend.Dockerfile \
+        .
+    
+    - echo "Pushing Frontend Docker image to registry..."
+    - docker push $FRONTEND_IMAGE_NAME:$DOCKER_TAG
+    - docker push $FRONTEND_IMAGE_NAME:$CI_COMMIT_SHORT_SHA

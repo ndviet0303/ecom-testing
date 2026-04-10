@@ -1,0 +1,82 @@
+variables:
+  DOCKER_REGISTRY: "$CI_REGISTRY"
+  BASE_IMAGE_NAME: "$CI_REGISTRY/$CI_PROJECT_PATH"
+  ECM_IMAGE_NAME: "$BASE_IMAGE_NAME/api"
+  SERVER_IMAGE_NAME: "$BASE_IMAGE_NAME/server"
+  DOCKER_TAG: "latest"
+  DOCKER_BUILDKIT: "1"  # Enable BuildKit for better caching
+  BACKEND_PATH: "backend/"
+
+# Use GitLab's CI/CD cache more effectively
+cache:
+  key: "$CI_COMMIT_REF_SLUG"  # Better key using ref slug
+  paths:
+    - .docker/cache
+
+.if-mr-to-dev-main: &if-mr-to-dev-main
+  if: '$CI_PIPELINE_SOURCE == "merge_request_event" &&
+    ($CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "dev" ||
+    $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main")'
+
+ecm_build:
+  image: docker:latest
+  stage: app_build
+  services:
+    - docker:dind
+  rules:
+      - <<: *if-mr-to-dev-main
+        when: manual
+  allow_failure: true
+  # Add before_script to set up cache directory
+  before_script:
+    - mkdir -p .docker/cache
+  script:
+    - echo "Logging into Docker Registry..."
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin $DOCKER_REGISTRY
+    - echo Building Docker image
+
+    # Improved Docker build with multiple cache options
+    - |
+      docker build \
+        --cache-from=$ECM_IMAGE_NAME:$DOCKER_TAG \
+        --build-arg BUILDKIT_INLINE_CACHE=1 \
+        -t $ECM_IMAGE_NAME:$DOCKER_TAG \
+        -t $ECM_IMAGE_NAME:$CI_COMMIT_SHORT_SHA \
+        $BACKEND_PATH
+
+    - echo "Pushing Docker image to registry..."
+    - docker push $ECM_IMAGE_NAME:$DOCKER_TAG
+    - docker push $ECM_IMAGE_NAME:$CI_COMMIT_SHORT_SHA
+
+server_build:
+  image: docker:latest
+  stage: server_build
+  rules:
+    - <<: *if-mr-to-dev-main
+  needs: [ecm_build]
+  services:
+    - docker:dind
+  script:
+    - echo "Logging into GitLab Registry..."
+    - echo "$DEPLOY_PASSWORD" | docker login -u "$DEPLOY_USERNAME" --password-stdin $DOCKER_REGISTRY
+    - docker build -t $SERVER_IMAGE_NAME:$DOCKER_TAG -f devops/build/ptb.prod.Dockerfile ./devops
+    - echo "Pushing Docker image to registry..."
+    - docker push $SERVER_IMAGE_NAME:$DOCKER_TAG
+
+deploy_to_portainer:
+  image: debian:trixie-slim
+  stage: deploy
+  rules:
+    - <<: *if-mr-to-dev-main
+  needs: [server_build]
+  before_script:
+    - apt-get update -y && apt-get install -y jq curl
+  script:
+    - |
+      set -euo pipefail
+      echo "Deploying to Portainer..."
+
+      for item in $(echo "$PORTAINER_WEBHOOK_URLS" | jq -r '.[]'); do
+        echo "🚀 Processing item: $item";
+        curl -fsS -X POST "$item";
+      done
