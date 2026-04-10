@@ -19,7 +19,7 @@ return [
 
     /** Danh sách quận nội thành Hà Nội được miễn phí ship. */
     'inner_city_districts' => array_values(array_filter(array_map(
-        static fn (string $v): string => trim($v),
+        static fn(string $v): string => trim($v),
         explode(',', (string) env('ECM_VN_INNER_CITY_DISTRICTS', 'Ba Đình,Hoàn Kiếm,Đống Đa,Hai Bà Trưng,Hoàng Mai,Thanh Xuân,Cầu Giấy,Tây Hồ,Long Biên,Hà Đông,Nam Từ Liêm,Bắc Từ Liêm'))
     ))),
 

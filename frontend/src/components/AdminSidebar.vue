@@ -1,19 +1,34 @@
 <script setup>
-import { ShoppingBag, Box, History, LayoutDashboard, Undo2, Ticket } from 'lucide-vue-next'
-import { RouterLink } from 'vue-router'
+import {
+  ShoppingBag,
+  Box,
+  History,
+  LayoutDashboard,
+  Undo2,
+  Ticket,
+} from "lucide-vue-next";
+import { RouterLink } from "vue-router";
 </script>
 
 <template>
   <aside class="admin-sidebar glass-panel">
-    <div style="padding: 32px 24px; border-bottom: 1px solid var(--border-color); margin-bottom: 24px;">
-      <h3 style="font-size: 1.1rem; font-weight: 700;">Admin <span class="gradient-text">Panel</span></h3>
+    <div
+      style="
+        padding: 32px 24px;
+        border-bottom: 1px solid var(--border-color);
+        margin-bottom: 24px;
+      "
+    >
+      <h3 style="font-size: 1.1rem; font-weight: 700">
+        Admin <span class="gradient-text">Panel</span>
+      </h3>
     </div>
 
     <nav class="admin-nav">
       <RouterLink to="/admin" class="nav-item" exact-active-class="active">
         <LayoutDashboard :size="20" /> Dashboard
       </RouterLink>
-      
+
       <RouterLink to="/admin/orders" class="nav-item" active-class="active">
         <ShoppingBag :size="20" /> Quản lý Đơn hàng
       </RouterLink>
@@ -30,7 +45,11 @@ import { RouterLink } from 'vue-router'
         <History :size="20" /> Nhật ký hệ thống
       </RouterLink>
 
-      <RouterLink to="/admin/return-requests" class="nav-item" active-class="active">
+      <RouterLink
+        to="/admin/return-requests"
+        class="nav-item"
+        active-class="active"
+      >
         <Undo2 :size="20" /> Yêu cầu trả hàng
       </RouterLink>
 

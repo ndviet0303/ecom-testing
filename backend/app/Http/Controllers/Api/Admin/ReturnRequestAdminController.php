@@ -13,7 +13,8 @@ class ReturnRequestAdminController extends Controller
 {
     public function __construct(
         private readonly ReturnTransitionService $returnTransitionService
-    ) {}
+    ) {
+    }
 
     public function index(Request $request): JsonResponse
     {
@@ -34,14 +35,14 @@ class ReturnRequestAdminController extends Controller
         if ($search !== '') {
             $q->where(function ($builder) use ($search): void {
                 $builder
-                    ->where('id', 'like', '%'.$search.'%')
-                    ->orWhere('order_id', 'like', '%'.$search.'%')
-                    ->orWhere('order_item_id', 'like', '%'.$search.'%')
-                    ->orWhere('reason', 'like', '%'.$search.'%')
+                    ->where('id', 'like', '%' . $search . '%')
+                    ->orWhere('order_id', 'like', '%' . $search . '%')
+                    ->orWhere('order_item_id', 'like', '%' . $search . '%')
+                    ->orWhere('reason', 'like', '%' . $search . '%')
                     ->orWhereHas('user', function ($userQ) use ($search): void {
                         $userQ
-                            ->where('email', 'like', '%'.$search.'%')
-                            ->orWhere('name', 'like', '%'.$search.'%');
+                            ->where('email', 'like', '%' . $search . '%')
+                            ->orWhere('name', 'like', '%' . $search . '%');
                     });
             });
         }

@@ -25,7 +25,8 @@ class CheckoutService
         private readonly TaxCalculator $taxCalculator,
         private readonly OrderTotalCalculator $orderTotalCalculator,
         private readonly OrderStatusEventRecorder $orderStatusEventRecorder,
-    ) {}
+    ) {
+    }
 
     /**
      * @param  array{fulfillment_method?: string, shipping_address_id?: int|null, weight_grams: int, tax_rate_basis_points: int, coupon_code?: string|null, customer_note?: string|null, payment_method?: string}  $options
@@ -36,10 +37,10 @@ class CheckoutService
 
         $paymentMethod = $options['payment_method'] ?? 'immediate';
         $fulfillmentMethod = $options['fulfillment_method'] ?? 'shipping';
-        if (! in_array($paymentMethod, ['immediate', 'sepay_qr'], true)) {
+        if (!in_array($paymentMethod, ['immediate', 'sepay_qr'], true)) {
             throw ValidationException::withMessages(['payment_method' => ['Phương thức thanh toán không hợp lệ.']]);
         }
-        if (! in_array($fulfillmentMethod, ['shipping', 'pickup'], true)) {
+        if (!in_array($fulfillmentMethod, ['shipping', 'pickup'], true)) {
             throw ValidationException::withMessages(['fulfillment_method' => ['Hình thức nhận hàng không hợp lệ.']]);
         }
 
@@ -82,7 +83,7 @@ class CheckoutService
                 ->whereRaw('lower(code) = ?', [strtolower($couponCode)])
                 ->first();
 
-            if ($coupon === null || ! $coupon->isUsableAt(now())) {
+            if ($coupon === null || !$coupon->isUsableAt(now())) {
                 throw ValidationException::withMessages(['coupon_code' => ['Invalid or expired coupon.']]);
             }
 
@@ -128,22 +129,7 @@ class CheckoutService
 
         $initialStatus = $paymentMethod === 'sepay_qr' ? OrderStatus::Pending : OrderStatus::Paid;
 
-        return DB::transaction(function () use (
-            $user,
-            $cart,
-            $subtotal,
-            $discountCents,
-            $shippingCents,
-            $taxCents,
-            $totalCents,
-            $couponCode,
-            $address,
-            $weightGrams,
-            $snapshot,
-            $coupon,
-            $customerNote,
-            $initialStatus,
-        ): Order {
+        return DB::transaction(function () use ($user, $cart, $subtotal, $discountCents, $shippingCents, $taxCents, $totalCents, $couponCode, $address, $weightGrams, $snapshot, $coupon, $customerNote, $initialStatus, ): Order {
             if ($coupon !== null) {
                 $coupon = Coupon::query()->whereKey($coupon->id)->lockForUpdate()->firstOrFail();
                 $global = CouponRedemption::query()->where('coupon_id', $coupon->id)->count();
@@ -255,13 +241,13 @@ class CheckoutService
         $isHanoi = $incomingProvince !== ''
             && $this->normalizeText($incomingProvince) === $this->normalizeText($innerCityProvince);
 
-        if (! $isHanoi || $incomingDistrict === '') {
+        if (!$isHanoi || $incomingDistrict === '') {
             return $defaultShipping;
         }
 
         $normalizedDistrict = $this->normalizeText($incomingDistrict);
         $isInnerDistrict = collect($innerCityDistricts)
-            ->map(fn (string $district): string => $this->normalizeText($district))
+            ->map(fn(string $district): string => $this->normalizeText($district))
             ->contains($normalizedDistrict);
 
         if ($isInnerDistrict) {

@@ -14,7 +14,8 @@ class CheckoutController extends Controller
     public function __construct(
         private readonly CartService $cartService,
         private readonly CheckoutService $checkoutService
-    ) {}
+    ) {
+    }
 
     public function store(Request $request): JsonResponse
     {

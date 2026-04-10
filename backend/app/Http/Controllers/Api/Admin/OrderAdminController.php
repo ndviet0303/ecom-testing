@@ -13,7 +13,8 @@ class OrderAdminController extends Controller
 {
     public function __construct(
         private readonly OrderTransitionService $orderTransitionService
-    ) {}
+    ) {
+    }
 
     public function index(Request $request): JsonResponse
     {
@@ -74,7 +75,7 @@ class OrderAdminController extends Controller
                 $orderItem = $order->orderItems()->find($itemData['id']);
                 if ($orderItem) {
                     $update = ['serial_number' => $itemData['serial_number']];
-                    
+
                     // Nếu nhập serial number lần đầu, tính ngày hết hạn bảo hành dựa trên sản phẩm
                     if ($itemData['serial_number'] && $orderItem->warranty_expires_at === null) {
                         $product = $orderItem->product;

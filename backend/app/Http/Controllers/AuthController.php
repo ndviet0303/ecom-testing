@@ -37,7 +37,7 @@ class AuthController extends Controller
 
         $user = User::where('email', $validated['email'])->first();
 
-        if (! $user || ! Hash::check($validated['password'], $user->password)) {
+        if (!$user || !Hash::check($validated['password'], $user->password)) {
             return response()->json([
                 'message' => 'Invalid credentials.',
             ], 401);
@@ -64,13 +64,13 @@ class AuthController extends Controller
 
         $validated = $request->validate([
             'name' => ['sometimes', 'string', 'max:255'],
-            'email' => ['sometimes', 'string', 'email', 'max:255', 'unique:users,email,'.$user->id],
+            'email' => ['sometimes', 'string', 'email', 'max:255', 'unique:users,email,' . $user->id],
             'current_password' => ['sometimes', 'string'],
             'password' => ['sometimes', 'string', 'min:8', 'confirmed'],
         ]);
 
         if (array_key_exists('password', $validated)) {
-            if (empty($validated['current_password']) || ! Hash::check($validated['current_password'], $user->password)) {
+            if (empty($validated['current_password']) || !Hash::check($validated['current_password'], $user->password)) {
                 throw ValidationException::withMessages([
                     'current_password' => ['Mật khẩu hiện tại không đúng.'],
                 ]);

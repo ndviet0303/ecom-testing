@@ -1,81 +1,89 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue'
-import axios from 'axios'
+import { ref, onMounted, watch } from "vue";
+import axios from "axios";
 
-const rows = ref([])
-const loading = ref(true)
-const statusFilter = ref('')
-const updatingId = ref(null)
-const searchQuery = ref('')
-const page = ref(1)
-const lastPage = ref(1)
-const total = ref(0)
-const perPage = ref(15)
+const rows = ref([]);
+const loading = ref(true);
+const statusFilter = ref("");
+const updatingId = ref(null);
+const searchQuery = ref("");
+const page = ref(1);
+const lastPage = ref(1);
+const total = ref(0);
+const perPage = ref(15);
 
-const statuses = ['pending', 'approved', 'rejected', 'received', 'refunded']
+const statuses = ["pending", "approved", "rejected", "received", "refunded"];
 
 const fetchRows = async (targetPage = 1) => {
-  loading.value = true
+  loading.value = true;
   try {
-    const response = await axios.get('/api/v1/admin/return-requests', {
+    const response = await axios.get("/api/v1/admin/return-requests", {
       params: {
         page: targetPage,
         per_page: perPage.value,
         status: statusFilter.value || undefined,
         q: searchQuery.value || undefined,
       },
-    })
+    });
 
-    rows.value = response.data.data || []
-    page.value = response.data.current_page || targetPage
-    lastPage.value = response.data.last_page || 1
-    total.value = response.data.total || rows.value.length
+    rows.value = response.data.data || [];
+    page.value = response.data.current_page || targetPage;
+    lastPage.value = response.data.last_page || 1;
+    total.value = response.data.total || rows.value.length;
   } catch (err) {
-    console.error('Lỗi tải yêu cầu trả hàng:', err)
+    console.error("Lỗi tải yêu cầu trả hàng:", err);
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 const updateStatus = async (row, status) => {
-  updatingId.value = row.id
+  updatingId.value = row.id;
   try {
     await axios.patch(`/api/v1/admin/return-requests/${row.id}`, {
       status,
       staff_note: row.staff_note || null,
-    })
-    await fetchRows(page.value)
+    });
+    await fetchRows(page.value);
   } catch (err) {
-    alert('Không cập nhật được: ' + (err.response?.data?.message || err.message))
+    alert(
+      "Không cập nhật được: " + (err.response?.data?.message || err.message),
+    );
   } finally {
-    updatingId.value = null
+    updatingId.value = null;
   }
-}
+};
 
 watch([statusFilter, perPage], () => {
-  fetchRows(1)
-})
+  fetchRows(1);
+});
 
-let searchTimer = null
+let searchTimer = null;
 watch(searchQuery, () => {
   if (searchTimer) {
-    clearTimeout(searchTimer)
+    clearTimeout(searchTimer);
   }
 
   searchTimer = setTimeout(() => {
-    fetchRows(1)
-  }, 300)
-})
+    fetchRows(1);
+  }, 300);
+});
 
-onMounted(() => fetchRows(1))
+onMounted(() => fetchRows(1));
 </script>
 
 <template>
   <div class="return-admin">
     <div class="head">
-      <h2 style="font-size: 1.75rem; font-weight: 700;">Yêu cầu <span class="gradient-text">Trả hàng</span></h2>
+      <h2 style="font-size: 1.75rem; font-weight: 700">
+        Yêu cầu <span class="gradient-text">Trả hàng</span>
+      </h2>
       <div class="head-actions">
-        <input v-model="searchQuery" class="field" placeholder="Tìm theo đơn, item, người dùng" />
+        <input
+          v-model="searchQuery"
+          class="field"
+          placeholder="Tìm theo đơn, item, người dùng"
+        />
         <select v-model="statusFilter" class="field">
           <option value="">Tất cả trạng thái</option>
           <option v-for="s in statuses" :key="s" :value="s">{{ s }}</option>
@@ -93,22 +101,34 @@ onMounted(() => fetchRows(1))
 
     <div v-if="loading" class="state-msg">Đang tải yêu cầu...</div>
 
-    <div v-else-if="rows.length === 0" class="state-msg glass-panel">Không có yêu cầu trả hàng.</div>
+    <div v-else-if="rows.length === 0" class="state-msg glass-panel">
+      Không có yêu cầu trả hàng.
+    </div>
 
     <div v-else class="list">
       <article v-for="row in rows" :key="row.id" class="item glass-panel">
         <header class="item-head">
           <div>
-            <div class="title">#{{ row.id }} · Đơn #{{ row.order_id }} · Item #{{ row.order_item_id }}</div>
-            <div class="meta">{{ row.user?.email || 'N/A' }} · Số lượng: {{ row.quantity }}</div>
+            <div class="title">
+              #{{ row.id }} · Đơn #{{ row.order_id }} · Item #{{
+                row.order_item_id
+              }}
+            </div>
+            <div class="meta">
+              {{ row.user?.email || "N/A" }} · Số lượng: {{ row.quantity }}
+            </div>
           </div>
           <span class="badge">{{ row.status }}</span>
         </header>
 
-        <p class="reason">Lý do: {{ row.reason || 'Không có' }}</p>
+        <p class="reason">Lý do: {{ row.reason || "Không có" }}</p>
 
         <label class="field-label">Ghi chú staff</label>
-        <textarea v-model="row.staff_note" class="field area" rows="2"></textarea>
+        <textarea
+          v-model="row.staff_note"
+          class="field area"
+          rows="2"
+        ></textarea>
 
         <div class="actions">
           <button
@@ -125,9 +145,17 @@ onMounted(() => fetchRows(1))
     </div>
 
     <footer v-if="lastPage > 1" class="pager">
-      <button class="btn" :disabled="page <= 1" @click="fetchRows(page - 1)">Trước</button>
+      <button class="btn" :disabled="page <= 1" @click="fetchRows(page - 1)">
+        Trước
+      </button>
       <span>Trang {{ page }} / {{ lastPage }}</span>
-      <button class="btn" :disabled="page >= lastPage" @click="fetchRows(page + 1)">Sau</button>
+      <button
+        class="btn"
+        :disabled="page >= lastPage"
+        @click="fetchRows(page + 1)"
+      >
+        Sau
+      </button>
     </footer>
   </div>
 </template>

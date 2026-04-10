@@ -20,9 +20,9 @@ class CouponAdminController extends Controller
         if ($q !== '') {
             $query->where(function ($builder) use ($q): void {
                 $builder
-                    ->where('code', 'like', '%'.$q.'%')
-                    ->orWhere('discount_cents', 'like', '%'.$q.'%')
-                    ->orWhere('min_subtotal_cents', 'like', '%'.$q.'%');
+                    ->where('code', 'like', '%' . $q . '%')
+                    ->orWhere('discount_cents', 'like', '%' . $q . '%')
+                    ->orWhere('min_subtotal_cents', 'like', '%' . $q . '%');
             });
         }
 
@@ -66,7 +66,7 @@ class CouponAdminController extends Controller
     public function update(Request $request, Coupon $coupon): JsonResponse
     {
         $validated = $request->validate([
-            'code' => ['sometimes', 'string', 'max:32', 'unique:coupons,code,'.$coupon->id],
+            'code' => ['sometimes', 'string', 'max:32', 'unique:coupons,code,' . $coupon->id],
             'min_subtotal_cents' => ['nullable', 'integer', 'min:0'],
             'discount_cents' => ['sometimes', 'integer', 'min:0'],
             'is_active' => ['sometimes', 'boolean'],
