@@ -12,7 +12,8 @@ class OrderSePayQrController extends Controller
 {
     public function __construct(
         private readonly SePayQrService $sePayQrService
-    ) {}
+    ) {
+    }
 
     public function show(Request $request, Order $order): JsonResponse
     {

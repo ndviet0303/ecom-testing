@@ -18,7 +18,8 @@ class SePayWebhookHandler
         private readonly OrderStateMachine $orderStateMachine,
         private readonly OrderStatusEventRecorder $orderStatusEventRecorder,
         private readonly AuditLogger $auditLogger,
-    ) {}
+    ) {
+    }
 
     /**
      * @param  array<string, mixed>  $payload
@@ -39,16 +40,16 @@ class SePayWebhookHandler
             return ['processed' => false, 'order_id' => null, 'message' => 'Thiếu id giao dịch.'];
         }
 
-        $eventId = 'sepay:'.$id;
+        $eventId = 'sepay:' . $id;
 
         if (ProcessedWebhookEvent::query()->where('provider', 'sepay')->where('event_id', $eventId)->exists()) {
             return ['processed' => true, 'order_id' => null, 'message' => 'Giao dịch webhook đã xử lý.'];
         }
 
         $transferType = $payload['transaction']['transaction_type'] ?? $payload['transferType'] ?? 'in';
-        if (! in_array(strtolower((string) $transferType), ['in', 'payment', 'approved'])) {
-             // Với Gateway IPN, transaction_type thường là PAYMENT hoặc notification_type là ORDER_PAID
-             // Ta kiểm tra thêm notification_type nếu cần, nhưng thường id là đủ duy nhất.
+        if (!in_array(strtolower((string) $transferType), ['in', 'payment', 'approved'])) {
+            // Với Gateway IPN, transaction_type thường là PAYMENT hoặc notification_type là ORDER_PAID
+            // Ta kiểm tra thêm notification_type nếu cần, nhưng thường id là đủ duy nhất.
         }
 
         // Kiểm tra số tài khoản nếu cần (thường chỉ áp dụng cho Bank Webhook)
@@ -179,11 +180,11 @@ class SePayWebhookHandler
                 $id = (string) $order->id;
                 $num = $order->order_number ?? '';
 
-                if (! $this->amountMatchesOrder($transferAmount, (int) $order->total_cents, $this->expectedPayableAmount($order))) {
+                if (!$this->amountMatchesOrder($transferAmount, (int) $order->total_cents, $this->expectedPayableAmount($order))) {
                     return false;
                 }
 
-                if ($prefix !== '' && Str::contains($needle, $prefix.mb_strtolower($id))) {
+                if ($prefix !== '' && Str::contains($needle, $prefix . mb_strtolower($id))) {
                     return true;
                 }
 
@@ -255,7 +256,7 @@ class SePayWebhookHandler
             return null;
         }
 
-        $pattern = '/'.preg_quote($prefix, '/').'\s*([0-9]{1,12})/iu';
+        $pattern = '/' . preg_quote($prefix, '/') . '\s*([0-9]{1,12})/iu';
         if (preg_match($pattern, $content, $matches) !== 1) {
             return null;
         }
@@ -275,7 +276,7 @@ class SePayWebhookHandler
             return max(0, (int) round($amount));
         }
 
-        if (! is_string($amount)) {
+        if (!is_string($amount)) {
             return 0;
         }
 
@@ -315,6 +316,6 @@ class SePayWebhookHandler
         }
 
         // Quy ước nội bộ đang lưu integer đơn vị nhỏ nhất, nên với số thập phân ta lấy đơn vị lớn.
-        return (int) round((float) (($intPart === '' ? '0' : $intPart).'.'.$decPart));
+        return (int) round((float) (($intPart === '' ? '0' : $intPart) . '.' . $decPart));
     }
 }

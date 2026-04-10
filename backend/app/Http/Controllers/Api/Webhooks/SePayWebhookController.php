@@ -11,7 +11,8 @@ class SePayWebhookController extends Controller
 {
     public function __construct(
         private readonly SePayWebhookHandler $handler
-    ) {}
+    ) {
+    }
 
     /**
      * IPN SePay — POST JSON theo tài liệu; trả 200/201 + {"success": true}.
@@ -23,7 +24,7 @@ class SePayWebhookController extends Controller
         $secretKey = config('sepay.secret_key');
         if (is_string($secretKey) && $secretKey !== '') {
             $headerSecret = $request->header('X-Secret-Key');
-            if (! is_string($headerSecret) || trim($headerSecret) !== trim($secretKey)) {
+            if (!is_string($headerSecret) || trim($headerSecret) !== trim($secretKey)) {
                 return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
             }
         }
@@ -33,7 +34,7 @@ class SePayWebhookController extends Controller
             if (is_string($apiKey) && $apiKey !== '') {
                 $auth = (string) $request->header('Authorization', '');
                 $xApiKey = (string) $request->header('X-Api-Key', '');
-                $expectedAuth = 'apikey '.strtolower(trim($apiKey));
+                $expectedAuth = 'apikey ' . strtolower(trim($apiKey));
                 $normalizedAuth = strtolower(trim($auth));
 
                 if (
@@ -47,7 +48,7 @@ class SePayWebhookController extends Controller
         }
 
         $payload = $request->json()->all();
-        if (! is_array($payload)) {
+        if (!is_array($payload)) {
             $payload = $request->all();
         }
 
