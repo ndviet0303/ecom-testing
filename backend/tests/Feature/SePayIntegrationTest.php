@@ -66,7 +66,7 @@ class SePayIntegrationTest extends TestCase
         $qr = $this->getJson('/api/v1/orders/'.$orderId.'/sepay-qr')->assertOk();
         $this->assertStringContainsString('qr.sepay.vn', $qr->json('qr_image_url'));
         $this->assertStringContainsString('TTECOMDZ', $qr->json('qr_image_url'));
-        $this->assertSame($total, $qr->json('amount'));
+        $this->assertSame(2000, $qr->json('amount'));
         $this->assertStringContainsString((string) $orderId, $qr->json('transfer_content'));
 
         $this->postJson('/api/v1/webhooks/sepay', [

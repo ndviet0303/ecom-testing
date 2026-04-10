@@ -1,10 +1,14 @@
 <script setup>
 import { ref } from 'vue'
 import { useAuthStore } from '@/stores/authStore'
+import { useCartStore } from '@/stores/cartStore'
+import { useToastStore } from '@/stores/toastStore'
 import { useRouter } from 'vue-router'
 import { LogIn, User } from 'lucide-vue-next'
 
 const auth = useAuthStore()
+const cartStore = useCartStore()
+const toastStore = useToastStore()
 const router = useRouter()
 
 const email = ref('customer@ziet.dev')
@@ -15,6 +19,12 @@ const handleLogin = async () => {
   error.value = ''
   const success = await auth.login(email.value, password.value)
   if (success) {
+    try {
+      await cartStore.mergeGuestCart()
+    } catch (err) {
+      toastStore.error('Không thể đồng bộ giỏ hàng cũ. Hệ thống sẽ tải giỏ hàng hiện tại của tài khoản.')
+    }
+    await cartStore.fetchCart()
     router.push('/checkout')
   } else {
     error.value = 'Email hoặc mật khẩu không chính xác.'

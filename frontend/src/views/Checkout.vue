@@ -73,7 +73,7 @@ const shippingFee = computed(() => {
 
 const total = computed(() => cartStore.subtotal + shippingFee.value)
 const canPlaceOrder = computed(() => {
-  if (loading.value || cartStore.items.length === 0) return false
+  if (loading.value || cartStore.loading || cartStore.items.length === 0) return false
   if (fulfillmentMethod.value === 'pickup') return true
   return !!selectedAddressId.value && !!selectedZoneId.value
 })
@@ -157,6 +157,8 @@ const placeOrder = async () => {
       tax_rate_basis_points: 0,
       payment_method: 'sepay_qr',
       customer_note: note.value
+    }, {
+      headers: { 'X-Cart-Token': cartStore.cartToken }
     })
     
     // Clear cart locally
@@ -165,7 +167,12 @@ const placeOrder = async () => {
     
     router.push({ name: 'order-success', params: { id: response.data.order.id } })
   } catch (err) {
-    toastStore.error(err.response?.data?.message || 'Lỗi khi đặt hàng.')
+    const validationErrors = err.response?.data?.errors
+    const firstValidationMessage = validationErrors
+      ? Object.values(validationErrors).flat()[0]
+      : null
+
+    toastStore.error(firstValidationMessage || err.response?.data?.message || 'Lỗi khi đặt hàng.')
   } finally {
     loading.value = false
   }
@@ -178,9 +185,9 @@ const formatPrice = (cents) => {
   }).format(cents || 0)
 }
 
-onMounted(() => {
-    cartStore.fetchCart()
-    fetchData()
+onMounted(async () => {
+    await cartStore.fetchCart()
+    await fetchData()
 })
 </script>
 

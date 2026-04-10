@@ -84,6 +84,44 @@ class CheckoutAndOrderApiTest extends TestCase
         Notification::assertSentTo($user, \App\Notifications\OrderPlacedNotification::class);
     }
 
+    public function test_checkout_merges_guest_cart_from_header_before_creating_order(): void
+    {
+        Notification::fake();
+
+        $user = User::factory()->create();
+        $zone = $this->shippingZone();
+        $addr = $this->address($user);
+
+        $product = Product::factory()->create(['base_price_cents' => 100_000]);
+        $product->inventory->update(['on_hand' => 5, 'reserved' => 0]);
+
+        $addToCart = $this->postJson('/api/v1/cart/items', [
+            'product_id' => $product->id,
+            'quantity' => 2,
+        ])->assertCreated();
+
+        $guestToken = $addToCart->headers->get('X-Cart-Token');
+        $this->assertNotNull($guestToken);
+
+        Sanctum::actingAs($user);
+
+        $res = $this->postJson('/api/v1/checkout', [
+            'shipping_address_id' => $addr->id,
+            'shipping_zone_id' => $zone->id,
+            'weight_grams' => 2000,
+            'tax_rate_basis_points' => 0,
+        ], [
+            'X-Cart-Token' => $guestToken,
+        ]);
+
+        $res->assertCreated()
+            ->assertJsonPath('order.subtotal_cents', 200_000);
+
+        $this->assertDatabaseMissing('carts', [
+            'guest_token' => $guestToken,
+        ]);
+    }
+
     public function test_customer_can_cancel_paid_order_and_stock_restored(): void
     {
         Notification::fake();

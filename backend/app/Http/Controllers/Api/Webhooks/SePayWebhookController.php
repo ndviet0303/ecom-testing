@@ -23,7 +23,7 @@ class SePayWebhookController extends Controller
         $secretKey = config('sepay.secret_key');
         if (is_string($secretKey) && $secretKey !== '') {
             $headerSecret = $request->header('X-Secret-Key');
-            if ($headerSecret !== $secretKey) {
+            if (! is_string($headerSecret) || trim($headerSecret) !== trim($secretKey)) {
                 return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
             }
         }
@@ -31,8 +31,16 @@ class SePayWebhookController extends Controller
         $apiKey = config('sepay.webhook_api_key');
         if ($secretKey === null || $secretKey === '') {
             if (is_string($apiKey) && $apiKey !== '') {
-                $auth = $request->header('Authorization', '');
-                if ($auth !== 'Apikey '.$apiKey) {
+                $auth = (string) $request->header('Authorization', '');
+                $xApiKey = (string) $request->header('X-Api-Key', '');
+                $expectedAuth = 'apikey '.strtolower(trim($apiKey));
+                $normalizedAuth = strtolower(trim($auth));
+
+                if (
+                    $normalizedAuth !== $expectedAuth
+                    && strtolower(trim($xApiKey)) !== strtolower(trim($apiKey))
+                    && $normalizedAuth !== strtolower(trim($apiKey))
+                ) {
                     return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
                 }
             }

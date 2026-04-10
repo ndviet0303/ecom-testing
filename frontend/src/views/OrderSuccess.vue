@@ -8,17 +8,30 @@ const route = useRoute()
 const orderId = route.params.id
 const qrUrl = ref('')
 const loading = ref(true)
+const errorMessage = ref('')
+const transferContent = ref('')
+const amount = ref(0)
 
 const fetchQrCode = async () => {
     try {
-        // API này chúng ta đã code ở Backend để trả về link ảnh QR
         const response = await axios.get(`/api/v1/orders/${orderId}/sepay-qr`)
-        qrUrl.value = response.data.qr_url
+        qrUrl.value = response.data.qr_image_url || ''
+        transferContent.value = response.data.transfer_content || ''
+        amount.value = response.data.amount || 0
+        errorMessage.value = qrUrl.value ? '' : 'API không trả về ảnh QR.'
     } catch (err) {
         console.error('Error fetching QR code:', err)
+        errorMessage.value = err.response?.data?.message || 'Không thể tải mã QR thanh toán.'
     } finally {
         loading.value = false
     }
+}
+
+const formatPrice = (cents) => {
+  return new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND'
+  }).format(cents || 0)
 }
 
 onMounted(fetchQrCode)
@@ -44,11 +57,14 @@ onMounted(fetchQrCode)
           <div class="payment-details">
               <div class="detail-row"><span>Phương thức:</span> <span>Chuyển khoản (SePay)</span></div>
               <div class="detail-row"><span>Trạng thái:</span> <span class="badge-pending">Chờ thanh toán</span></div>
+              <div class="detail-row"><span>Số tiền:</span> <span>{{ formatPrice(amount) }}</span></div>
+              <div class="detail-row"><span>Nội dung CK:</span> <span class="transfer-content">{{ transferContent || 'Đang tạo...' }}</span></div>
           </div>
         </div>
 
         <div class="qr-display">
           <div v-if="loading" class="qr-placeholder">Đang tạo mã QR...</div>
+          <div v-else-if="errorMessage" class="qr-placeholder qr-error">{{ errorMessage }}</div>
           <img v-else :src="qrUrl" alt="SePay QR Code" class="qr-img" />
         </div>
       </div>
@@ -87,6 +103,8 @@ onMounted(fetchQrCode)
 .payment-details { border-top: 1px solid var(--border-color); padding-top: 20px; display: flex; flex-direction: column; gap: 8px; }
 .detail-row { display: flex; justify-content: space-between; font-size: 0.9rem; }
 .badge-pending { color: #eab308; font-weight: 700; text-transform: uppercase; font-size: 0.75rem; }
+.transfer-content { font-weight: 700; color: var(--text-primary); }
+.qr-error { color: var(--error); text-align: center; }
 
 .success-actions { display: flex; justify-content: center; gap: 16px; }
 </style>

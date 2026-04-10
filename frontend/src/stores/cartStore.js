@@ -16,6 +16,10 @@ export const useCartStore = defineStore('cart', {
   },
 
   actions: {
+    isValidCartToken(token = this.cartToken) {
+      return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(token || ''))
+    },
+
     applyCartTokenFromResponse(response) {
       const newToken = response.headers['x-cart-token']
       if (newToken) {
@@ -42,6 +46,10 @@ export const useCartStore = defineStore('cart', {
     },
 
     async fetchCart() {
+      if (this.cartToken && !this.isValidCartToken()) {
+        this.clearToken()
+      }
+
       this.loading = true
       try {
         const response = await axios.get('/api/v1/cart', {
@@ -52,9 +60,39 @@ export const useCartStore = defineStore('cart', {
         this.subtotal = response.data.subtotal_cents || 0
         this.applyCartTokenFromResponse(response)
       } catch (err) {
+        if (err.response?.status === 404 && this.cartToken) {
+          this.clearToken()
+          this.items = []
+          this.subtotal = 0
+          return
+        }
         console.error('Lỗi khi tải giỏ hàng:', err)
       } finally {
         this.loading = false
+      }
+    },
+
+    async mergeGuestCart() {
+      if (!this.cartToken) return false
+      if (!this.isValidCartToken()) {
+        this.clearToken()
+        return false
+      }
+
+      try {
+        await axios.post('/api/v1/cart/merge', {
+          guest_token: this.cartToken
+        })
+        this.clearToken()
+        await this.fetchCart()
+        return true
+      } catch (err) {
+        if (err.response?.status === 404 || err.response?.status === 422) {
+          this.clearToken()
+          return false
+        }
+        console.error('Lỗi khi gộp giỏ hàng guest:', err)
+        throw err
       }
     },
 
@@ -154,6 +192,11 @@ export const useCartStore = defineStore('cart', {
     setToken(token) {
       this.cartToken = token
       localStorage.setItem('cart_token', token)
+    },
+
+    clearToken() {
+      this.cartToken = null
+      localStorage.removeItem('cart_token')
     }
   }
 })

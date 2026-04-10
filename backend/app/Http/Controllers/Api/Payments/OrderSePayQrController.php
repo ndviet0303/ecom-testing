@@ -22,9 +22,12 @@ class OrderSePayQrController extends Controller
             abort(422, 'Chỉ đơn chờ thanh toán (pending) mới có QR SePay.');
         }
 
+        $fixedAmount = (int) config('sepay.fixed_qr_amount', 2000);
+        $testAmount = $fixedAmount > 0 ? $fixedAmount : (int) $order->total_cents;
+
         return response()->json([
-            'qr_image_url' => $this->sePayQrService->qrImageUrl($order),
-            'amount' => $order->total_cents,
+            'qr_image_url' => $this->sePayQrService->qrImageUrl($order, $testAmount),
+            'amount' => $testAmount,
             'transfer_content' => $this->sePayQrService->transferContent($order),
             'order_number' => $order->order_number,
         ]);

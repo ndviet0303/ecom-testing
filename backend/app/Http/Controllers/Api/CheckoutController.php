@@ -7,6 +7,7 @@ use App\Services\Ecommerce\CartService;
 use App\Services\Ecommerce\CheckoutService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class CheckoutController extends Controller
 {
@@ -28,9 +29,15 @@ class CheckoutController extends Controller
             'payment_method' => ['nullable', 'in:immediate,sepay_qr'],
         ]);
 
+        $guestToken = $request->header('X-Cart-Token');
+
+        if ($request->user() !== null && is_string($guestToken) && Str::isUuid($guestToken)) {
+            $this->cartService->mergeGuestIntoUser($guestToken, $request->user());
+        }
+
         [$cart] = $this->cartService->resolveCart(
             $request->user(),
-            $request->header('X-Cart-Token'),
+            $guestToken,
             false
         );
 
