@@ -125,7 +125,10 @@ const shippingFee = computed(() => {
 
 const discountCents = computed(() => appliedCoupon.value?.discount_cents || 0);
 const total = computed(() => {
-  const discountedSubtotal = Math.max(0, cartStore.subtotal - discountCents.value);
+  const discountedSubtotal = Math.max(
+    0,
+    cartStore.subtotal - discountCents.value,
+  );
   return discountedSubtotal + shippingFee.value;
 });
 const canPlaceOrder = computed(() => {
@@ -243,7 +246,9 @@ const applyCoupon = async () => {
     localStorage.setItem(STORAGE_KEY, code);
     toastStore.success(`Đã áp dụng mã ${code}.`);
   } catch (err) {
-    toastStore.error(err.response?.data?.message || "Không áp dụng được mã giảm giá.");
+    toastStore.error(
+      err.response?.data?.message || "Không áp dụng được mã giảm giá.",
+    );
   } finally {
     couponChecking.value = false;
   }
@@ -322,7 +327,9 @@ watch(
 
     const oldCode = appliedCoupon.value.code;
     appliedCoupon.value = null;
-    toastStore.error(`Mã ${oldCode} đã bị gỡ vì đơn hàng không còn đủ điều kiện.`);
+    toastStore.error(
+      `Mã ${oldCode} đã bị gỡ vì đơn hàng không còn đủ điều kiện.`,
+    );
   },
 );
 
@@ -552,7 +559,9 @@ onMounted(async () => {
             </button>
           </div>
           <div v-if="appliedCoupon" class="coupon-applied">
-            <span>Đã áp dụng: <strong>{{ appliedCoupon.code }}</strong></span>
+            <span
+              >Đã áp dụng: <strong>{{ appliedCoupon.code }}</strong></span
+            >
             <button type="button" class="coupon-clear-btn" @click="clearCoupon">
               Bỏ
             </button>
