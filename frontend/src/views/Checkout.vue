@@ -105,7 +105,10 @@ const normalizeText = (value) => {
 
 const normalizeAdministrativeName = (value) => {
   return normalizeText(value)
-    .replace(/\b(thanh pho|tp\.?|tinh|quan|huyen|thi xa|thi tran|phuong|xa)\b/g, " ")
+    .replace(
+      /\b(thanh pho|tp\.?|tinh|quan|huyen|thi xa|thi tran|phuong|xa)\b/g,
+      " ",
+    )
     .replace(/\s+/g, " ")
     .trim();
 };
@@ -120,7 +123,9 @@ const isInnerCityAddress = (address) => {
   if (!isHanoi) return false;
 
   const district = normalizeAdministrativeName(address.district);
-  return HANOI_INNER_DISTRICTS.map((item) => normalizeAdministrativeName(item)).includes(district);
+  return HANOI_INNER_DISTRICTS.map((item) =>
+    normalizeAdministrativeName(item),
+  ).includes(district);
 };
 
 const shippingFee = computed(() => {
