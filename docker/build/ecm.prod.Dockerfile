@@ -1,5 +1,5 @@
 FROM registry.gitlab.com/bantool/devops/frankenphp:latest AS runner
-COPY --from=registry.gitlab.com/bantool/ziet-projects/ecm/api:latest /app /app/ecm-api
+COPY --from=registry.gitlab.com/bantool/ziet-projects/ecom/api:latest /app /app/ecm-api
 
 COPY env/ecm-api.prod.env /app/ecm-api/.env
 COPY configs/ecm.prod.Caddyfile /etc/frankenphp/Caddyfile

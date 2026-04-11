@@ -1,19 +1,27 @@
 <script setup>
-import { onMounted } from 'vue'
-import { RouterView, RouterLink } from 'vue-router'
-import { ShoppingCart, Cpu, User, LogOut } from 'lucide-vue-next'
-import { useCartStore } from '@/stores/cartStore'
-import { useAuthStore } from '@/stores/authStore'
-import ToastContainer from '@/components/ToastContainer.vue'
+import { onMounted } from "vue";
+import { RouterView, RouterLink, useRouter } from "vue-router";
+import { ShoppingCart, Cpu, User, LogOut } from "lucide-vue-next";
+import { useCartStore } from "@/stores/cartStore";
+import { useAuthStore } from "@/stores/authStore";
+import ToastContainer from "@/components/ToastContainer.vue";
 
-const cartStore = useCartStore()
-const authStore = useAuthStore()
+const cartStore = useCartStore();
+const authStore = useAuthStore();
+const router = useRouter();
+
+const handleLogout = async () => {
+  await authStore.logout();
+  if (router.currentRoute.value.name !== "home") {
+    await router.push({ name: "home" });
+  }
+};
 
 onMounted(() => {
-  cartStore.fetchCart()
-  authStore.applyAuthHeader()
-  authStore.fetchUser()
-})
+  cartStore.fetchCart();
+  authStore.applyAuthHeader();
+  authStore.fetchUser();
+});
 </script>
 
 <template>
@@ -31,21 +39,36 @@ onMounted(() => {
       <RouterLink to="/" class="nav-link">Home</RouterLink>
       <RouterLink to="/builder" class="nav-link">PC Builder</RouterLink>
       <RouterLink to="/products" class="nav-link">Products</RouterLink>
-      <RouterLink v-if="authStore.user?.role === 'admin' || authStore.user?.role === 'staff'" to="/admin" class="nav-link">Dashboard</RouterLink>
+      <RouterLink
+        v-if="
+          authStore.user?.role === 'admin' || authStore.user?.role === 'staff'
+        "
+        to="/admin"
+        class="nav-link"
+        >Dashboard</RouterLink
+      >
     </div>
 
     <div class="nav-actions">
       <RouterLink to="/cart" class="nav-icon-btn cart-btn">
         <ShoppingCart :size="20" />
-        <span v-if="cartStore.itemCount > 0" class="cart-badge">{{ cartStore.itemCount }}</span>
+        <span v-if="cartStore.itemCount > 0" class="cart-badge">{{
+          cartStore.itemCount
+        }}</span>
       </RouterLink>
-      
+
       <div v-if="authStore.isLoggedIn" class="user-actions">
-         <span class="user-greeting">Hi, {{ authStore.user?.name }}</span>
-         <RouterLink to="/profile" class="nav-icon-btn"><User :size="20" /></RouterLink>
-         <button @click="authStore.logout()" class="nav-icon-btn"><LogOut :size="18" /></button>
+        <span class="user-greeting">Hi, {{ authStore.user?.name }}</span>
+        <RouterLink to="/profile" class="nav-icon-btn"
+          ><User :size="20"
+        /></RouterLink>
+        <button @click="handleLogout" class="nav-icon-btn">
+          <LogOut :size="18" />
+        </button>
       </div>
-      <RouterLink v-else to="/login" class="nav-icon-btn"><User :size="20" /></RouterLink>
+      <RouterLink v-else to="/login" class="nav-icon-btn"
+        ><User :size="20"
+      /></RouterLink>
     </div>
   </nav>
 
@@ -69,7 +92,11 @@ onMounted(() => {
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
 }
 
-.nav-logo, .logo-link, .nav-links, .nav-actions, .user-actions {
+.nav-logo,
+.logo-link,
+.nav-links,
+.nav-actions,
+.user-actions {
   display: flex;
   align-items: center;
 }
@@ -107,7 +134,8 @@ onMounted(() => {
   transition: all 0.3s ease;
 }
 
-.nav-link:hover, .router-link-active {
+.nav-link:hover,
+.router-link-active {
   color: var(--accent-primary);
 }
 

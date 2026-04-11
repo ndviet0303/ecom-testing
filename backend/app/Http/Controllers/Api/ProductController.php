@@ -10,40 +10,35 @@ use App\Models\Product;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class ProductController extends Controller
 {
     public function __construct(
         private readonly ProductPriceValidator $priceValidator
-    ) {}
+    ) {
+    }
 
     public function index(Request $request): JsonResponse
     {
         $category = $request->query('category');
         $search = $request->query('q');
-        $page = $request->query('page', 1);
         $perPage = min((int) $request->query('per_page', 15), 100);
 
-        $cacheKey = "products_idx_{$category}_{$search}_{$page}_{$perPage}";
+        $query = Product::query()->with('inventory');
 
-        $results = Cache::remember($cacheKey, 600, function () use ($category, $search, $perPage) {
-            $query = Product::query()->with('inventory');
+        if ($category) {
+            $query->where('category', $category);
+        }
 
-            if ($category) {
-                $query->where('category', $category);
-            }
+        if ($search) {
+            $query->where(function ($q) use ($search): void {
+                $q->where('name', 'like', '%' . $search . '%')
+                    ->orWhere('sku', 'like', '%' . $search . '%');
+            });
+        }
 
-            if ($search) {
-                $query->where(function ($q) use ($search): void {
-                    $q->where('name', 'like', '%'.$search.'%')
-                        ->orWhere('sku', 'like', '%'.$search.'%');
-                });
-            }
-
-            return $query->orderBy('id')->paginate($perPage);
-        });
+        $results = $query->orderBy('id')->paginate($perPage);
 
         return response()->json($results);
     }
@@ -76,8 +71,8 @@ class ProductController extends Controller
             $this->priceValidator->validate(
                 (int) $validated['base_price_cents'],
                 array_key_exists('sale_price_cents', $validated) && $validated['sale_price_cents'] !== null
-                    ? (int) $validated['sale_price_cents']
-                    : null
+                ? (int) $validated['sale_price_cents']
+                : null
             );
         } catch (InvalidDomainArgumentException $e) {
             throw ValidationException::withMessages([

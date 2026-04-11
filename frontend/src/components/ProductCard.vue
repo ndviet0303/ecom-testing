@@ -1,115 +1,173 @@
 <script setup>
-import { ref, computed } from 'vue'
-import { 
-  ShieldCheck, 
-  ArrowRight, 
-  ShoppingCart, 
-  Cpu, 
-  HardDrive, 
-  Zap, 
-  Monitor, 
+import { ref, computed } from "vue";
+import {
+  ShieldCheck,
+  ArrowRight,
+  ShoppingCart,
+  Cpu,
+  HardDrive,
+  Zap,
+  Monitor,
   Box,
   RefreshCcw,
-  CheckCircle2
-} from 'lucide-vue-next'
-import { useCartStore } from '@/stores/cartStore'
-import { useToastStore } from '@/stores/toastStore'
-import { useRouter } from 'vue-router'
+  CheckCircle2,
+} from "lucide-vue-next";
+import { useCartStore } from "@/stores/cartStore";
+import { useToastStore } from "@/stores/toastStore";
+import { useRouter } from "vue-router";
 
 const props = defineProps({
   product: {
     type: Object,
-    required: true
-  }
-})
+    required: true,
+  },
+});
 
-const cartStore = useCartStore()
-const toastStore = useToastStore()
-const router = useRouter()
-const isAdding = ref(false)
-const addedToCart = ref(false)
+const cartStore = useCartStore();
+const toastStore = useToastStore();
+const router = useRouter();
+const isAdding = ref(false);
+const addedToCart = ref(false);
+const forcedOutOfStock = ref(false);
 
 const formatPrice = (cents) => {
   // Giả định backend là USD cents, đổi sang VND (x 250)
-  const vnd = (cents / 100) * 25000
-  return new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND',
-    maximumFractionDigits: 0
-  }).format(vnd)
-}
+  const vnd = (cents / 100) * 25000;
+  return new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
+    maximumFractionDigits: 0,
+  }).format(vnd);
+};
 
 const handleImageError = (e) => {
-  e.target.src = 'https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?q=80&w=400&auto=format&fit=crop'
-}
+  e.target.src =
+    "https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?q=80&w=400&auto=format&fit=crop";
+};
 
 const addToCart = async () => {
-  if (isAdding.value) return
-  isAdding.value = true
+  if (isAdding.value) return;
+  isAdding.value = true;
   try {
-    await cartStore.addToCart(props.product.id)
-    addedToCart.value = true
-    toastStore.success(`Đã thêm ${props.product.name} vào giỏ hàng!`)
+    await cartStore.addToCart(props.product.id);
+    addedToCart.value = true;
+    toastStore.success(`Đã thêm ${props.product.name} vào giỏ hàng!`);
     setTimeout(() => {
-      addedToCart.value = false
-    }, 2000)
+      addedToCart.value = false;
+    }, 2000);
   } catch (err) {
-    console.error('Failed to add to cart:', err)
+    console.error("Failed to add to cart:", err);
+    const stockError = err?.response?.data?.errors?.stock?.[0];
+    if (stockError) {
+      forcedOutOfStock.value = true;
+    }
+    toastStore.error(
+      stockError ||
+        err?.response?.data?.message ||
+        "Không thể thêm vào giỏ hàng.",
+    );
   } finally {
-    isAdding.value = false
+    isAdding.value = false;
   }
-}
+};
 
 const getSpecLabels = computed(() => {
-  const specs = props.product.specs || {}
-  const items = []
-  
+  const specs = props.product.specs || {};
+  const items = [];
+
   switch (props.product.category) {
-    case 'CPU':
-      if (specs.cores) items.push({ label: 'Nhân', value: specs.cores, icon: Cpu })
-      if (specs.boost) items.push({ label: 'Boost', value: `${specs.boost}GHz`, icon: Zap })
-      if (specs.socket) items.push({ label: 'Socket', value: specs.socket, icon: Box })
-      if (specs.tdp) items.push({ label: 'TDP', value: `${specs.tdp}W`, icon: Zap })
-      break
-    case 'GPU':
-      if (specs.vram) items.push({ label: 'VRAM', value: specs.vram, icon: Monitor })
-      if (specs.chipset) items.push({ label: 'Chipset', value: specs.chipset.split(' ')[0], icon: Cpu })
-      if (specs.length_mm) items.push({ label: 'Dài', value: `${specs.length_mm}mm`, icon: Box })
-      break
-    case 'Motherboard':
-      if (specs.socket) items.push({ label: 'Socket', value: specs.socket, icon: Box })
-      if (specs.ram_type) items.push({ label: 'RAM', value: specs.ram_type, icon: Box })
-      break
-    case 'RAM':
-      if (specs.speed?.[1]) items.push({ label: 'Bus', value: `${specs.speed[1]}MHz`, icon: Zap })
-      if (specs.modules) items.push({ label: 'Dung lượng', value: specs.modules, icon: Box })
-      if (specs.ram_type) items.push({ label: 'Loại', value: specs.ram_type, icon: Box })
-      break
-    case 'Storage':
-      if (specs.capacity) items.push({ label: 'Dung lượng', value: `${specs.capacity}GB`, icon: HardDrive })
-      if (specs.type) items.push({ label: 'Loại', value: specs.type, icon: Box })
-      break
-    case 'Monitor':
-      if (specs.screen_size) items.push({ label: 'Kích thước', value: `${specs.screen_size}"`, icon: Monitor })
-      if (specs.refresh_rate) items.push({ label: 'Tần số', value: `${specs.refresh_rate}Hz`, icon: Zap })
-      break
+    case "CPU":
+      if (specs.cores)
+        items.push({ label: "Nhân", value: specs.cores, icon: Cpu });
+      if (specs.boost)
+        items.push({ label: "Boost", value: `${specs.boost}GHz`, icon: Zap });
+      if (specs.socket)
+        items.push({ label: "Socket", value: specs.socket, icon: Box });
+      if (specs.tdp)
+        items.push({ label: "TDP", value: `${specs.tdp}W`, icon: Zap });
+      break;
+    case "GPU":
+      if (specs.vram)
+        items.push({ label: "VRAM", value: specs.vram, icon: Monitor });
+      if (specs.chipset)
+        items.push({
+          label: "Chipset",
+          value: specs.chipset.split(" ")[0],
+          icon: Cpu,
+        });
+      if (specs.length_mm)
+        items.push({ label: "Dài", value: `${specs.length_mm}mm`, icon: Box });
+      break;
+    case "Motherboard":
+      if (specs.socket)
+        items.push({ label: "Socket", value: specs.socket, icon: Box });
+      if (specs.ram_type)
+        items.push({ label: "RAM", value: specs.ram_type, icon: Box });
+      break;
+    case "RAM":
+      if (specs.speed?.[1])
+        items.push({ label: "Bus", value: `${specs.speed[1]}MHz`, icon: Zap });
+      if (specs.modules)
+        items.push({ label: "Dung lượng", value: specs.modules, icon: Box });
+      if (specs.ram_type)
+        items.push({ label: "Loại", value: specs.ram_type, icon: Box });
+      break;
+    case "Storage":
+      if (specs.capacity)
+        items.push({
+          label: "Dung lượng",
+          value: `${specs.capacity}GB`,
+          icon: HardDrive,
+        });
+      if (specs.type)
+        items.push({ label: "Loại", value: specs.type, icon: Box });
+      break;
+    case "Monitor":
+      if (specs.screen_size)
+        items.push({
+          label: "Kích thước",
+          value: `${specs.screen_size}"`,
+          icon: Monitor,
+        });
+      if (specs.refresh_rate)
+        items.push({
+          label: "Tần số",
+          value: `${specs.refresh_rate}Hz`,
+          icon: Zap,
+        });
+      break;
     default:
       // Fallback for general specs if available
-      if (specs.socket) items.push({ label: 'Socket', value: specs.socket, icon: Box })
+      if (specs.socket)
+        items.push({ label: "Socket", value: specs.socket, icon: Box });
   }
-  return items.slice(0, 4) // Show max 4 specs for layout consistency
-})
+  return items.slice(0, 4); // Show max 4 specs for layout consistency
+});
 
-const inStock = computed(() => (props.product.inventory?.on_hand || 0) > 0)
+const availableStock = computed(() => {
+  const onHand = Number(props.product.inventory?.on_hand || 0);
+  const reserved = Number(props.product.inventory?.reserved || 0);
+  return Math.max(0, onHand - reserved);
+});
+
+const inStock = computed(
+  () => availableStock.value > 0 && !forcedOutOfStock.value,
+);
 </script>
 
 <template>
-  <div class="product-card glass-panel animate-fade-in" :class="{ 'out-of-stock': !inStock }">
-    <router-link :to="{ name: 'product-detail', params: { id: product.id } }" class="product-link">
+  <div
+    class="product-card glass-panel animate-fade-in"
+    :class="{ 'out-of-stock': !inStock }"
+  >
+    <router-link
+      :to="{ name: 'product-detail', params: { id: product.id } }"
+      class="product-link"
+    >
       <div class="product-image">
-        <img 
-          :src="product.image_url" 
-          :alt="product.name" 
+        <img
+          :src="product.image_url"
+          :alt="product.name"
           @error="handleImageError"
           loading="lazy"
         />
@@ -118,9 +176,7 @@ const inStock = computed(() => (props.product.inventory?.on_hand || 0) > 0)
             <ShieldCheck :size="12" />
             <span>{{ product.warranty_months }}T BH</span>
           </div>
-          <div v-if="!inStock" class="badge out-stock">
-            Hết hàng
-          </div>
+          <div v-if="!inStock" class="badge out-stock">Hết hàng</div>
         </div>
       </div>
     </router-link>
@@ -133,8 +189,11 @@ const inStock = computed(() => (props.product.inventory?.on_hand || 0) > 0)
           <span>Sẵn hàng</span>
         </div>
       </div>
-      
-      <router-link :to="{ name: 'product-detail', params: { id: product.id } }" class="product-name-link">
+
+      <router-link
+        :to="{ name: 'product-detail', params: { id: product.id } }"
+        class="product-name-link"
+      >
         <h3 class="product-name" :title="product.name">{{ product.name }}</h3>
       </router-link>
 
@@ -147,16 +206,18 @@ const inStock = computed(() => (props.product.inventory?.on_hand || 0) > 0)
           </div>
         </div>
       </div>
-      
+
       <div class="product-footer">
         <div class="price-section">
           <span class="price-label">Giá niêm yết</span>
-          <span class="product-price">{{ formatPrice(product.base_price_cents) }}</span>
+          <span class="product-price">{{
+            formatPrice(product.base_price_cents)
+          }}</span>
         </div>
-        
-        <button 
-          class="action-btn" 
-          @click.stop="addToCart" 
+
+        <button
+          class="action-btn"
+          @click.stop="addToCart"
           :disabled="!inStock || isAdding"
           :class="{ 'is-loading': isAdding, 'is-added': addedToCart }"
         >
@@ -189,13 +250,17 @@ const inStock = computed(() => (props.product.inventory?.on_hand || 0) > 0)
 }
 
 .product-card::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: radial-gradient(circle at top right, rgba(37, 99, 235, 0.05), transparent 60%);
+  background: radial-gradient(
+    circle at top right,
+    rgba(37, 99, 235, 0.05),
+    transparent 60%
+  );
   opacity: 0;
   transition: opacity 0.5s ease;
 }
@@ -321,9 +386,18 @@ const inStock = computed(() => (props.product.inventory?.on_hand || 0) > 0)
 }
 
 @keyframes pulse {
-  0% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(1.2); }
-  100% { opacity: 1; transform: scale(1); }
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.2);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .product-name-link {
@@ -470,13 +544,23 @@ const inStock = computed(() => (props.product.inventory?.on_hand || 0) > 0)
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .animate-fade-in {

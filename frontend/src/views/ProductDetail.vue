@@ -1,63 +1,97 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import { useRoute } from 'vue-router'
-import axios from 'axios'
-import { useCartStore } from '@/stores/cartStore'
-import { 
-  ShieldCheck, 
-  ShoppingCart, 
-  ArrowLeft, 
-  Truck, 
-  CheckCircle, 
+import { ref, onMounted, computed } from "vue";
+import { useRoute } from "vue-router";
+import axios from "axios";
+import { useCartStore } from "@/stores/cartStore";
+import { useToastStore } from "@/stores/toastStore";
+import {
+  ShieldCheck,
+  ShoppingCart,
+  ArrowLeft,
+  Truck,
+  CheckCircle,
   Info,
   ChevronRight,
-  RefreshCcw
-} from 'lucide-vue-next'
+  RefreshCcw,
+} from "lucide-vue-next";
 
-const route = useRoute()
-const cartStore = useCartStore()
-const product = ref(null)
-const loading = ref(true)
-const quantity = ref(1)
-const isAdding = ref(false)
+const route = useRoute();
+const cartStore = useCartStore();
+const toastStore = useToastStore();
+const product = ref(null);
+const loading = ref(true);
+const quantity = ref(1);
+const isAdding = ref(false);
 
 const fetchProduct = async () => {
-  loading.value = true
+  loading.value = true;
   try {
-    const response = await axios.get(`/api/v1/products/${route.params.id}`)
-    product.value = response.data
+    const response = await axios.get(`/api/v1/products/${route.params.id}`);
+    product.value = response.data;
   } catch (err) {
-    console.error('Lỗi khi tải chi tiết sản phẩm:', err)
+    console.error("Lỗi khi tải chi tiết sản phẩm:", err);
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 const formatPrice = (cents) => {
-  if (!cents) return '0 đ'
-  const vnd = (cents / 100) * 25000
-  return new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND',
-    maximumFractionDigits: 0
-  }).format(vnd)
-}
+  if (!cents) return "0 đ";
+  const vnd = (cents / 100) * 25000;
+  return new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
+    maximumFractionDigits: 0,
+  }).format(vnd);
+};
 
 const addToCart = async () => {
-  isAdding.value = true
-  await cartStore.addToCart(product.value.id, quantity.value)
-  isAdding.value = false
-}
+  if (!product.value || availableStock.value <= 0 || isAdding.value) return;
+  const safeQuantity = Math.min(
+    Math.max(1, Number(quantity.value || 1)),
+    availableStock.value,
+  );
+  quantity.value = safeQuantity;
 
-onMounted(fetchProduct)
+  isAdding.value = true;
+  try {
+    await cartStore.addToCart(product.value.id, safeQuantity);
+    toastStore.success("Đã thêm vào giỏ hàng.");
+    await fetchProduct();
+    quantity.value = Math.min(
+      quantity.value,
+      Math.max(1, availableStock.value),
+    );
+  } catch (err) {
+    const stockError = err?.response?.data?.errors?.stock?.[0];
+    toastStore.error(
+      stockError ||
+        err?.response?.data?.message ||
+        "Không thể thêm vào giỏ hàng.",
+    );
+    await fetchProduct();
+  } finally {
+    isAdding.value = false;
+  }
+};
+
+onMounted(fetchProduct);
 
 const specGroups = computed(() => {
-  if (!product.value?.specs) return []
+  if (!product.value?.specs) return [];
   return Object.entries(product.value.specs).map(([key, value]) => ({
-    label: key.replace(/_/g, ' ').toUpperCase(),
-    value: Array.isArray(value) ? value.join(' / ') : value
-  }))
-})
+    label: key.replace(/_/g, " ").toUpperCase(),
+    value: Array.isArray(value) ? value.join(" / ") : value,
+  }));
+});
+
+const availableStock = computed(() => {
+  const onHand = Number(product.value?.inventory?.on_hand || 0);
+  const reserved = Number(product.value?.inventory?.reserved || 0);
+  return Math.max(0, onHand - reserved);
+});
+
+const inStock = computed(() => availableStock.value > 0);
 </script>
 
 <template>
@@ -90,7 +124,9 @@ const specGroups = computed(() => {
           <div class="visual-badges">
             <div class="visual-badge">
               <ShieldCheck :size="20" />
-              <span>Bảo hành {{ product.warranty_months }} tháng chính hãng</span>
+              <span
+                >Bảo hành {{ product.warranty_months }} tháng chính hãng</span
+              >
             </div>
           </div>
         </div>
@@ -99,12 +135,12 @@ const specGroups = computed(() => {
         <div class="product-info-panel">
           <div class="brand-badge">{{ product.brand }}</div>
           <h1 class="detail-title">{{ product.name }}</h1>
-          
+
           <div class="status-row">
-            <div class="stock-info" :class="{ 'out-of-stock': product.inventory?.on_hand <= 0 }">
-              <CheckCircle v-if="product.inventory?.on_hand > 0" :size="16" />
+            <div class="stock-info" :class="{ 'out-of-stock': !inStock }">
+              <CheckCircle v-if="inStock" :size="16" />
               <Info v-else :size="16" />
-              {{ product.inventory?.on_hand > 0 ? 'Còn hàng' : 'Hết hàng' }}
+              {{ inStock ? `Còn ${availableStock} sản phẩm` : "Hết hàng" }}
             </div>
             <div class="sku-info">SKU: {{ product.sku }}</div>
           </div>
@@ -112,31 +148,63 @@ const specGroups = computed(() => {
           <div class="price-section glass-panel">
             <div class="price-tag">
               <span class="label">Giá niêm yết:</span>
-              <span class="value">{{ formatPrice(product.base_price_cents) }}</span>
+              <span class="value">{{
+                formatPrice(product.base_price_cents)
+              }}</span>
             </div>
             <div class="shipping-info">
               <Truck :size="18" />
-              <span>Miễn phí vận chuyển toàn quốc cho đơn hàng từ 10.000.000đ</span>
+              <span
+                >Miễn phí vận chuyển toàn quốc cho đơn hàng từ 10.000.000đ</span
+              >
             </div>
           </div>
 
-          <div class="purchase-actions" v-if="product.inventory?.on_hand > 0">
+          <div class="purchase-actions" v-if="inStock">
             <div class="quantity-selector glass-panel">
-              <button @click="quantity > 1 && quantity--" :disabled="quantity <= 1">-</button>
-              <input type="number" v-model="quantity" />
-              <button @click="quantity++">+</button>
+              <button
+                @click="quantity > 1 && quantity--"
+                :disabled="quantity <= 1"
+              >
+                -
+              </button>
+              <input
+                type="number"
+                v-model.number="quantity"
+                min="1"
+                :max="availableStock"
+              />
+              <button
+                @click="quantity < availableStock && quantity++"
+                :disabled="quantity >= availableStock"
+              >
+                +
+              </button>
             </div>
-            <button class="add-cart-btn btn-primary" @click="addToCart" :disabled="isAdding">
+            <button
+              class="add-cart-btn btn-primary"
+              @click="addToCart"
+              :disabled="
+                isAdding ||
+                !inStock ||
+                quantity < 1 ||
+                quantity > availableStock
+              "
+            >
               <ShoppingCart v-if="!isAdding" :size="20" />
               <RefreshCcw v-else class="animate-spin" :size="20" />
-              {{ isAdding ? 'Đang thêm...' : 'Thêm vào giỏ hàng' }}
+              {{ isAdding ? "Đang thêm..." : "Thêm vào giỏ hàng" }}
             </button>
           </div>
 
           <div class="tech-specs-preview">
             <h3>Thông số kỹ thuật nổi bật</h3>
             <div class="spec-grid">
-              <div v-for="spec in specGroups.slice(0, 6)" :key="spec.label" class="spec-card glass-panel">
+              <div
+                v-for="spec in specGroups.slice(0, 6)"
+                :key="spec.label"
+                class="spec-card glass-panel"
+              >
                 <span class="spec-label">{{ spec.label }}</span>
                 <span class="spec-value">{{ spec.value }}</span>
               </div>
@@ -151,7 +219,12 @@ const specGroups = computed(() => {
           <button class="tab-btn">Đánh giá (0)</button>
         </div>
         <div class="tab-content">
-          <p>{{ product.description || 'Đang cập nhật nội dung cho sản phẩm này...' }}</p>
+          <p>
+            {{
+              product.description ||
+              "Đang cập nhật nội dung cho sản phẩm này..."
+            }}
+          </p>
         </div>
       </div>
     </div>
@@ -200,7 +273,11 @@ const specGroups = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, rgba(30,30,35,0.6) 0%, rgba(20,20,25,0.8) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(30, 30, 35, 0.6) 0%,
+    rgba(20, 20, 25, 0.8) 100%
+  );
 }
 
 .main-image-wrapper img {
@@ -229,7 +306,7 @@ const specGroups = computed(() => {
 .brand-badge {
   display: inline-block;
   padding: 4px 12px;
-  background: rgba(255,255,255,0.05);
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 4px;
   font-size: 0.8rem;
   font-weight: 700;
@@ -266,7 +343,7 @@ const specGroups = computed(() => {
 .price-section {
   padding: 32px;
   margin-bottom: 32px;
-  background: rgba(255,255,255,0.02);
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .price-tag {
@@ -304,7 +381,7 @@ const specGroups = computed(() => {
 .quantity-selector {
   display: flex;
   align-items: center;
-  background: rgba(255,255,255,0.05);
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 12px;
   overflow: hidden;
 }
@@ -355,7 +432,7 @@ const specGroups = computed(() => {
   padding: 16px;
   display: flex;
   flex-direction: column;
-  background: rgba(255,255,255,0.02);
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .spec-label {
@@ -377,7 +454,7 @@ const specGroups = computed(() => {
 .tabs {
   display: flex;
   gap: 40px;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   margin-bottom: 32px;
 }
 
@@ -396,7 +473,7 @@ const specGroups = computed(() => {
 }
 
 .tab-btn.active::after {
-  content: '';
+  content: "";
   position: absolute;
   bottom: -1px;
   left: 0;
@@ -419,7 +496,7 @@ const specGroups = computed(() => {
 
 .skeleton-image {
   height: 500px;
-  background: rgba(255,255,255,0.05);
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 20px;
 }
 
@@ -428,8 +505,12 @@ const specGroups = computed(() => {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (max-width: 968px) {
