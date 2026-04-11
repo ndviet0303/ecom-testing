@@ -28,6 +28,7 @@ const toastStore = useToastStore()
 const router = useRouter()
 const isAdding = ref(false)
 const addedToCart = ref(false)
+const forcedOutOfStock = ref(false)
 
 const formatPrice = (cents) => {
   // Giả định backend là USD cents, đổi sang VND (x 250)
@@ -55,6 +56,11 @@ const addToCart = async () => {
     }, 2000)
   } catch (err) {
     console.error('Failed to add to cart:', err)
+    const stockError = err?.response?.data?.errors?.stock?.[0]
+    if (stockError) {
+      forcedOutOfStock.value = true
+    }
+    toastStore.error(stockError || err?.response?.data?.message || 'Không thể thêm vào giỏ hàng.')
   } finally {
     isAdding.value = false
   }
@@ -100,7 +106,13 @@ const getSpecLabels = computed(() => {
   return items.slice(0, 4) // Show max 4 specs for layout consistency
 })
 
-const inStock = computed(() => (props.product.inventory?.on_hand || 0) > 0)
+const availableStock = computed(() => {
+  const onHand = Number(props.product.inventory?.on_hand || 0)
+  const reserved = Number(props.product.inventory?.reserved || 0)
+  return Math.max(0, onHand - reserved)
+})
+
+const inStock = computed(() => availableStock.value > 0 && !forcedOutOfStock.value)
 </script>
 
 <template>

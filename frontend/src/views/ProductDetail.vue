@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from 'axios'
 import { useCartStore } from '@/stores/cartStore'
+import { useToastStore } from '@/stores/toastStore'
 import { 
   ShieldCheck, 
   ShoppingCart, 
@@ -16,6 +17,7 @@ import {
 
 const route = useRoute()
 const cartStore = useCartStore()
+const toastStore = useToastStore()
 const product = ref(null)
 const loading = ref(true)
 const quantity = ref(1)
@@ -44,9 +46,26 @@ const formatPrice = (cents) => {
 }
 
 const addToCart = async () => {
+  if (!product.value || availableStock.value <= 0 || isAdding.value) return
+  const safeQuantity = Math.min(
+    Math.max(1, Number(quantity.value || 1)),
+    availableStock.value
+  )
+  quantity.value = safeQuantity
+
   isAdding.value = true
-  await cartStore.addToCart(product.value.id, quantity.value)
-  isAdding.value = false
+  try {
+    await cartStore.addToCart(product.value.id, safeQuantity)
+    toastStore.success('Đã thêm vào giỏ hàng.')
+    await fetchProduct()
+    quantity.value = Math.min(quantity.value, Math.max(1, availableStock.value))
+  } catch (err) {
+    const stockError = err?.response?.data?.errors?.stock?.[0]
+    toastStore.error(stockError || err?.response?.data?.message || 'Không thể thêm vào giỏ hàng.')
+    await fetchProduct()
+  } finally {
+    isAdding.value = false
+  }
 }
 
 onMounted(fetchProduct)
@@ -58,6 +77,14 @@ const specGroups = computed(() => {
     value: Array.isArray(value) ? value.join(' / ') : value
   }))
 })
+
+const availableStock = computed(() => {
+  const onHand = Number(product.value?.inventory?.on_hand || 0)
+  const reserved = Number(product.value?.inventory?.reserved || 0)
+  return Math.max(0, onHand - reserved)
+})
+
+const inStock = computed(() => availableStock.value > 0)
 </script>
 
 <template>
@@ -101,10 +128,10 @@ const specGroups = computed(() => {
           <h1 class="detail-title">{{ product.name }}</h1>
           
           <div class="status-row">
-            <div class="stock-info" :class="{ 'out-of-stock': product.inventory?.on_hand <= 0 }">
-              <CheckCircle v-if="product.inventory?.on_hand > 0" :size="16" />
+            <div class="stock-info" :class="{ 'out-of-stock': !inStock }">
+              <CheckCircle v-if="inStock" :size="16" />
               <Info v-else :size="16" />
-              {{ product.inventory?.on_hand > 0 ? 'Còn hàng' : 'Hết hàng' }}
+              {{ inStock ? `Còn ${availableStock} sản phẩm` : 'Hết hàng' }}
             </div>
             <div class="sku-info">SKU: {{ product.sku }}</div>
           </div>
@@ -120,13 +147,13 @@ const specGroups = computed(() => {
             </div>
           </div>
 
-          <div class="purchase-actions" v-if="product.inventory?.on_hand > 0">
+          <div class="purchase-actions" v-if="inStock">
             <div class="quantity-selector glass-panel">
               <button @click="quantity > 1 && quantity--" :disabled="quantity <= 1">-</button>
-              <input type="number" v-model="quantity" />
-              <button @click="quantity++">+</button>
+              <input type="number" v-model.number="quantity" min="1" :max="availableStock" />
+              <button @click="quantity < availableStock && quantity++" :disabled="quantity >= availableStock">+</button>
             </div>
-            <button class="add-cart-btn btn-primary" @click="addToCart" :disabled="isAdding">
+            <button class="add-cart-btn btn-primary" @click="addToCart" :disabled="isAdding || !inStock || quantity < 1 || quantity > availableStock">
               <ShoppingCart v-if="!isAdding" :size="20" />
               <RefreshCcw v-else class="animate-spin" :size="20" />
               {{ isAdding ? 'Đang thêm...' : 'Thêm vào giỏ hàng' }}
