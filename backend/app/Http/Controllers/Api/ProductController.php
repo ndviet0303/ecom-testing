@@ -16,7 +16,8 @@ class ProductController extends Controller
 {
     public function __construct(
         private readonly ProductPriceValidator $priceValidator
-    ) {}
+    ) {
+    }
 
     public function index(Request $request): JsonResponse
     {
@@ -32,8 +33,8 @@ class ProductController extends Controller
 
         if ($search) {
             $query->where(function ($q) use ($search): void {
-                $q->where('name', 'like', '%'.$search.'%')
-                    ->orWhere('sku', 'like', '%'.$search.'%');
+                $q->where('name', 'like', '%' . $search . '%')
+                    ->orWhere('sku', 'like', '%' . $search . '%');
             });
         }
 
@@ -70,8 +71,8 @@ class ProductController extends Controller
             $this->priceValidator->validate(
                 (int) $validated['base_price_cents'],
                 array_key_exists('sale_price_cents', $validated) && $validated['sale_price_cents'] !== null
-                    ? (int) $validated['sale_price_cents']
-                    : null
+                ? (int) $validated['sale_price_cents']
+                : null
             );
         } catch (InvalidDomainArgumentException $e) {
             throw ValidationException::withMessages([
