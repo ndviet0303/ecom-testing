@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted } from 'vue'
-import { RouterView, RouterLink } from 'vue-router'
+import { RouterView, RouterLink, useRouter } from 'vue-router'
 import { ShoppingCart, Cpu, User, LogOut } from 'lucide-vue-next'
 import { useCartStore } from '@/stores/cartStore'
 import { useAuthStore } from '@/stores/authStore'
@@ -8,6 +8,14 @@ import ToastContainer from '@/components/ToastContainer.vue'
 
 const cartStore = useCartStore()
 const authStore = useAuthStore()
+const router = useRouter()
+
+const handleLogout = async () => {
+  await authStore.logout()
+  if (router.currentRoute.value.name !== 'home') {
+    await router.push({ name: 'home' })
+  }
+}
 
 onMounted(() => {
   cartStore.fetchCart()
@@ -43,7 +51,7 @@ onMounted(() => {
       <div v-if="authStore.isLoggedIn" class="user-actions">
          <span class="user-greeting">Hi, {{ authStore.user?.name }}</span>
          <RouterLink to="/profile" class="nav-icon-btn"><User :size="20" /></RouterLink>
-         <button @click="authStore.logout()" class="nav-icon-btn"><LogOut :size="18" /></button>
+        <button @click="handleLogout" class="nav-icon-btn"><LogOut :size="18" /></button>
       </div>
       <RouterLink v-else to="/login" class="nav-icon-btn"><User :size="20" /></RouterLink>
     </div>

@@ -1,9 +1,9 @@
 <script setup>
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed, watch } from "vue";
 import { useCartStore } from "@/stores/cartStore";
 import { useAuthStore } from "@/stores/authStore";
 import { useToastStore } from "@/stores/toastStore";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import axios from "axios";
 import { MapPin, Truck, CreditCard, CheckCircle } from "lucide-vue-next";
 import administrativeUnits from "@/data/vn-administrative-units.json";
@@ -12,6 +12,7 @@ const cartStore = useCartStore();
 const authStore = useAuthStore();
 const toastStore = useToastStore();
 const router = useRouter();
+const route = useRoute();
 
 const addresses = ref([]);
 const fulfillmentMethod = ref("shipping");
@@ -31,6 +32,10 @@ const newAddress = ref({
   is_default: true,
 });
 const selectedProvinceCode = ref("");
+const couponCodeInput = ref("");
+const appliedCoupon = ref(null);
+const couponChecking = ref(false);
+const STORAGE_KEY = "checkout_coupon_code";
 
 const fetchData = async () => {
   if (!authStore.isLoggedIn) {
@@ -118,7 +123,11 @@ const shippingFee = computed(() => {
   return isInnerCityAddress(selectedAddress.value) ? 0 : DEFAULT_SHIPPING_FEE;
 });
 
-const total = computed(() => cartStore.subtotal + shippingFee.value);
+const discountCents = computed(() => appliedCoupon.value?.discount_cents || 0);
+const total = computed(() => {
+  const discountedSubtotal = Math.max(0, cartStore.subtotal - discountCents.value);
+  return discountedSubtotal + shippingFee.value;
+});
 const canPlaceOrder = computed(() => {
   if (loading.value || cartStore.loading || cartStore.items.length === 0)
     return false;
@@ -194,6 +203,68 @@ const submitNewAddress = async () => {
   }
 };
 
+const applyCoupon = async () => {
+  const code = String(couponCodeInput.value || "").trim();
+  if (!code) {
+    toastStore.error("Vui lòng nhập mã giảm giá.");
+    return;
+  }
+
+  couponChecking.value = true;
+  try {
+    const response = await axios.get(
+      `/api/v1/coupons/${encodeURIComponent(code)}/preview`,
+      {
+        params: {
+          subtotal_cents: cartStore.subtotal,
+        },
+      },
+    );
+
+    if (!response.data?.valid) {
+      toastStore.error("Mã giảm giá không hợp lệ.");
+      return;
+    }
+
+    if (!response.data?.eligible) {
+      const minSubtotal = Number(response.data?.min_subtotal_cents || 0);
+      toastStore.error(
+        `Đơn hàng chưa đạt mức tối thiểu ${formatPrice(minSubtotal)} để dùng mã này.`,
+      );
+      return;
+    }
+
+    appliedCoupon.value = {
+      code,
+      discount_cents: Number(response.data?.discount_cents || 0),
+      min_subtotal_cents: Number(response.data?.min_subtotal_cents || 0),
+    };
+    couponCodeInput.value = code;
+    localStorage.setItem(STORAGE_KEY, code);
+    toastStore.success(`Đã áp dụng mã ${code}.`);
+  } catch (err) {
+    toastStore.error(err.response?.data?.message || "Không áp dụng được mã giảm giá.");
+  } finally {
+    couponChecking.value = false;
+  }
+};
+
+const clearCoupon = () => {
+  appliedCoupon.value = null;
+  couponCodeInput.value = "";
+  localStorage.removeItem(STORAGE_KEY);
+};
+
+const tryHydrateCouponFromState = async () => {
+  const fromQuery = String(route.query?.coupon || "").trim();
+  const fromStorage = String(localStorage.getItem(STORAGE_KEY) || "").trim();
+  const fallbackCode = fromQuery || fromStorage;
+  if (!fallbackCode) return;
+
+  couponCodeInput.value = fallbackCode;
+  await applyCoupon();
+};
+
 const placeOrder = async () => {
   if (!canPlaceOrder.value) return;
 
@@ -209,6 +280,7 @@ const placeOrder = async () => {
             : null,
         weight_grams: fulfillmentMethod.value === "shipping" ? 15000 : 0,
         tax_rate_basis_points: 0,
+        coupon_code: appliedCoupon.value?.code || null,
         payment_method: "sepay_qr",
         customer_note: note.value,
       },
@@ -220,6 +292,7 @@ const placeOrder = async () => {
     // Clear cart locally
     cartStore.items = [];
     cartStore.subtotal = 0;
+    clearCoupon();
 
     router.push({
       name: "order-success",
@@ -241,6 +314,18 @@ const placeOrder = async () => {
   }
 };
 
+watch(
+  () => cartStore.subtotal,
+  (nextSubtotal) => {
+    if (!appliedCoupon.value) return;
+    if (nextSubtotal >= appliedCoupon.value.min_subtotal_cents) return;
+
+    const oldCode = appliedCoupon.value.code;
+    appliedCoupon.value = null;
+    toastStore.error(`Mã ${oldCode} đã bị gỡ vì đơn hàng không còn đủ điều kiện.`);
+  },
+);
+
 const formatPrice = (cents) => {
   return new Intl.NumberFormat("vi-VN", {
     style: "currency",
@@ -258,6 +343,7 @@ const formatAddressLine = (addr) => {
 
 onMounted(async () => {
   await cartStore.fetchCart();
+  await tryHydrateCouponFromState();
   await fetchData();
 });
 </script>
@@ -447,9 +533,39 @@ onMounted(async () => {
 
       <div class="order-summary-sidebar glass-panel">
         <h3 style="margin-bottom: 24px">Chi tiết đơn hàng</h3>
+        <div class="coupon-box">
+          <label for="coupon-input">Mã giảm giá</label>
+          <div class="coupon-input-row">
+            <input
+              id="coupon-input"
+              v-model="couponCodeInput"
+              type="text"
+              placeholder="Nhập mã giảm giá"
+              :disabled="couponChecking"
+            />
+            <button
+              class="btn btn-secondary coupon-apply-btn"
+              @click="applyCoupon"
+              :disabled="couponChecking || !couponCodeInput.trim()"
+            >
+              {{ couponChecking ? "..." : "Áp dụng" }}
+            </button>
+          </div>
+          <div v-if="appliedCoupon" class="coupon-applied">
+            <span>Đã áp dụng: <strong>{{ appliedCoupon.code }}</strong></span>
+            <button type="button" class="coupon-clear-btn" @click="clearCoupon">
+              Bỏ
+            </button>
+          </div>
+        </div>
+
         <div class="summary-line">
           <span>Tiền hàng</span>
           <span>{{ formatPrice(cartStore.subtotal) }}</span>
+        </div>
+        <div v-if="discountCents > 0" class="summary-line discount-line">
+          <span>Giảm giá</span>
+          <span>- {{ formatPrice(discountCents) }}</span>
         </div>
         <div class="summary-line">
           <span>{{
@@ -605,6 +721,67 @@ onMounted(async () => {
 .summary-line.total {
   font-size: 1.5rem;
   font-weight: 800;
+}
+
+.discount-line {
+  color: #0f766e;
+  font-weight: 600;
+}
+
+.coupon-box {
+  padding: 14px;
+  margin-bottom: 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  background: #fff;
+}
+
+.coupon-box label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.coupon-input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.coupon-input-row input {
+  flex: 1;
+  min-width: 0;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: var(--text-primary);
+  outline: none;
+}
+
+.coupon-apply-btn {
+  padding: 10px 12px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+.coupon-applied {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.coupon-clear-btn {
+  border: none;
+  background: none;
+  color: #b91c1c;
+  font-weight: 700;
+  cursor: pointer;
 }
 
 .empty-msg {

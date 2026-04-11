@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, ref } from "vue";
-import { RouterLink } from "vue-router";
+import { RouterLink, useRouter } from "vue-router";
 import axios from "axios";
 import { useAuthStore } from "@/stores/authStore";
 import { useToastStore } from "@/stores/toastStore";
@@ -8,6 +8,7 @@ import { Clock, MapPin, Package, ShoppingBag, User } from "lucide-vue-next";
 
 const auth = useAuthStore();
 const toastStore = useToastStore();
+const router = useRouter();
 
 const activeTab = ref("orders");
 
@@ -406,6 +407,13 @@ const cancelOrder = async () => {
   }
 };
 
+const handleLogout = async () => {
+  await auth.logout();
+  if (router.currentRoute.value.name !== "home") {
+    await router.push({ name: "home" });
+  }
+};
+
 onMounted(refreshProfile);
 </script>
 
@@ -432,7 +440,7 @@ onMounted(refreshProfile);
             <div class="meta-item"><MapPin :size="16" /> {{ roleLabel }}</div>
           </div>
 
-          <button @click="auth.logout()" class="btn btn-logout w-100">
+          <button @click="handleLogout" class="btn btn-logout w-100">
             Đăng xuất
           </button>
         </div>
