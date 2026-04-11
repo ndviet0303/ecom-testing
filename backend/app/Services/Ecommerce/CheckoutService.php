@@ -238,16 +238,20 @@ class CheckoutService
         $incomingProvince = trim((string) ($address->province ?? ''));
         $incomingDistrict = trim((string) ($address->district ?? ''));
 
+        $normalizedProvince = $this->normalizeAdministrativeName($incomingProvince);
         $isHanoi = $incomingProvince !== ''
-            && $this->normalizeText($incomingProvince) === $this->normalizeText($innerCityProvince);
+            && (
+                str_contains($normalizedProvince, 'ha noi')
+                || $normalizedProvince === $this->normalizeAdministrativeName($innerCityProvince)
+            );
 
         if (!$isHanoi || $incomingDistrict === '') {
             return $defaultShipping;
         }
 
-        $normalizedDistrict = $this->normalizeText($incomingDistrict);
+        $normalizedDistrict = $this->normalizeAdministrativeName($incomingDistrict);
         $isInnerDistrict = collect($innerCityDistricts)
-            ->map(fn(string $district): string => $this->normalizeText($district))
+            ->map(fn(string $district): string => $this->normalizeAdministrativeName($district))
             ->contains($normalizedDistrict);
 
         if ($isInnerDistrict) {
@@ -260,5 +264,17 @@ class CheckoutService
     private function normalizeText(string $value): string
     {
         return Str::lower(trim(Str::ascii($value)));
+    }
+
+    private function normalizeAdministrativeName(string $value): string
+    {
+        $normalized = $this->normalizeText($value);
+        $withoutPrefix = preg_replace(
+            '/\b(thanh pho|tp|tinh|quan|huyen|thi xa|thi tran|phuong|xa)\b/u',
+            ' ',
+            $normalized
+        ) ?? $normalized;
+
+        return trim(preg_replace('/\s+/', ' ', $withoutPrefix) ?? $withoutPrefix);
     }
 }

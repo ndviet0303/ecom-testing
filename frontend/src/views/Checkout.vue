@@ -103,17 +103,24 @@ const normalizeText = (value) => {
     .trim();
 };
 
+const normalizeAdministrativeName = (value) => {
+  return normalizeText(value)
+    .replace(/\b(thanh pho|tp\.?|tinh|quan|huyen|thi xa|thi tran|phuong|xa)\b/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+};
+
 const isInnerCityAddress = (address) => {
   if (!address?.province || !address?.district) return false;
 
+  const normalizedProvince = normalizeAdministrativeName(address.province);
   const isHanoi =
-    normalizeText(address.province) === normalizeText(INNER_CITY_PROVINCE);
+    normalizedProvince.includes("ha noi") ||
+    normalizedProvince === normalizeAdministrativeName(INNER_CITY_PROVINCE);
   if (!isHanoi) return false;
 
-  const district = normalizeText(address.district);
-  return HANOI_INNER_DISTRICTS.map((item) => normalizeText(item)).includes(
-    district,
-  );
+  const district = normalizeAdministrativeName(address.district);
+  return HANOI_INNER_DISTRICTS.map((item) => normalizeAdministrativeName(item)).includes(district);
 };
 
 const shippingFee = computed(() => {
