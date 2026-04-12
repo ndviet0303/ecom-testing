@@ -1,6 +1,12 @@
 # Docker config ignoring
 docker/.env
 
+# Local tooling folders
+.agent/
+.shared/
+.codex/
+.cursor/
+
 # Backend ignoring
 backend/vendor/
 backend/.env
