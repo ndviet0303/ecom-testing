@@ -4,88 +4,107 @@ import { useAuthStore } from '@/stores/authStore'
 import { useCartStore } from '@/stores/cartStore'
 import { useToastStore } from '@/stores/toastStore'
 import { useRouter } from 'vue-router'
-import { LogIn, User } from 'lucide-vue-next'
+import { UserPlus, User } from 'lucide-vue-next'
 
 const auth = useAuthStore()
 const cartStore = useCartStore()
 const toastStore = useToastStore()
 const router = useRouter()
 
-const email = ref('customer@ziet.dev')
-const password = ref('password')
+const form = ref({
+  name: '',
+  email: '',
+  password: '',
+  password_confirmation: ''
+})
+
 const error = ref('')
 
-const handleLogin = async () => {
+const handleRegister = async () => {
   error.value = ''
-  const success = await auth.login(email.value, password.value)
-  if (success) {
-    try {
-      await cartStore.mergeGuestCart()
-    } catch (err) {
-      toastStore.error('Không thể đồng bộ giỏ hàng cũ. Hệ thống sẽ tải giỏ hàng hiện tại của tài khoản.')
-    }
-    await cartStore.fetchCart()
-    router.push('/checkout')
-  } else {
-    error.value = 'Email hoặc mật khẩu không chính xác.'
+
+  if (form.value.password !== form.value.password_confirmation) {
+    error.value = 'Mật khẩu xác nhận không khớp.'
+    return
   }
+
+  const result = await auth.register({ ...form.value })
+
+  if (result.success) {
+    toastStore.success('Đăng ký thành công. Chào mừng bạn đến với ZIET.PC!')
+    await cartStore.fetchCart()
+    await router.push('/checkout')
+    return
+  }
+
+  error.value = result.message || 'Đăng ký thất bại.'
 }
 </script>
 
 <template>
-  <div class="login-view animate-fade-in">
-    <div class="login-card glass-panel">
-      <div class="login-header">
+  <div class="register-view animate-fade-in">
+    <div class="register-card glass-panel">
+      <div class="register-header">
         <div class="user-icon"><User :size="24" /></div>
-        <h2>Đăng nhập <span class="gradient-text">ZIET.PC</span></h2>
-        <p>Truy cập tài khoản để tiếp tục thanh toán.</p>
+        <h2>Tạo tài khoản <span class="gradient-text">ZIET.PC</span></h2>
+        <p>Đăng ký để lưu đơn hàng và quản lý địa chỉ nhận hàng.</p>
       </div>
 
-      <form @submit.prevent="handleLogin" class="login-form">
+      <form @submit.prevent="handleRegister" class="register-form">
+        <div class="form-group">
+          <label>Họ và tên</label>
+          <input v-model="form.name" type="text" required placeholder="Nguyễn Văn A" />
+        </div>
+
         <div class="form-group">
           <label>Email</label>
-          <input type="email" v-model="email" required placeholder="example@ziet.dev" />
+          <input v-model="form.email" type="email" required placeholder="example@ziet.dev" />
         </div>
-        
+
         <div class="form-group">
           <label>Mật khẩu</label>
-          <input type="password" v-model="password" required placeholder="••••••••" />
+          <input v-model="form.password" type="password" required minlength="8" placeholder="Tối thiểu 8 ký tự" />
+        </div>
+
+        <div class="form-group">
+          <label>Xác nhận mật khẩu</label>
+          <input v-model="form.password_confirmation" type="password" required minlength="8" placeholder="Nhập lại mật khẩu" />
         </div>
 
         <div v-if="error" class="error-msg">{{ error }}</div>
 
         <button type="submit" class="btn btn-primary w-100" :disabled="auth.loading">
-          <span v-if="auth.loading">Đang đăng nhập...</span>
+          <span v-if="auth.loading">Đang tạo tài khoản...</span>
           <span v-else style="display: flex; align-items: center; justify-content: center; gap: 8px;">
-            Đăng nhập ngay <LogIn :size="18" />
+            Tạo tài khoản <UserPlus :size="18" />
           </span>
         </button>
       </form>
-      
-      <div class="login-footer">
-        Chưa có tài khoản? <RouterLink to="/register">Đăng ký ngay</RouterLink>
+
+      <div class="register-footer">
+        Đã có tài khoản? <RouterLink to="/login">Đăng nhập ngay</RouterLink>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.login-view {
+.register-view {
   min-height: 80vh;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.login-card {
+.register-card {
   width: 100%;
-  max-width: 440px;
-  padding: 48px;
+  max-width: 480px;
+  padding: 44px;
 }
 
-.login-header {
+.register-header {
   text-align: center;
-  margin-bottom: 32px;
+  margin-bottom: 28px;
 }
 
 .user-icon {
@@ -100,21 +119,21 @@ const handleLogin = async () => {
   margin: 0 auto 20px;
 }
 
-.login-header h2 {
+.register-header h2 {
   font-size: 1.75rem;
   font-weight: 700;
   margin-bottom: 8px;
 }
 
-.login-header p {
+.register-header p {
   color: var(--text-secondary);
   font-size: 0.95rem;
 }
 
-.login-form {
+.register-form {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
 }
 
 .form-group label {
@@ -146,18 +165,20 @@ const handleLogin = async () => {
   text-align: center;
 }
 
-.login-footer {
-  margin-top: 32px;
+.register-footer {
+  margin-top: 28px;
   text-align: center;
   font-size: 0.9rem;
   color: var(--text-secondary);
 }
 
-.login-footer a {
+.register-footer a {
   color: var(--accent-primary);
   text-decoration: none;
   font-weight: 600;
 }
 
-.w-100 { width: 100%; }
+.w-100 {
+  width: 100%;
+}
 </style>

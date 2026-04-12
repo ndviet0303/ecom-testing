@@ -45,6 +45,35 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
+    async register(payload) {
+      this.loading = true
+      try {
+        const response = await axios.post('/api/auth/register', payload)
+        const token = response?.data?.token
+
+        if (!token) {
+          return { success: false, message: 'Đăng ký thành công nhưng không nhận được token.' }
+        }
+
+        this.token = token
+        localStorage.setItem('auth_token', this.token)
+        this.applyAuthHeader(this.token)
+
+        if (response?.data?.user) {
+          this.user = response.data.user
+        } else {
+          await this.fetchUser()
+        }
+
+        return { success: true }
+      } catch (err) {
+        const message = err?.response?.data?.message || 'Không thể đăng ký tài khoản.'
+        return { success: false, message }
+      } finally {
+        this.loading = false
+      }
+    },
+
     async fetchUser() {
       if (!this.token) return
       this.applyAuthHeader(this.token)

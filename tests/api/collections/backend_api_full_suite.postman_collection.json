@@ -143,13 +143,41 @@
           }
         },
         {
-          "name": "User (auth:sanctum)",
+          "name": "Login Logout Tester",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  var d = pm.response.json();",
+                  "  if (d.token) pm.environment.set('logoutTesterToken', d.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
           "request": {
-            "method": "GET",
+            "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{customerToken}}" }
+              { "key": "Content-Type", "value": "application/json" }
             ],
-            "url": "{{apiBaseUrl}}/user"
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{logoutTesterEmail}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": "{{apiBaseUrl}}/auth/login"
+          }
+        },
+        {
+          "name": "Logout Logout Tester",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{logoutTesterToken}}" }
+            ],
+            "url": "{{apiBaseUrl}}/auth/logout"
           }
         }
       ]
@@ -488,9 +516,11 @@
     { "key": "baseUrl", "value": "http://localhost:8000/api/v1" },
     { "key": "password", "value": "password" },
     { "key": "customerEmail", "value": "customer@ziet.dev" },
+    { "key": "logoutTesterEmail", "value": "logout.tester@ziet.dev" },
     { "key": "staffEmail", "value": "staff@ziet.dev" },
     { "key": "adminEmail", "value": "admin@ziet.dev" },
     { "key": "customerToken", "value": "" },
+    { "key": "logoutTesterToken", "value": "" },
     { "key": "staffToken", "value": "" },
     { "key": "adminToken", "value": "" },
     { "key": "sepaySecretKey", "value": "ttecom_secret_test" },
