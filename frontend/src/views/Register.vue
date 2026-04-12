@@ -1,44 +1,44 @@
 <script setup>
-import { ref } from 'vue'
-import { useAuthStore } from '@/stores/authStore'
-import { useCartStore } from '@/stores/cartStore'
-import { useToastStore } from '@/stores/toastStore'
-import { useRouter } from 'vue-router'
-import { UserPlus, User } from 'lucide-vue-next'
+import { ref } from "vue";
+import { useAuthStore } from "@/stores/authStore";
+import { useCartStore } from "@/stores/cartStore";
+import { useToastStore } from "@/stores/toastStore";
+import { useRouter } from "vue-router";
+import { UserPlus, User } from "lucide-vue-next";
 
-const auth = useAuthStore()
-const cartStore = useCartStore()
-const toastStore = useToastStore()
-const router = useRouter()
+const auth = useAuthStore();
+const cartStore = useCartStore();
+const toastStore = useToastStore();
+const router = useRouter();
 
 const form = ref({
-  name: '',
-  email: '',
-  password: '',
-  password_confirmation: ''
-})
+  name: "",
+  email: "",
+  password: "",
+  password_confirmation: "",
+});
 
-const error = ref('')
+const error = ref("");
 
 const handleRegister = async () => {
-  error.value = ''
+  error.value = "";
 
   if (form.value.password !== form.value.password_confirmation) {
-    error.value = 'Mật khẩu xác nhận không khớp.'
-    return
+    error.value = "Mật khẩu xác nhận không khớp.";
+    return;
   }
 
-  const result = await auth.register({ ...form.value })
+  const result = await auth.register({ ...form.value });
 
   if (result.success) {
-    toastStore.success('Đăng ký thành công. Chào mừng bạn đến với ZIET.PC!')
-    await cartStore.fetchCart()
-    await router.push('/checkout')
-    return
+    toastStore.success("Đăng ký thành công. Chào mừng bạn đến với ZIET.PC!");
+    await cartStore.fetchCart();
+    await router.push("/checkout");
+    return;
   }
 
-  error.value = result.message || 'Đăng ký thất bại.'
-}
+  error.value = result.message || "Đăng ký thất bại.";
+};
 </script>
 
 <template>
@@ -53,29 +53,63 @@ const handleRegister = async () => {
       <form @submit.prevent="handleRegister" class="register-form">
         <div class="form-group">
           <label>Họ và tên</label>
-          <input v-model="form.name" type="text" required placeholder="Nguyễn Văn A" />
+          <input
+            v-model="form.name"
+            type="text"
+            required
+            placeholder="Nguyễn Văn A"
+          />
         </div>
 
         <div class="form-group">
           <label>Email</label>
-          <input v-model="form.email" type="email" required placeholder="example@ziet.dev" />
+          <input
+            v-model="form.email"
+            type="email"
+            required
+            placeholder="example@ziet.dev"
+          />
         </div>
 
         <div class="form-group">
           <label>Mật khẩu</label>
-          <input v-model="form.password" type="password" required minlength="8" placeholder="Tối thiểu 8 ký tự" />
+          <input
+            v-model="form.password"
+            type="password"
+            required
+            minlength="8"
+            placeholder="Tối thiểu 8 ký tự"
+          />
         </div>
 
         <div class="form-group">
           <label>Xác nhận mật khẩu</label>
-          <input v-model="form.password_confirmation" type="password" required minlength="8" placeholder="Nhập lại mật khẩu" />
+          <input
+            v-model="form.password_confirmation"
+            type="password"
+            required
+            minlength="8"
+            placeholder="Nhập lại mật khẩu"
+          />
         </div>
 
         <div v-if="error" class="error-msg">{{ error }}</div>
 
-        <button type="submit" class="btn btn-primary w-100" :disabled="auth.loading">
+        <button
+          type="submit"
+          class="btn btn-primary w-100"
+          :disabled="auth.loading"
+        >
           <span v-if="auth.loading">Đang tạo tài khoản...</span>
-          <span v-else style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+          <span
+            v-else
+            style="
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 8px;
+            "
+          >
             Tạo tài khoản <UserPlus :size="18" />
           </span>
         </button>

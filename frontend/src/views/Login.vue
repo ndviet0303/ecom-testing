@@ -1,35 +1,37 @@
 <script setup>
-import { ref } from 'vue'
-import { useAuthStore } from '@/stores/authStore'
-import { useCartStore } from '@/stores/cartStore'
-import { useToastStore } from '@/stores/toastStore'
-import { useRouter } from 'vue-router'
-import { LogIn, User } from 'lucide-vue-next'
+import { ref } from "vue";
+import { useAuthStore } from "@/stores/authStore";
+import { useCartStore } from "@/stores/cartStore";
+import { useToastStore } from "@/stores/toastStore";
+import { useRouter } from "vue-router";
+import { LogIn, User } from "lucide-vue-next";
 
-const auth = useAuthStore()
-const cartStore = useCartStore()
-const toastStore = useToastStore()
-const router = useRouter()
+const auth = useAuthStore();
+const cartStore = useCartStore();
+const toastStore = useToastStore();
+const router = useRouter();
 
-const email = ref('customer@ziet.dev')
-const password = ref('password')
-const error = ref('')
+const email = ref("customer@ziet.dev");
+const password = ref("password");
+const error = ref("");
 
 const handleLogin = async () => {
-  error.value = ''
-  const success = await auth.login(email.value, password.value)
+  error.value = "";
+  const success = await auth.login(email.value, password.value);
   if (success) {
     try {
-      await cartStore.mergeGuestCart()
+      await cartStore.mergeGuestCart();
     } catch (err) {
-      toastStore.error('Không thể đồng bộ giỏ hàng cũ. Hệ thống sẽ tải giỏ hàng hiện tại của tài khoản.')
+      toastStore.error(
+        "Không thể đồng bộ giỏ hàng cũ. Hệ thống sẽ tải giỏ hàng hiện tại của tài khoản.",
+      );
     }
-    await cartStore.fetchCart()
-    router.push('/checkout')
+    await cartStore.fetchCart();
+    router.push("/checkout");
   } else {
-    error.value = 'Email hoặc mật khẩu không chính xác.'
+    error.value = "Email hoặc mật khẩu không chính xác.";
   }
-}
+};
 </script>
 
 <template>
@@ -44,24 +46,46 @@ const handleLogin = async () => {
       <form @submit.prevent="handleLogin" class="login-form">
         <div class="form-group">
           <label>Email</label>
-          <input type="email" v-model="email" required placeholder="example@ziet.dev" />
+          <input
+            type="email"
+            v-model="email"
+            required
+            placeholder="example@ziet.dev"
+          />
         </div>
-        
+
         <div class="form-group">
           <label>Mật khẩu</label>
-          <input type="password" v-model="password" required placeholder="••••••••" />
+          <input
+            type="password"
+            v-model="password"
+            required
+            placeholder="••••••••"
+          />
         </div>
 
         <div v-if="error" class="error-msg">{{ error }}</div>
 
-        <button type="submit" class="btn btn-primary w-100" :disabled="auth.loading">
+        <button
+          type="submit"
+          class="btn btn-primary w-100"
+          :disabled="auth.loading"
+        >
           <span v-if="auth.loading">Đang đăng nhập...</span>
-          <span v-else style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+          <span
+            v-else
+            style="
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 8px;
+            "
+          >
             Đăng nhập ngay <LogIn :size="18" />
           </span>
         </button>
       </form>
-      
+
       <div class="login-footer">
         Chưa có tài khoản? <RouterLink to="/register">Đăng ký ngay</RouterLink>
       </div>
@@ -159,5 +183,7 @@ const handleLogin = async () => {
   font-weight: 600;
 }
 
-.w-100 { width: 100%; }
+.w-100 {
+  width: 100%;
+}
 </style>
