@@ -133,16 +133,6 @@
           }
         },
         {
-          "name": "Logout",
-          "request": {
-            "method": "POST",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{customerToken}}" }
-            ],
-            "url": "{{apiBaseUrl}}/auth/logout"
-          }
-        },
-        {
           "name": "Login Logout Tester",
           "event": [
             {
@@ -378,7 +368,7 @@
               { "key": "Authorization", "value": "Bearer {{customerToken}}" },
               { "key": "Content-Type", "value": "application/json" }
             ],
-            "body": { "mode": "raw", "raw": "{\n  \"order_id\": {{orderId}},\n  \"reason\": \"Defective item\"\n}" },
+            "body": { "mode": "raw", "raw": "{\n  \"order_item_id\": {{orderItemId}},\n  \"quantity\": {{returnQuantity}},\n  \"reason\": \"Defective item\"\n}" },
             "url": "{{baseUrl}}/return-requests"
           }
         }
@@ -396,7 +386,7 @@
               { "key": "Authorization", "value": "Bearer {{staffToken}}" },
               { "key": "Content-Type", "value": "application/json" }
             ],
-            "body": { "mode": "raw", "raw": "{\n  \"status\": \"processing\"\n}" },
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"packed\"\n}" },
             "url": "{{baseUrl}}/admin/orders/{{orderId}}/status"
           }
         },
@@ -527,6 +517,8 @@
     { "key": "productId", "value": "1" },
     { "key": "secondProductId", "value": "2" },
     { "key": "orderId", "value": "1" },
+    { "key": "orderItemId", "value": "1" },
+    { "key": "returnQuantity", "value": "1" },
     { "key": "addressId", "value": "1" },
     { "key": "couponCode", "value": "WELCOME10" },
     { "key": "couponId", "value": "1" },

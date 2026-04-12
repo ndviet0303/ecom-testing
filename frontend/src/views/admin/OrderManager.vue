@@ -72,8 +72,8 @@ const getStatusClass = (status) => {
   switch (status) {
     case "paid":
       return "status-paid";
-    case "processing":
-      return "status-processing";
+    case "packed":
+      return "status-packed";
     case "shipped":
       return "status-shipped";
     case "delivered":
@@ -265,10 +265,10 @@ onMounted(fetchOrders);
             <div style="display: flex; gap: 12px; margin-top: 12px">
               <button
                 class="btn btn-sm"
-                @click="updateStatus(selectedOrder.id, 'processing')"
+                @click="updateStatus(selectedOrder.id, 'packed')"
                 :disabled="isUpdating"
               >
-                Hành xử lý
+                Đóng gói
               </button>
               <button
                 class="btn btn-sm btn-primary"
@@ -322,7 +322,7 @@ onMounted(fetchOrders);
   background: rgba(34, 197, 94, 0.1);
   color: #22c55e;
 }
-.status-processing {
+.status-packed {
   background: rgba(99, 102, 241, 0.1);
   color: #6366f1;
 }
