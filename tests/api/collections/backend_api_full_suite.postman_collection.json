@@ -283,6 +283,57 @@
     {
       "name": "03. Customer Protected v1",
       "item": [
+        {
+          "name": "Products - Resolve IDs",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var d = {};",
+                  "try {",
+                  "  d = pm.response.json();",
+                  "} catch (e) {",
+                  "  d = {};",
+                  "}",
+                  "",
+                  "var rows = Array.isArray(d) ? d : (Array.isArray(d.data) ? d.data : []);",
+                  "pm.test('Products list has at least 1 item', function () {",
+                  "  pm.expect(rows.length).to.be.above(0);",
+                  "});",
+                  "",
+                  "var eligible = rows.filter(function (p) {",
+                  "  var inv = (p && p.inventory) || {};",
+                  "  var onHand = Number(inv.on_hand || 0);",
+                  "  var reserved = Number(inv.reserved || 0);",
+                  "  return p && p.id && (onHand - reserved) > 0;",
+                  "});",
+                  "",
+                  "pm.test('Has at least 1 in-stock product', function () {",
+                  "  pm.expect(eligible.length).to.be.above(0);",
+                  "});",
+                  "",
+                  "if (eligible.length > 0 && eligible[0].id) {",
+                  "  pm.environment.set('productId', eligible[0].id);",
+                  "}",
+                  "if (eligible.length > 1 && eligible[1].id) {",
+                  "  pm.environment.set('secondProductId', eligible[1].id);",
+                  "} else if (eligible.length > 0 && eligible[0].id) {",
+                  "  pm.environment.set('secondProductId', eligible[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/products?per_page=50"
+          }
+        },
         { "name": "Addresses - List", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }], "url": "{{baseUrl}}/addresses" } },
         {
           "name": "Addresses - Create",
@@ -324,6 +375,18 @@
             ],
             "body": { "mode": "raw", "raw": "{\n  \"label\": \"Văn phòng\"\n}" },
             "url": "{{baseUrl}}/addresses/{{addressId}}"
+          }
+        },
+        {
+          "name": "Cart Ensure Item For Checkout",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{customerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"quantity\": 1\n}" },
+            "url": "{{baseUrl}}/cart/items/{{productId}}"
           }
         },
         {

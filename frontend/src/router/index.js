@@ -68,6 +68,11 @@ const router = createRouter({
           component: () => import('../views/admin/ProductsAdmin.vue')
         }
       ]
+    },
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'not-found',
+      component: () => import('../views/NotFound.vue')
     }
   ]
 })
@@ -80,7 +85,10 @@ router.beforeEach(async (to, from, next) => {
     await auth.fetchUser()
   }
 
-  if (to.meta.requiresStaff && (!auth.isLoggedIn || (auth.user.role !== 'admin' && auth.user.role !== 'staff'))) {
+  const userRole = auth.user?.role
+  const isStaffUser = userRole === 'admin' || userRole === 'staff'
+
+  if (to.meta.requiresStaff && (!auth.isLoggedIn || !isStaffUser)) {
     next({ name: 'home' })
   } else if (to.meta.requiresAuth && !auth.isLoggedIn) {
     next({ name: 'login' })
