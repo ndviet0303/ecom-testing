@@ -283,36 +283,23 @@
     {
       "name": "03. Customer Protected v1",
       "item": [
-        {
-          "name": "Checkout",
-          "request": {
-            "method": "POST",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{customerToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"fulfillment_method\": \"shipping\",\n  \"shipping_address_id\": {{addressId}},\n  \"weight_grams\": 15000,\n  \"tax_rate_basis_points\": 0,\n  \"payment_method\": \"sepay_qr\"\n}"
-            },
-            "url": "{{baseUrl}}/checkout"
-          }
-        },
-        { "name": "Orders - List", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }], "url": "{{baseUrl}}/orders" } },
-        { "name": "Orders - Detail", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }], "url": "{{baseUrl}}/orders/{{orderId}}" } },
-        { "name": "Orders - SePay QR", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }], "url": "{{baseUrl}}/orders/{{orderId}}/sepay-qr" } },
-        { "name": "Orders - Cancel", "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }], "url": "{{baseUrl}}/orders/{{orderId}}/cancel" } },
-
-        { "name": "Compare - List", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }], "url": "{{baseUrl}}/compare" } },
-        { "name": "Compare - Add", "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }], "url": "{{baseUrl}}/compare/{{productId}}" } },
-        { "name": "Compare - Remove", "request": { "method": "DELETE", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }], "url": "{{baseUrl}}/compare/{{productId}}" } },
-
-        { "name": "Recent Views - List", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }], "url": "{{baseUrl}}/recent-views" } },
-        { "name": "Recent Views - Add", "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }], "url": "{{baseUrl}}/recent-views/{{productId}}" } },
-
         { "name": "Addresses - List", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }], "url": "{{baseUrl}}/addresses" } },
         {
           "name": "Addresses - Create",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  var d = pm.response.json();",
+                  "  if (d && d.id) pm.environment.set('addressId', d.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -339,11 +326,54 @@
             "url": "{{baseUrl}}/addresses/{{addressId}}"
           }
         },
-        { "name": "Addresses - Delete", "request": { "method": "DELETE", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }], "url": "{{baseUrl}}/addresses/{{addressId}}" } },
+        {
+          "name": "Checkout",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  var d = pm.response.json();",
+                  "  var order = d && d.order ? d.order : null;",
+                  "  if (order && order.id) pm.environment.set('orderId', order.id);",
+                  "  var items = (order && (order.order_items || order.orderItems)) || [];",
+                  "  if (Array.isArray(items) && items.length > 0 && items[0].id) {",
+                  "    pm.environment.set('orderItemId', items[0].id);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{customerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fulfillment_method\": \"shipping\",\n  \"shipping_address_id\": {{addressId}},\n  \"weight_grams\": 15000,\n  \"tax_rate_basis_points\": 0,\n  \"payment_method\": \"sepay_qr\"\n}"
+            },
+            "url": "{{baseUrl}}/checkout"
+          }
+        },
+        { "name": "Orders - List", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }], "url": "{{baseUrl}}/orders" } },
+        { "name": "Orders - Detail", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }], "url": "{{baseUrl}}/orders/{{orderId}}" } },
+        { "name": "Orders - SePay QR", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }], "url": "{{baseUrl}}/orders/{{orderId}}/sepay-qr" } },
 
         { "name": "Wishlist - List", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }], "url": "{{baseUrl}}/wishlist" } },
         { "name": "Wishlist - Add", "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }], "url": "{{baseUrl}}/wishlist/{{productId}}" } },
         { "name": "Wishlist - Remove", "request": { "method": "DELETE", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }], "url": "{{baseUrl}}/wishlist/{{productId}}" } },
+
+        { "name": "Compare - List", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }], "url": "{{baseUrl}}/compare" } },
+        { "name": "Compare - Add", "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }], "url": "{{baseUrl}}/compare/{{productId}}" } },
+        { "name": "Compare - Remove", "request": { "method": "DELETE", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }], "url": "{{baseUrl}}/compare/{{productId}}" } },
+
+        { "name": "Recent Views - List", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }], "url": "{{baseUrl}}/recent-views" } },
+        { "name": "Recent Views - Add", "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }], "url": "{{baseUrl}}/recent-views/{{productId}}" } },
 
         {
           "name": "Products - Create Review",
@@ -359,9 +389,22 @@
         },
 
         { "name": "Return Requests - List", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }], "url": "{{baseUrl}}/return-requests" } },
-        { "name": "Return Requests - Show", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }], "url": "{{baseUrl}}/return-requests/{{returnRequestId}}" } },
         {
           "name": "Return Requests - Create",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  var d = pm.response.json();",
+                  "  if (d && d.id) pm.environment.set('returnRequestId', d.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -371,7 +414,10 @@
             "body": { "mode": "raw", "raw": "{\n  \"order_item_id\": {{orderItemId}},\n  \"quantity\": {{returnQuantity}},\n  \"reason\": \"Defective item\"\n}" },
             "url": "{{baseUrl}}/return-requests"
           }
-        }
+        },
+        { "name": "Return Requests - Show", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }], "url": "{{baseUrl}}/return-requests/{{returnRequestId}}" } },
+        { "name": "Orders - Cancel", "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }], "url": "{{baseUrl}}/orders/{{orderId}}/cancel" } },
+        { "name": "Addresses - Delete", "request": { "method": "DELETE", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }], "url": "{{baseUrl}}/addresses/{{addressId}}" } }
       ]
     },
     {
