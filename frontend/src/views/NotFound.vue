@@ -1,8 +1,8 @@
 <template>
   <section class="not-found">
-    <h1>Khong tim thay trang</h1>
-    <p>Duong dan ban vua truy cap khong ton tai hoac da duoc di chuyen.</p>
-    <RouterLink to="/" class="go-home">Quay ve trang chu</RouterLink>
+    <h1>Không tìm thấy trang</h1>
+    <p>Đường dẫn bạn vừa truy cập không tồn tại hoặc đã được di chuyển.</p>
+    <RouterLink to="/" class="go-home">Quay về trang chủ</RouterLink>
   </section>
 </template>
 

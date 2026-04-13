@@ -30,7 +30,7 @@ function extractErrorMessage(error) {
     return error.message
   }
 
-  return 'Co loi xay ra. Vui long thu lai.'
+  return 'Có lỗi xảy ra. Vui lòng thử lại.'
 }
 
 axios.interceptors.response.use(
@@ -65,13 +65,13 @@ axios.interceptors.response.use(
 
 app.config.errorHandler = (error, instance, info) => {
   const toastStore = useToastStore(pinia)
-  toastStore.error('Ung dung gap loi. Vui long tai lai trang.')
+  toastStore.error('Ứng dụng gặp lỗi. Vui lòng tải lại trang.')
   console.error('Vue error:', error, info, instance)
 }
 
 window.addEventListener('unhandledrejection', (event) => {
   const toastStore = useToastStore(pinia)
-  toastStore.error('Tac vu that bai. Vui long thu lai.')
+  toastStore.error('Tác vụ thất bại. Vui lòng thử lại.')
   console.error('Unhandled promise rejection:', event.reason)
 })
 

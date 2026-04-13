@@ -23,12 +23,12 @@ const isUpdating = ref(false);
 const isSavingFulfillment = ref(false);
 
 const statusLabelMap = {
-  pending: "Cho thanh toan",
-  paid: "Da thanh toan",
-  packed: "Da xu ly",
-  shipped: "Dang giao",
-  delivered: "Da giao",
-  cancelled: "Da huy",
+  pending: "Chờ thanh toán",
+  paid: "Đã thanh toán",
+  packed: "Đã xử lý",
+  shipped: "Đang giao",
+  delivered: "Đã giao",
+  cancelled: "Đã hủy",
 };
 
 const allowedTransitions = {
@@ -94,7 +94,7 @@ const fetchOrders = async () => {
     const response = await axios.get("/api/v1/admin/orders");
     orders.value = (response.data.data || []).map(normalizeOrder);
   } catch (err) {
-    loadError.value = parseApiError(err, "Khong the tai danh sach don hang.");
+    loadError.value = parseApiError(err, "Không thể tải danh sách đơn hàng.");
     toastStore.error(loadError.value);
   } finally {
     loading.value = false;
@@ -122,9 +122,9 @@ const updateStatus = async (orderId, status) => {
       },
     );
     syncOrderInList(response.data);
-    toastStore.success("Da cap nhat trang thai don hang.");
+    toastStore.success("Đã cập nhật trạng thái đơn hàng.");
   } catch (err) {
-    toastStore.error(parseApiError(err, "Khong the cap nhat trang thai."));
+    toastStore.error(parseApiError(err, "Không thể cập nhật trạng thái."));
   } finally {
     isUpdating.value = false;
   }
@@ -136,7 +136,7 @@ const triggerTransition = async (toStatus) => {
   if (toStatus === "shipped") {
     const tracking = String(selectedOrder.value.tracking_number || "").trim();
     if (!tracking) {
-      toastStore.error("Can nhap ma van don truoc khi giao hang.");
+      toastStore.error("Cần nhập mã vận đơn trước khi giao hàng.");
       return;
     }
   }
@@ -165,9 +165,9 @@ const saveFulfillment = async () => {
     );
 
     syncOrderInList(response.data);
-    toastStore.success("Da luu thong tin xu ly don.");
+    toastStore.success("Đã lưu thông tin xử lý đơn.");
   } catch (err) {
-    toastStore.error(parseApiError(err, "Khong the luu thong tin xu ly."));
+    toastStore.error(parseApiError(err, "Không thể lưu thông tin xử lý."));
   } finally {
     isSavingFulfillment.value = false;
   }
@@ -180,16 +180,16 @@ onMounted(fetchOrders);
   <div class="order-manager">
     <header class="page-head">
       <div>
-        <h2>Quan ly <span class="gradient-text">Don hang</span></h2>
-        <p>Theo doi va xu ly don theo dung luong van hanh.</p>
+        <h2>Quản lý <span class="gradient-text">Đơn hàng</span></h2>
+        <p>Theo dõi và xử lý đơn theo đúng luồng vận hành.</p>
       </div>
       <button class="refresh-btn" @click="fetchOrders" :disabled="loading">
         <RefreshCcw :size="16" />
-        Lam moi
+        Làm mới
       </button>
     </header>
 
-    <div v-if="loading" class="state-msg">Dang tai don hang...</div>
+    <div v-if="loading" class="state-msg">Đang tải đơn hàng...</div>
     <div v-else-if="loadError" class="state-msg state-error">
       {{ loadError }}
     </div>
@@ -198,12 +198,12 @@ onMounted(fetchOrders);
       <table class="orders-table">
         <thead>
           <tr>
-            <th>Ma don</th>
-            <th>Khach hang</th>
-            <th>Ngay dat</th>
-            <th>Tong tien</th>
-            <th>Trang thai</th>
-            <th>Hanh dong</th>
+            <th>Mã đơn</th>
+            <th>Khách hàng</th>
+            <th>Ngày đặt</th>
+            <th>Tổng tiền</th>
+            <th>Trạng thái</th>
+            <th>Hành động</th>
           </tr>
         </thead>
         <tbody>
@@ -225,7 +225,7 @@ onMounted(fetchOrders);
                 <button
                   class="icon-btn"
                   @click="openOrder(order)"
-                  title="Xem chi tiet"
+                  title="Xem chi tiết"
                 >
                   <Eye :size="17" />
                 </button>
@@ -235,14 +235,14 @@ onMounted(fetchOrders);
                   @click="updateStatus(order.id, 'packed')"
                   :disabled="isUpdating"
                 >
-                  Xu ly
+                  Xử lý
                 </button>
                 <button
                   v-if="canTransition(order.status, 'shipped')"
                   class="mini-btn mini-btn-primary"
                   @click="openOrder(order)"
                 >
-                  Giao hang
+                  Giao hàng
                 </button>
               </div>
             </td>
@@ -255,7 +255,7 @@ onMounted(fetchOrders);
       <div class="modal-content glass-panel">
         <header class="modal-header">
           <div>
-            <h3>Don hang #{{ selectedOrder.id }}</h3>
+            <h3>Đơn hàng #{{ selectedOrder.id }}</h3>
             <p>{{ formatDateTime(selectedOrder.created_at) }}</p>
           </div>
           <div class="modal-head-right">
@@ -273,12 +273,12 @@ onMounted(fetchOrders);
 
         <section class="summary-grid">
           <article class="summary-card">
-            <label>Khach hang</label>
+            <label>Khách hàng</label>
             <div>{{ selectedOrder.user?.name || "Guest" }}</div>
             <small>{{ selectedOrder.user?.email || "-" }}</small>
           </article>
           <article class="summary-card">
-            <label>Lien he giao hang</label>
+            <label>Liên hệ giao hàng</label>
             <div>
               {{
                 selectedOrder.shipping_address?.phone ||
@@ -290,22 +290,22 @@ onMounted(fetchOrders);
               {{
                 selectedOrder.shipping_address_snapshot?.line1 ||
                 selectedOrder.shipping_address?.line1 ||
-                "Khong co dia chi"
+                "Không có địa chỉ"
               }}
             </small>
           </article>
           <article class="summary-card summary-card-money">
-            <label>Tong thanh toan</label>
+            <label>Tổng thanh toán</label>
             <div>{{ formatPrice(selectedOrder.total_cents) }}</div>
             <small>
               <Wallet :size="14" />
-              Tam tinh {{ formatPrice(selectedOrder.subtotal_cents) }}
+              Tạm tính {{ formatPrice(selectedOrder.subtotal_cents) }}
             </small>
           </article>
         </section>
 
         <section class="block">
-          <div class="block-title">San pham trong don</div>
+          <div class="block-title">Sản phẩm trong đơn</div>
           <div class="order-items-list">
             <div
               v-for="item in orderItems(selectedOrder)"
@@ -314,7 +314,7 @@ onMounted(fetchOrders);
             >
               <div class="item-main">
                 <div class="item-name">
-                  {{ item.name || item.product?.name || "San pham" }}
+                  {{ item.name || item.product?.name || "Sản phẩm" }}
                 </div>
                 <div class="item-sub">SKU: {{ item.sku || "-" }}</div>
               </div>
@@ -331,23 +331,23 @@ onMounted(fetchOrders);
         </section>
 
         <section class="block">
-          <div class="block-title">Thong tin xu ly va giao hang</div>
+          <div class="block-title">Thông tin xử lý và giao hàng</div>
           <div class="form-grid">
             <input
               v-model="selectedOrder.tracking_number"
               class="f-input"
-              placeholder="Ma van don"
+              placeholder="Mã vận đơn"
             />
             <input
               v-model="selectedOrder.tracking_carrier"
               class="f-input"
-              placeholder="Don vi van chuyen"
+              placeholder="Đơn vị vận chuyển"
             />
             <textarea
               v-model="selectedOrder.internal_note"
               class="f-input"
               rows="2"
-              placeholder="Ghi chu noi bo"
+              placeholder="Ghi chú nội bộ"
             ></textarea>
           </div>
 
@@ -378,7 +378,7 @@ onMounted(fetchOrders);
             :disabled="isSavingFulfillment"
           >
             <Save :size="15" />
-            {{ isSavingFulfillment ? "Dang luu..." : "Luu thong tin" }}
+            {{ isSavingFulfillment ? "Đang lưu..." : "Lưu thông tin" }}
           </button>
 
           <div class="status-action-group">
@@ -397,7 +397,7 @@ onMounted(fetchOrders);
               @click="triggerTransition('paid')"
             >
               <CheckCircle2 :size="15" />
-              Xac nhan da thanh toan
+              Xác nhận đã thanh toán
             </button>
             <button
               v-if="canTransition(selectedOrder.status, 'packed')"
@@ -406,7 +406,7 @@ onMounted(fetchOrders);
               @click="triggerTransition('packed')"
             >
               <Box :size="15" />
-              Xu ly don
+              Xử lý đơn
             </button>
             <button
               v-if="canTransition(selectedOrder.status, 'shipped')"
@@ -415,7 +415,7 @@ onMounted(fetchOrders);
               @click="triggerTransition('shipped')"
             >
               <Truck :size="15" />
-              Giao hang
+              Giao hàng
             </button>
             <button
               v-if="canTransition(selectedOrder.status, 'delivered')"
@@ -423,7 +423,7 @@ onMounted(fetchOrders);
               :disabled="isUpdating"
               @click="triggerTransition('delivered')"
             >
-              Da giao thanh cong
+              Đã giao thành công
             </button>
           </div>
         </footer>

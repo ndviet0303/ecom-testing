@@ -13,7 +13,8 @@ class OrderAdminController extends Controller
 {
     public function __construct(
         private readonly OrderTransitionService $orderTransitionService
-    ) {}
+    ) {
+    }
 
     public function index(Request $request): JsonResponse
     {

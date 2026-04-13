@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
-use Throwable;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -24,14 +23,14 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        $exceptions->render(function (Throwable $e, Request $request) {
+        $exceptions->render(function (\Throwable $e, Request $request) {
             if (!$request->is('api/*')) {
                 return null;
             }
 
             if ($e instanceof ValidationException) {
                 return response()->json([
-                    'message' => 'Du lieu khong hop le.',
+                    'message' => 'Dữ liệu không hợp lệ.',
                     'errors' => $e->errors(),
                 ], 422);
             }
@@ -44,7 +43,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
             if ($e instanceof ModelNotFoundException) {
                 return response()->json([
-                    'message' => 'Tai nguyen khong ton tai.',
+                    'message' => 'Tài nguyên không tồn tại.'
                 ], 404);
             }
 
