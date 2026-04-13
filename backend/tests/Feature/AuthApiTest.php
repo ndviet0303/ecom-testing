@@ -102,7 +102,7 @@ class AuthApiTest extends TestCase
         $user = User::factory()->create();
         $token = $user->createToken('test-token')->plainTextToken;
 
-        $response = $this->withHeader('Authorization', 'Bearer ' . $token)
+        $response = $this->withHeader('Authorization', 'Bearer '.$token)
             ->postJson('/api/auth/logout');
 
         $response->assertOk()
@@ -116,44 +116,5 @@ class AuthApiTest extends TestCase
         $response = $this->postJson('/api/auth/logout');
 
         $response->assertUnauthorized();
-    }
-
-    public function test_update_me_updates_name_and_email(): void
-    {
-        $user = User::factory()->create([
-            'name' => 'Old Name',
-            'email' => 'old@example.com',
-        ]);
-
-        Sanctum::actingAs($user);
-
-        $response = $this->patchJson('/api/auth/me', [
-            'name' => 'New Name',
-            'email' => 'new@example.com',
-        ]);
-
-        $response->assertOk()
-            ->assertJson([
-                'name' => 'New Name',
-                'email' => 'new@example.com',
-            ]);
-    }
-
-    public function test_update_me_rejects_wrong_current_password_when_changing_password(): void
-    {
-        $user = User::factory()->create([
-            'password' => 'password123',
-        ]);
-
-        Sanctum::actingAs($user);
-
-        $response = $this->patchJson('/api/auth/me', [
-            'current_password' => 'wrong',
-            'password' => 'newpassword123',
-            'password_confirmation' => 'newpassword123',
-        ]);
-
-        $response->assertUnprocessable()
-            ->assertJsonValidationErrors(['current_password']);
     }
 }

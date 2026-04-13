@@ -14,7 +14,7 @@ class SePayQrService
         $prefix = trim((string) config('sepay.transfer_content_prefix', 'TTECOMDZ'));
         $num = (string) $order->id;
 
-        return trim($prefix . '' . $num);
+        return trim($prefix.' '.$num);
     }
 
     /**
@@ -22,7 +22,7 @@ class SePayQrService
      *
      * @see https://qr.sepay.vn/img?acc=...&bank=...&amount=...&des=...
      */
-    public function qrImageUrl(Order $order, ?int $amount = null): string
+    public function qrImageUrl(Order $order): string
     {
         $acc = config('sepay.account_number');
         $bank = config('sepay.bank_code');
@@ -36,10 +36,10 @@ class SePayQrService
         $query = http_build_query([
             'acc' => $acc,
             'bank' => $bank,
-            'amount' => max(0, (int) ($amount ?? $order->total_cents)),
+            'amount' => $order->total_cents,
             'des' => $this->transferContent($order),
         ], '', '&', PHP_QUERY_RFC3986);
 
-        return $base . '?' . $query;
+        return $base.'?'.$query;
     }
 }

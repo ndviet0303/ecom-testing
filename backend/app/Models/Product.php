@@ -23,9 +23,7 @@ class Product extends Model
         'brand',
         'base_price_cents',
         'sale_price_cents',
-        'image_url',
         'specs',
-        'warranty_months',
     ];
 
     protected function casts(): array
@@ -34,7 +32,6 @@ class Product extends Model
             'specs' => 'array',
             'base_price_cents' => 'integer',
             'sale_price_cents' => 'integer',
-            'warranty_months' => 'integer',
         ];
     }
 

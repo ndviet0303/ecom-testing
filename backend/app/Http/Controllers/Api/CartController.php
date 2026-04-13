@@ -59,44 +59,13 @@ class CartController extends Controller
         );
 
         $product = Product::query()->findOrFail($validated['product_id']);
-        $item = $this->cartService->addOrUpdateLine($cart, $product, (int) $validated['quantity'], true);
+        $item = $this->cartService->addOrUpdateLine($cart, $product, (int) $validated['quantity']);
 
         $cart->load(['items.product']);
 
         $response = response()->json([
             'message' => 'Cart updated.',
             'item' => $item,
-            'subtotal_cents' => $this->cartService->subtotalCents($cart),
-        ], 201);
-
-        if ($guestToken !== null) {
-            $response->header('X-Cart-Token', $guestToken);
-        }
-
-        return $response;
-    }
-
-    public function addBulkItems(Request $request): JsonResponse
-    {
-        $validated = $request->validate([
-            'items' => ['required', 'array', 'min:1'],
-            'items.*.product_id' => ['required', 'integer', 'exists:products,id'],
-            'items.*.quantity' => ['required', 'integer', 'min:1'],
-        ]);
-
-        [$cart, $guestToken] = $this->cartService->resolveCart(
-            $request->user(),
-            $request->header('X-Cart-Token'),
-            true
-        );
-
-        $this->cartService->addMultipleLines($cart, $validated['items']);
-
-        $cart->load(['items.product']);
-
-        $response = response()->json([
-            'message' => 'Cart updated in bulk.',
-            'items' => $cart->items,
             'subtotal_cents' => $this->cartService->subtotalCents($cart),
         ], 201);
 

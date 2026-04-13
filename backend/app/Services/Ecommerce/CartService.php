@@ -99,9 +99,9 @@ class CartService
         });
     }
 
-    public function addOrUpdateLine(Cart $cart, Product $product, int $quantity, bool $increment = false): CartItem
+    public function addOrUpdateLine(Cart $cart, Product $product, int $quantity): CartItem
     {
-        return DB::transaction(function () use ($cart, $product, $quantity, $increment): CartItem {
+        return DB::transaction(function () use ($cart, $product, $quantity): CartItem {
             $price = $product->effectivePriceCents();
             $line = $cart->items()->where('product_id', $product->id)->lockForUpdate()->first();
 
@@ -113,7 +113,7 @@ class CartService
                 ]);
             } else {
                 $line->update([
-                    'quantity' => $increment ? ($line->quantity + $quantity) : $quantity,
+                    'quantity' => $quantity,
                     'unit_price_cents' => $price,
                 ]);
             }
@@ -121,24 +121,6 @@ class CartService
             $this->reservation->syncProduct($product->id);
 
             return $line->fresh();
-        });
-    }
-
-    public function addMultipleLines(Cart $cart, array $items): void
-    {
-        DB::transaction(function () use ($cart, $items): void {
-            $productIds = [];
-            foreach ($items as $itemData) {
-                $productId = $itemData['product_id'];
-                $quantity = (int) ($itemData['quantity'] ?? 1);
-                
-                $product = Product::query()->findOrFail($productId);
-                $this->addOrUpdateLine($cart, $product, $quantity, true);
-                $productIds[] = $productId;
-            }
-            // addOrUpdateLine already calls syncProduct, 
-            // but we can call syncProducts once at the end if we wanted to be more efficient.
-            // For now, addOrUpdateLine is fine.
         });
     }
 
