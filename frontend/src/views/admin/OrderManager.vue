@@ -115,9 +115,12 @@ const syncOrderInList = (updatedOrder) => {
 const updateStatus = async (orderId, status) => {
   isUpdating.value = true;
   try {
-    const response = await axios.patch(`/api/v1/admin/orders/${orderId}/status`, {
-      status,
-    });
+    const response = await axios.patch(
+      `/api/v1/admin/orders/${orderId}/status`,
+      {
+        status,
+      },
+    );
     syncOrderInList(response.data);
     toastStore.success("Da cap nhat trang thai don hang.");
   } catch (err) {
@@ -187,7 +190,9 @@ onMounted(fetchOrders);
     </header>
 
     <div v-if="loading" class="state-msg">Dang tai don hang...</div>
-    <div v-else-if="loadError" class="state-msg state-error">{{ loadError }}</div>
+    <div v-else-if="loadError" class="state-msg state-error">
+      {{ loadError }}
+    </div>
 
     <div v-else class="orders-table-container glass-panel">
       <table class="orders-table">
@@ -217,7 +222,11 @@ onMounted(fetchOrders);
             </td>
             <td>
               <div class="table-actions">
-                <button class="icon-btn" @click="openOrder(order)" title="Xem chi tiet">
+                <button
+                  class="icon-btn"
+                  @click="openOrder(order)"
+                  title="Xem chi tiet"
+                >
                   <Eye :size="17" />
                 </button>
                 <button
@@ -250,7 +259,10 @@ onMounted(fetchOrders);
             <p>{{ formatDateTime(selectedOrder.created_at) }}</p>
           </div>
           <div class="modal-head-right">
-            <span class="status-badge" :class="getStatusClass(selectedOrder.status)">
+            <span
+              class="status-badge"
+              :class="getStatusClass(selectedOrder.status)"
+            >
               {{ statusLabel(selectedOrder.status) }}
             </span>
             <button class="close-btn" @click="closeOrder">
@@ -301,11 +313,19 @@ onMounted(fetchOrders);
               class="item-row"
             >
               <div class="item-main">
-                <div class="item-name">{{ item.name || item.product?.name || "San pham" }}</div>
+                <div class="item-name">
+                  {{ item.name || item.product?.name || "San pham" }}
+                </div>
                 <div class="item-sub">SKU: {{ item.sku || "-" }}</div>
               </div>
               <div class="item-qty">x{{ item.quantity }}</div>
-              <div class="item-price">{{ formatPrice((item.quantity || 0) * (item.unit_price_cents || 0)) }}</div>
+              <div class="item-price">
+                {{
+                  formatPrice(
+                    (item.quantity || 0) * (item.unit_price_cents || 0),
+                  )
+                }}
+              </div>
             </div>
           </div>
         </section>
@@ -338,7 +358,10 @@ onMounted(fetchOrders);
               :key="`serial-${item.id}`"
               class="serial-row"
             >
-              <span>#{{ item.id }} - {{ item.name || item.product?.name || "Item" }}</span>
+              <span
+                >#{{ item.id }} -
+                {{ item.name || item.product?.name || "Item" }}</span
+              >
               <input
                 v-model="item.serial_number"
                 class="f-input"
@@ -349,7 +372,11 @@ onMounted(fetchOrders);
         </section>
 
         <footer class="modal-footer">
-          <button class="btn-outline" @click="saveFulfillment" :disabled="isSavingFulfillment">
+          <button
+            class="btn-outline"
+            @click="saveFulfillment"
+            :disabled="isSavingFulfillment"
+          >
             <Save :size="15" />
             {{ isSavingFulfillment ? "Dang luu..." : "Luu thong tin" }}
           </button>
