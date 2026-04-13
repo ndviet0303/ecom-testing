@@ -95,8 +95,9 @@ Route::middleware(['throttle:120,1'])->prefix('v1')->group(function (): void {
     });
 
     Route::middleware(['auth:sanctum', 'staff'])->prefix('admin')->group(function (): void {
-        Route::patch('orders/{order}/status', [OrderAdminController::class, 'updateStatus']);
-        Route::patch('orders/{order}/fulfillment', [OrderAdminController::class, 'updateFulfillment']);
+        Route::get('orders', [OrderAdminController::class, 'index'])->name('api/v1/admin/orders');
+        Route::patch('orders/{order}/status', [OrderAdminController::class, 'updateStatus'])->name('api/v1/admin/orders/status');
+        Route::patch('orders/{order}/fulfillment', [OrderAdminController::class, 'updateFulfillment'])->name('api/v1/admin/orders/fulfillment');
         Route::get('inventory/low-stock', [LowStockInventoryController::class, 'index']);
         Route::get('audit-logs', [AdminAuditLogController::class, 'index']);
         Route::get('return-requests', [ReturnRequestAdminController::class, 'index']);
