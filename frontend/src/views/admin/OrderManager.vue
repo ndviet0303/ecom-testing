@@ -58,6 +58,29 @@ const normalizeOrder = (order) => ({
   order_items: orderItems(order),
 });
 
+const cloneOrder = (order) => {
+  const normalized = normalizeOrder(order);
+
+  try {
+    return JSON.parse(JSON.stringify(normalized));
+  } catch (e) {
+    return {
+      ...normalized,
+      user: normalized.user ? { ...normalized.user } : null,
+      shipping_address: normalized.shipping_address
+        ? { ...normalized.shipping_address }
+        : null,
+      shipping_address_snapshot: normalized.shipping_address_snapshot
+        ? { ...normalized.shipping_address_snapshot }
+        : null,
+      order_items: orderItems(normalized).map((item) => ({
+        ...item,
+        product: item.product ? { ...item.product } : null,
+      })),
+    };
+  }
+};
+
 const formatPrice = (cents) => {
   return new Intl.NumberFormat("vi-VN", {
     style: "currency",
@@ -79,7 +102,7 @@ const canTransition = (fromStatus, toStatus) => {
 };
 
 const openOrder = (order) => {
-  selectedOrder.value = normalizeOrder(structuredClone(order));
+  selectedOrder.value = cloneOrder(order);
 };
 
 const closeOrder = () => {
@@ -108,7 +131,7 @@ const syncOrderInList = (updatedOrder) => {
     orders.value[idx] = normalized;
   }
   if (selectedOrder.value?.id === normalized.id) {
-    selectedOrder.value = structuredClone(normalized);
+    selectedOrder.value = cloneOrder(normalized);
   }
 };
 
