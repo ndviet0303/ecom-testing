@@ -274,8 +274,13 @@ onMounted(fetchOrders);
       </table>
     </div>
 
-    <div v-if="selectedOrder" class="modal-overlay" @click.self="closeOrder">
-      <div class="modal-content glass-panel">
+    <Teleport to="body">
+      <div
+        v-if="selectedOrder"
+        class="modal-overlay"
+        @click.self="closeOrder"
+      >
+        <div class="modal-content glass-panel">
         <header class="modal-header">
           <div>
             <h3>Đơn hàng #{{ selectedOrder.id }}</h3>
@@ -450,8 +455,9 @@ onMounted(fetchOrders);
             </button>
           </div>
         </footer>
+        </div>
       </div>
-    </div>
+    </Teleport>
   </div>
 </template>
 
@@ -609,8 +615,8 @@ onMounted(fetchOrders);
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(9, 11, 20, 0.74);
-  backdrop-filter: blur(5px);
+  background: rgba(2, 6, 23, 0.36);
+  backdrop-filter: blur(6px);
   display: grid;
   place-items: center;
   z-index: 1200;
@@ -622,7 +628,10 @@ onMounted(fetchOrders);
   max-height: 90vh;
   overflow: auto;
   padding: 24px;
-  border-radius: 16px;
+  border-radius: 18px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.18);
 }
 
 .modal-header {
@@ -655,12 +664,18 @@ onMounted(fetchOrders);
   height: 34px;
   border-radius: 8px;
   border: 1px solid var(--border-color);
-  background: transparent;
+  background: #ffffff;
   color: var(--text-primary);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
+}
+
+.close-btn:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0f172a;
 }
 
 .summary-grid {
@@ -671,11 +686,13 @@ onMounted(fetchOrders);
 }
 
 .summary-card {
-  border: 1px solid var(--border-color);
+  border: 1px solid #e2e8f0;
   border-radius: 12px;
   padding: 14px;
   display: grid;
   gap: 6px;
+  background: #ffffff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
 .summary-card label {
@@ -702,10 +719,11 @@ onMounted(fetchOrders);
 }
 
 .block {
-  border: 1px solid var(--border-color);
+  border: 1px solid #e2e8f0;
   border-radius: 12px;
   padding: 14px;
   margin-bottom: 14px;
+  background: #ffffff;
 }
 
 .block-title {
@@ -723,7 +741,7 @@ onMounted(fetchOrders);
   gap: 14px;
   align-items: center;
   padding: 10px 0;
-  border-bottom: 1px dashed var(--border-color);
+  border-bottom: 1px dashed #e2e8f0;
 }
 
 .item-row:last-child {
@@ -742,7 +760,7 @@ onMounted(fetchOrders);
 
 .item-qty {
   font-weight: 700;
-  color: var(--accent-primary);
+  color: #334155;
 }
 
 .item-price {
@@ -761,11 +779,17 @@ onMounted(fetchOrders);
 
 .f-input {
   width: 100%;
-  border: 1px solid var(--border-color);
+  border: 1px solid #d1d5db;
   border-radius: 9px;
-  background: transparent;
+  background: #ffffff;
   color: var(--text-primary);
   padding: 10px;
+}
+
+.f-input:focus {
+  outline: none;
+  border-color: #64748b;
+  box-shadow: 0 0 0 3px rgba(100, 116, 139, 0.14);
 }
 
 .serial-list {
@@ -798,8 +822,8 @@ onMounted(fetchOrders);
 .btn-outline,
 .btn-status {
   border-radius: 10px;
-  border: 1px solid var(--border-color);
-  background: transparent;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
   color: var(--text-primary);
   padding: 9px 12px;
   font-weight: 620;
@@ -811,9 +835,20 @@ onMounted(fetchOrders);
 }
 
 .btn-status-primary {
-  background: rgba(37, 99, 235, 0.14);
-  border-color: rgba(37, 99, 235, 0.36);
-  color: #2563eb;
+  background: #0f172a;
+  border-color: #0f172a;
+  color: #ffffff;
+}
+
+.btn-outline:hover,
+.btn-status:hover {
+  border-color: #94a3b8;
+  background: #f8fafc;
+}
+
+.btn-status-primary:hover {
+  background: #1e293b;
+  border-color: #1e293b;
 }
 
 .btn-outline:disabled,
