@@ -1,0 +1,171 @@
+{
+  "project": "backend",
+  "source_root": "/Users/ziet/WorkSpace/ziet's project/testing/backend",
+  "generated_at": "2026-04-16T14:23:40.093770+00:00",
+  "prompt_template": "You are an expert QA engineer.\n\nGiven the API metadata and retrieved source code context below, generate a JSON object only.\n\nRequirements:\n- Focus on HTTP/API test cases.\n- Include positive, negative, validation, authorization, and edge cases when applicable.\n- Keep request payloads realistic based on the code context.\n- Return valid JSON only using this shape:\n{\n  \"api_id\": \"string\",\n  \"endpoint\": \"string\",\n  \"method\": \"GET|POST|PUT|PATCH|DELETE\",\n  \"testcases\": [\n    {\n      \"name\": \"string\",\n      \"description\": \"string\",\n      \"request\": {\n        \"headers\": {},\n        \"query\": {},\n        \"path_params\": {},\n        \"body\": {}\n      },\n      \"expected\": {\n        \"status\": 200,\n        \"body_contains\": [],\n        \"notes\": \"string\"\n      }\n    }\n  ]\n}\n\nAPI metadata:\n__API_JSON__\n\nRetrieved context:\n__CONTEXT_JSON__\n",
+  "apis": [
+    {
+      "api_id": "auth_register",
+      "endpoint": "/api/auth/register",
+      "method": "POST",
+      "testcases": [
+        {
+          "name": "Positive test case: Valid user registration",
+          "description": "Validates that a new user can be registered with valid data and receives a token and user details.",
+          "request": {
+            "headers": {},
+            "query": {},
+            "path_params": {},
+            "body": {
+              "name": "John Doe",
+              "email": "johndoe@example.com",
+              "password": "securepassword123",
+              "password_confirmation": "securepassword123"
+            }
+          },
+          "expected": {
+            "status": 201,
+            "body_contains": [
+              "message",
+              "token",
+              "user"
+            ],
+            "notes": "Checks if the response contains expected fields and status code is 201."
+          }
+        },
+        {
+          "name": "Negative test case: Missing required fields",
+          "description": "Validates that an error is returned when required fields are missing.",
+          "request": {
+            "headers": {},
+            "query": {},
+            "path_params": {},
+            "body": {}
+          },
+          "expected": {
+            "status": 422,
+            "body_contains": [
+              "errors"
+            ],
+            "notes": "Checks if the response contains validation errors and status code is 422."
+          }
+        },
+        {
+          "name": "Negative test case: Duplicate email",
+          "description": "Validates that an error is returned when a user tries to register with an already existing email.",
+          "request": {
+            "headers": {},
+            "query": {},
+            "path_params": {},
+            "body": {
+              "name": "John Doe",
+              "email": "johndoe@example.com",
+              "password": "securepassword123",
+              "password_confirmation": "securepassword123"
+            }
+          },
+          "expected": {
+            "status": 422,
+            "body_contains": [
+              "errors"
+            ],
+            "notes": "Checks if the response contains validation errors for duplicate email and status code is 422."
+          }
+        },
+        {
+          "name": "Negative test case: Weak password",
+          "description": "Validates that an error is returned when a user tries to register with a weak password.",
+          "request": {
+            "headers": {},
+            "query": {},
+            "path_params": {},
+            "body": {
+              "name": "John Doe",
+              "email": "johndoe@example.com",
+              "password": "123",
+              "password_confirmation": "123"
+            }
+          },
+          "expected": {
+            "status": 422,
+            "body_contains": [
+              "errors"
+            ],
+            "notes": "Checks if the response contains validation errors for weak password and status code is 422."
+          }
+        },
+        {
+          "name": "Negative test case: Invalid email format",
+          "description": "Validates that an error is returned when a user tries to register with an invalid email format.",
+          "request": {
+            "headers": {},
+            "query": {},
+            "path_params": {},
+            "body": {
+              "name": "John Doe",
+              "email": "johndoeexample.com",
+              "password": "securepassword123",
+              "password_confirmation": "securepassword123"
+            }
+          },
+          "expected": {
+            "status": 422,
+            "body_contains": [
+              "errors"
+            ],
+            "notes": "Checks if the response contains validation errors for invalid email format and status code is 422."
+          }
+        },
+        {
+          "name": "Negative test case: Password mismatch",
+          "description": "Validates that an error is returned when passwords do not match.",
+          "request": {
+            "headers": {},
+            "query": {},
+            "path_params": {},
+            "body": {
+              "name": "John Doe",
+              "email": "johndoe@example.com",
+              "password": "securepassword123",
+              "password_confirmation": "wrongpassword"
+            }
+          },
+          "expected": {
+            "status": 422,
+            "body_contains": [
+              "errors"
+            ],
+            "notes": "Checks if the response contains validation errors for password mismatch and status code is 422."
+          }
+        }
+      ],
+      "retrieved_context": [
+        {
+          "file_path": "/Users/ziet/WorkSpace/ziet's project/testing/backend/app/Http/Controllers/AuthController.php",
+          "reason": "controller action",
+          "score": 100,
+          "snippet": "<?php\n\nnamespace App\\Http\\Controllers;\n\nuse App\\Models\\User;\nuse Illuminate\\Http\\JsonResponse;\nuse Illuminate\\Http\\Request;\nuse Illuminate\\Support\\Facades\\Hash;\n\nclass AuthController extends Controller\n{\n    public function register(Request $request): JsonResponse\n    {\n        $validated = $request->validate([\n            'name' => ['required', 'string', 'max:255'],\n            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],\n            'password' => ['required', 'string', 'min:8', 'confirmed'],\n        ]);\n\n        $user = User::create($validated);\n        $token = $user->createToken('auth-token')->plainTextToken;\n\n        return response()->json([\n            'message' => 'Registered successfully.',\n            'token' => $token,\n            'user' => $user,\n        ], 201);\n    }\n\n    public function login(Request $request): JsonResponse\n    {\n        $validated = $request->validate([\n            'email' => ['required', 'email'],\n            'password' => ['required', 'string'],\n        ]);\n\n        $user = User::where('email', $validated['email'])->first();\n\n        if (! $user || ! Hash::check($validated['password'], $user->password)) {\n          ..."
+        },
+        {
+          "file_path": "/Users/ziet/WorkSpace/ziet's project/testing/backend/app/Providers/AppServiceProvider.php",
+          "reason": "action name match, keyword:App, keyword:register",
+          "score": 65,
+          "snippet": "<?php\n\nnamespace App\\Providers;\n\nuse Illuminate\\Support\\ServiceProvider;\n\nclass AppServiceProvider extends ServiceProvider\n{\n    /**\n     * Register any application services.\n     */\n    public function register(): void\n    {\n        //\n    }\n\n    /**\n     * Bootstrap any application services.\n     */\n    public function boot(): void\n    {\n        //\n    }\n}"
+        },
+        {
+          "file_path": "/Users/ziet/WorkSpace/ziet's project/testing/backend/routes/api.php",
+          "reason": "controller reference, keyword:POST, keyword:App, keyword:Http, keyword:Controllers, keyword:AuthController, keyword:register, keyword:auth",
+          "score": 60,
+          "snippet": "App\\Http\\Controllers\\AuthController;\nuse Illuminate\\Http\\Request;\nuse Illuminate\\Support\\Facades\\Route;\n\nRoute::prefix('auth')->group(function () {\n    Route::post('/register', [AuthController::class, 'register']);\n    Route::post('/login', [AuthController::class, 'login']);\n\n    Route::middleware('auth:sanctum')->group(function () {\n        Route::get('/me', [AuthController::class, 'me']);\n        Route::post('/logout', [AuthController::class, 'logout']);\n    });\n});\n\nRoute::get('/user', function (Request $request) {\n    return $request->user();\n})->middleware('auth:sanctum');\n\nRoute::middleware(['throttle:120,1'])->prefix('v1')->group(function (): void {\n    Route::get('products', [ProductController::class, 'index']);\n    Route::get('products/{product}/reviews', [ReviewController::class, 'forProduct']);\n    Route::get('products/{product}', [ProductController::class, 'show']);\n\n    Route::get('coupons', [CouponController::class, 'index']);\n    Route::get('coupons/{code}/preview', [CouponController::class, 'preview']);\n\n    Route::get('shipping-zones', [ShippingZoneController::class, 'index']);\n\n    Route::post('build/validate', [BuildCompatibilityController::class, 'validateBuild"
+        },
+        {
+          "file_path": "/Users/ziet/WorkSpace/ziet's project/testing/backend/tests/Feature/AuthApiTest.php",
+          "reason": "keyword:POST, keyword:/auth/register, keyword:App, keyword:register, keyword:auth",
+          "score": 30,
+          "snippet": "lass AuthApiTest extends TestCase\n{\n    use RefreshDatabase;\n\n    public function test_register_returns_token_and_user(): void\n    {\n        $response = $this->postJson('/api/auth/register', [\n            'name' => 'Test User',\n            'email' => 'test@example.com',\n            'password' => 'password123',\n            'password_confirmation' => 'password123',\n        ]);\n\n        $response->assertCreated()\n            ->assertJsonStructure([\n                'message',\n                'token',\n                'user' => ['id', 'name', 'email'],\n            ]);\n\n        $this->assertDatabaseHas('users', [\n            'email' => 'test@example.com',\n            'name' => 'Test User',\n            'role' => User::ROLE_CUSTOMER,\n        ]);\n    }\n\n    public function test_register_validates_required_fields(): void\n    {\n        $response = $this->postJson('/api/auth/register', []);\n\n        $response->assertUnprocessable()\n            ->assertJsonValidationErrors(['name', 'email', 'password']);\n    }\n\n    public function test_login_returns_token_for_valid_credentials(): void\n    {\n        User::factory()->create([\n            'email' => 'test@example.com',\n            'password' => 'pa"
+        }
+      ],
+      "raw_model_output": "{\n  \"api_id\": \"auth_register\",\n  \"endpoint\": \"/api/auth/register\",\n  \"method\": \"POST\",\n  \"testcases\": [\n    {\n      \"name\": \"Positive test case: Valid user registration\",\n      \"description\": \"Validates that a new user can be registered with valid data and receives a token and user details.\",\n      \"request\": {\n        \"headers\": {},\n        \"query\": {},\n        \"path_params\": {},\n        \"body\": {\n          \"name\": \"John Doe\",\n          \"email\": \"johndoe@example.com\",\n          \"password\": \"securepassword123\",\n          \"password_confirmation\": \"securepassword123\"\n        }\n      },\n      \"expected\": {\n        \"status\": 201,\n        \"body_contains\": [\"message\", \"token\", \"user\"],\n        \"notes\": \"Checks if the response contains expected fields and status code is 201.\"\n      }\n    },\n    {\n      \"name\": \"Negative test case: Missing required fields\",\n      \"description\": \"Validates that an error is returned when required fields are missing.\",\n      \"request\": {\n        \"headers\": {},\n        \"query\": {},\n        \"path_params\": {},\n        \"body\": {}\n      },\n      \"expected\": {\n        \"status\": 422,\n        \"body_contains\": [\"errors\"],\n        \"notes\": \"Checks if the response contains validation errors and status code is 422.\"\n      }\n    },\n    {\n      \"name\": \"Negative test case: Duplicate email\",\n      \"description\": \"Validates that an error is returned when a user tries to register with an already existing email.\",\n      \"request\": {\n        \"headers\": {},\n        \"query\": {},\n        \"path_params\": {},\n        \"body\": {\n          \"name\": \"John Doe\",\n          \"email\": \"johndoe@example.com\",\n          \"password\": \"securepassword123\",\n          \"password_confirmation\": \"securepassword123\"\n        }\n      },\n      \"expected\": {\n        \"status\": 422,\n        \"body_contains\": [\"errors\"],\n        \"notes\": \"Checks if the response contains validation errors for duplicate email and status code is 422.\"\n      }\n    },\n    {\n      \"name\": \"Negative test case: Weak password\",\n      \"description\": \"Validates that an error is returned when a user tries to register with a weak password.\",\n      \"request\": {\n        \"headers\": {},\n        \"query\": {},\n        \"path_params\": {},\n        \"body\": {\n          \"name\": \"John Doe\",\n          \"email\": \"johndoe@example.com\",\n          \"password\": \"123\",\n          \"password_confirmation\": \"123\"\n        }\n      },\n      \"expected\": {\n        \"status\": 422,\n        \"body_contains\": [\"errors\"],\n        \"notes\": \"Checks if the response contains validation errors for weak password and status code is 422.\"\n      }\n    },\n    {\n      \"name\": \"Negative test case: Invalid email format\",\n      \"description\": \"Validates that an error is returned when a user tries to register with an invalid email format.\",\n      \"request\": {\n        \"headers\": {},\n        \"query\": {},\n        \"path_params\": {},\n        \"body\": {\n          \"name\": \"John Doe\",\n          \"email\": \"johndoeexample.com\",\n          \"password\": \"securepassword123\",\n          \"password_confirmation\": \"securepassword123\"\n        }\n      },\n      \"expected\": {\n        \"status\": 422,\n        \"body_contains\": [\"errors\"],\n        \"notes\": \"Checks if the response contains validation errors for invalid email format and status code is 422.\"\n      }\n    },\n    {\n      \"name\": \"Negative test case: Password mismatch\",\n      \"description\": \"Validates that an error is returned when passwords do not match.\",\n      \"request\": {\n        \"headers\": {},\n        \"query\": {},\n        \"path_params\": {},\n        \"body\": {\n          \"name\": \"John Doe\",\n          \"email\": \"johndoe@example.com\",\n          \"password\": \"securepassword123\",\n          \"password_confirmation\": \"wrongpassword\"\n        }\n      },\n      \"expected\": {\n        \"status\": 422,\n        \"body_contains\": [\"errors\"],\n        \"notes\": \"Checks if the response contains validation errors for password mismatch and status code is 422.\"\n      }\n    }\n  ]\n}"
+    }
+  ]
+}

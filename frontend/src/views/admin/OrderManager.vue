@@ -135,6 +135,16 @@ const syncOrderInList = (updatedOrder) => {
   }
 };
 
+const buildFulfillmentPayload = (order) => ({
+  tracking_number: order.tracking_number || null,
+  tracking_carrier: order.tracking_carrier || null,
+  internal_note: order.internal_note || null,
+  items: orderItems(order).map((item) => ({
+    id: item.id,
+    serial_number: item.serial_number || null,
+  })),
+});
+
 const updateStatus = async (orderId, status) => {
   isUpdating.value = true;
   try {
@@ -164,23 +174,19 @@ const triggerTransition = async (toStatus) => {
     }
   }
 
+  // Persist fulfillment draft before changing status to prevent losing local edits.
+  const saved = await saveFulfillment({ silentSuccess: true });
+  if (!saved) return;
+
   await updateStatus(selectedOrder.value.id, toStatus);
 };
 
-const saveFulfillment = async () => {
-  if (!selectedOrder.value) return;
+const saveFulfillment = async ({ silentSuccess = false } = {}) => {
+  if (!selectedOrder.value) return false;
 
   isSavingFulfillment.value = true;
   try {
-    const payload = {
-      tracking_number: selectedOrder.value.tracking_number || null,
-      tracking_carrier: selectedOrder.value.tracking_carrier || null,
-      internal_note: selectedOrder.value.internal_note || null,
-      items: orderItems(selectedOrder.value).map((item) => ({
-        id: item.id,
-        serial_number: item.serial_number || null,
-      })),
-    };
+    const payload = buildFulfillmentPayload(selectedOrder.value);
 
     const response = await axios.patch(
       `/api/v1/admin/orders/${selectedOrder.value.id}/fulfillment`,
@@ -188,9 +194,13 @@ const saveFulfillment = async () => {
     );
 
     syncOrderInList(response.data);
-    toastStore.success("Đã lưu thông tin xử lý đơn.");
+    if (!silentSuccess) {
+      toastStore.success("Đã lưu thông tin xử lý đơn.");
+    }
+    return true;
   } catch (err) {
     toastStore.error(parseApiError(err, "Không thể lưu thông tin xử lý."));
+    return false;
   } finally {
     isSavingFulfillment.value = false;
   }
@@ -275,186 +285,182 @@ onMounted(fetchOrders);
     </div>
 
     <Teleport to="body">
-      <div
-        v-if="selectedOrder"
-        class="modal-overlay"
-        @click.self="closeOrder"
-      >
+      <div v-if="selectedOrder" class="modal-overlay" @click.self="closeOrder">
         <div class="modal-content glass-panel">
-        <header class="modal-header">
-          <div>
-            <h3>Đơn hàng #{{ selectedOrder.id }}</h3>
-            <p>{{ formatDateTime(selectedOrder.created_at) }}</p>
-          </div>
-          <div class="modal-head-right">
-            <span
-              class="status-badge"
-              :class="getStatusClass(selectedOrder.status)"
-            >
-              {{ statusLabel(selectedOrder.status) }}
-            </span>
-            <button class="close-btn" @click="closeOrder">
-              <X :size="16" />
-            </button>
-          </div>
-        </header>
-
-        <section class="summary-grid">
-          <article class="summary-card">
-            <label>Khách hàng</label>
-            <div>{{ selectedOrder.user?.name || "Guest" }}</div>
-            <small>{{ selectedOrder.user?.email || "-" }}</small>
-          </article>
-          <article class="summary-card">
-            <label>Liên hệ giao hàng</label>
+          <header class="modal-header">
             <div>
-              {{
-                selectedOrder.shipping_address?.phone ||
-                selectedOrder.shipping_address_snapshot?.phone ||
-                "-"
-              }}
+              <h3>Đơn hàng #{{ selectedOrder.id }}</h3>
+              <p>{{ formatDateTime(selectedOrder.created_at) }}</p>
             </div>
-            <small>
-              {{
-                selectedOrder.shipping_address_snapshot?.line1 ||
-                selectedOrder.shipping_address?.line1 ||
-                "Không có địa chỉ"
-              }}
-            </small>
-          </article>
-          <article class="summary-card summary-card-money">
-            <label>Tổng thanh toán</label>
-            <div>{{ formatPrice(selectedOrder.total_cents) }}</div>
-            <small>
-              <Wallet :size="14" />
-              Tạm tính {{ formatPrice(selectedOrder.subtotal_cents) }}
-            </small>
-          </article>
-        </section>
+            <div class="modal-head-right">
+              <span
+                class="status-badge"
+                :class="getStatusClass(selectedOrder.status)"
+              >
+                {{ statusLabel(selectedOrder.status) }}
+              </span>
+              <button class="close-btn" @click="closeOrder">
+                <X :size="16" />
+              </button>
+            </div>
+          </header>
 
-        <section class="block">
-          <div class="block-title">Sản phẩm trong đơn</div>
-          <div class="order-items-list">
-            <div
-              v-for="item in orderItems(selectedOrder)"
-              :key="item.id"
-              class="item-row"
-            >
-              <div class="item-main">
-                <div class="item-name">
-                  {{ item.name || item.product?.name || "Sản phẩm" }}
-                </div>
-                <div class="item-sub">SKU: {{ item.sku || "-" }}</div>
-              </div>
-              <div class="item-qty">x{{ item.quantity }}</div>
-              <div class="item-price">
+          <section class="summary-grid">
+            <article class="summary-card">
+              <label>Khách hàng</label>
+              <div>{{ selectedOrder.user?.name || "Guest" }}</div>
+              <small>{{ selectedOrder.user?.email || "-" }}</small>
+            </article>
+            <article class="summary-card">
+              <label>Liên hệ giao hàng</label>
+              <div>
                 {{
-                  formatPrice(
-                    (item.quantity || 0) * (item.unit_price_cents || 0),
-                  )
+                  selectedOrder.shipping_address?.phone ||
+                  selectedOrder.shipping_address_snapshot?.phone ||
+                  "-"
                 }}
               </div>
-            </div>
-          </div>
-        </section>
+              <small>
+                {{
+                  selectedOrder.shipping_address_snapshot?.line1 ||
+                  selectedOrder.shipping_address?.line1 ||
+                  "Không có địa chỉ"
+                }}
+              </small>
+            </article>
+            <article class="summary-card summary-card-money">
+              <label>Tổng thanh toán</label>
+              <div>{{ formatPrice(selectedOrder.total_cents) }}</div>
+              <small>
+                <Wallet :size="14" />
+                Tạm tính {{ formatPrice(selectedOrder.subtotal_cents) }}
+              </small>
+            </article>
+          </section>
 
-        <section class="block">
-          <div class="block-title">Thông tin xử lý và giao hàng</div>
-          <div class="form-grid">
-            <input
-              v-model="selectedOrder.tracking_number"
-              class="f-input"
-              placeholder="Mã vận đơn"
-            />
-            <input
-              v-model="selectedOrder.tracking_carrier"
-              class="f-input"
-              placeholder="Đơn vị vận chuyển"
-            />
-            <textarea
-              v-model="selectedOrder.internal_note"
-              class="f-input"
-              rows="2"
-              placeholder="Ghi chú nội bộ"
-            ></textarea>
-          </div>
-
-          <div class="serial-list">
-            <div class="serial-title">Serial theo item</div>
-            <div
-              v-for="item in orderItems(selectedOrder)"
-              :key="`serial-${item.id}`"
-              class="serial-row"
-            >
-              <span
-                >#{{ item.id }} -
-                {{ item.name || item.product?.name || "Item" }}</span
+          <section class="block">
+            <div class="block-title">Sản phẩm trong đơn</div>
+            <div class="order-items-list">
+              <div
+                v-for="item in orderItems(selectedOrder)"
+                :key="item.id"
+                class="item-row"
               >
-              <input
-                v-model="item.serial_number"
-                class="f-input"
-                placeholder="Serial number"
-              />
+                <div class="item-main">
+                  <div class="item-name">
+                    {{ item.name || item.product?.name || "Sản phẩm" }}
+                  </div>
+                  <div class="item-sub">SKU: {{ item.sku || "-" }}</div>
+                </div>
+                <div class="item-qty">x{{ item.quantity }}</div>
+                <div class="item-price">
+                  {{
+                    formatPrice(
+                      (item.quantity || 0) * (item.unit_price_cents || 0),
+                    )
+                  }}
+                </div>
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
 
-        <footer class="modal-footer">
-          <button
-            class="btn-outline"
-            @click="saveFulfillment"
-            :disabled="isSavingFulfillment"
-          >
-            <Save :size="15" />
-            {{ isSavingFulfillment ? "Đang lưu..." : "Lưu thông tin" }}
-          </button>
+          <section class="block">
+            <div class="block-title">Thông tin xử lý và giao hàng</div>
+            <div class="form-grid">
+              <input
+                v-model="selectedOrder.tracking_number"
+                class="f-input"
+                placeholder="Mã vận đơn"
+              />
+              <input
+                v-model="selectedOrder.tracking_carrier"
+                class="f-input"
+                placeholder="Đơn vị vận chuyển"
+              />
+              <textarea
+                v-model="selectedOrder.internal_note"
+                class="f-input"
+                rows="2"
+                placeholder="Ghi chú nội bộ"
+              ></textarea>
+            </div>
 
-          <div class="status-action-group">
+            <div class="serial-list">
+              <div class="serial-title">Serial theo item</div>
+              <div
+                v-for="item in orderItems(selectedOrder)"
+                :key="`serial-${item.id}`"
+                class="serial-row"
+              >
+                <span
+                  >#{{ item.id }} -
+                  {{ item.name || item.product?.name || "Item" }}</span
+                >
+                <input
+                  v-model="item.serial_number"
+                  class="f-input"
+                  placeholder="Serial number"
+                />
+              </div>
+            </div>
+          </section>
+
+          <footer class="modal-footer">
             <button
-              v-if="canTransition(selectedOrder.status, 'pending')"
-              class="btn-status"
-              :disabled="isUpdating"
-              @click="triggerTransition('pending')"
+              class="btn-outline"
+              @click="saveFulfillment"
+              :disabled="isSavingFulfillment"
             >
-              Pending
+              <Save :size="15" />
+              {{ isSavingFulfillment ? "Đang lưu..." : "Lưu thông tin" }}
             </button>
-            <button
-              v-if="canTransition(selectedOrder.status, 'paid')"
-              class="btn-status"
-              :disabled="isUpdating"
-              @click="triggerTransition('paid')"
-            >
-              <CheckCircle2 :size="15" />
-              Xác nhận đã thanh toán
-            </button>
-            <button
-              v-if="canTransition(selectedOrder.status, 'packed')"
-              class="btn-status"
-              :disabled="isUpdating"
-              @click="triggerTransition('packed')"
-            >
-              <Box :size="15" />
-              Xử lý đơn
-            </button>
-            <button
-              v-if="canTransition(selectedOrder.status, 'shipped')"
-              class="btn-status btn-status-primary"
-              :disabled="isUpdating"
-              @click="triggerTransition('shipped')"
-            >
-              <Truck :size="15" />
-              Giao hàng
-            </button>
-            <button
-              v-if="canTransition(selectedOrder.status, 'delivered')"
-              class="btn-status"
-              :disabled="isUpdating"
-              @click="triggerTransition('delivered')"
-            >
-              Đã giao thành công
-            </button>
-          </div>
-        </footer>
+
+            <div class="status-action-group">
+              <button
+                v-if="canTransition(selectedOrder.status, 'pending')"
+                class="btn-status"
+                :disabled="isUpdating"
+                @click="triggerTransition('pending')"
+              >
+                Pending
+              </button>
+              <button
+                v-if="canTransition(selectedOrder.status, 'paid')"
+                class="btn-status"
+                :disabled="isUpdating"
+                @click="triggerTransition('paid')"
+              >
+                <CheckCircle2 :size="15" />
+                Xác nhận đã thanh toán
+              </button>
+              <button
+                v-if="canTransition(selectedOrder.status, 'packed')"
+                class="btn-status"
+                :disabled="isUpdating"
+                @click="triggerTransition('packed')"
+              >
+                <Box :size="15" />
+                Xử lý đơn
+              </button>
+              <button
+                v-if="canTransition(selectedOrder.status, 'shipped')"
+                class="btn-status btn-status-primary"
+                :disabled="isUpdating"
+                @click="triggerTransition('shipped')"
+              >
+                <Truck :size="15" />
+                Giao hàng
+              </button>
+              <button
+                v-if="canTransition(selectedOrder.status, 'delivered')"
+                class="btn-status"
+                :disabled="isUpdating"
+                @click="triggerTransition('delivered')"
+              >
+                Đã giao thành công
+              </button>
+            </div>
+          </footer>
         </div>
       </div>
     </Teleport>

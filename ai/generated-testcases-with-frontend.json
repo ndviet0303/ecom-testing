@@ -1,0 +1,232 @@
+{
+  "project": "backend",
+  "source_root": "/Users/ziet/WorkSpace/ziet's project/testing/backend",
+  "generated_at": "2026-04-16T14:33:09.320020+00:00",
+  "prompt_template": "You are an expert QA engineer.\n\nGiven the API metadata and retrieved source code context below, generate a JSON object only.\n\nRequirements:\n- Focus on HTTP/API test cases.\n- Include positive, negative, validation, authorization, and edge cases when applicable.\n- Keep request payloads realistic based on the code context.\n- Return valid JSON only using this shape:\n{\n  \"api_id\": \"string\",\n  \"endpoint\": \"string\",\n  \"method\": \"GET|POST|PUT|PATCH|DELETE\",\n  \"testcases\": [\n    {\n      \"name\": \"string\",\n      \"description\": \"string\",\n      \"request\": {\n        \"headers\": {},\n        \"query\": {},\n        \"path_params\": {},\n        \"body\": {}\n      },\n      \"expected\": {\n        \"status\": 200,\n        \"body_contains\": [],\n        \"notes\": \"string\"\n      }\n    }\n  ]\n}\n\nAPI metadata:\n__API_JSON__\n\nRetrieved context:\n__CONTEXT_JSON__\n",
+  "apis": [
+    {
+      "api_id": "post_auth_register",
+      "endpoint": "/auth/register",
+      "method": "POST",
+      "testcases": [
+        {
+          "name": "POST /auth/register returns success",
+          "description": "Happy path generated without an external model.",
+          "request": {
+            "headers": {
+              "Accept": "application/json"
+            },
+            "query": {},
+            "path_params": {},
+            "body": {}
+          },
+          "expected": {
+            "status": 201,
+            "body_contains": [],
+            "notes": "Update with concrete assertions after connecting an LLM."
+          }
+        }
+      ],
+      "retrieved_context": [
+        {
+          "file_path": "/Users/ziet/WorkSpace/ziet's project/testing/backend/app/Http/Controllers/AuthController.php",
+          "reason": "controller action",
+          "score": 100,
+          "snippet": "<?php\n\nnamespace App\\Http\\Controllers;\n\nuse App\\Models\\User;\nuse Illuminate\\Http\\JsonResponse;\nuse Illuminate\\Http\\Request;\nuse Illuminate\\Support\\Facades\\Hash;\n\nclass AuthController extends Controller\n{\n    public function register(Request $request): JsonResponse\n    {\n        $validated = $request->validate([\n            'name' => ['required', 'string', 'max:255'],\n            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],\n            'password' => ['required', 'string', 'min:8', 'confirmed'],\n        ]);\n\n        $user = User::create($validated);\n        $token = $user->createToken('auth-token')->plainTextToken;\n\n        return response()->json([\n            'message' => 'Registered successfully.',\n            'token' => $token,\n            'user' => $user,\n        ], 201);\n    }\n\n    public function login(Request $request): JsonResponse\n    {\n        $validated = $request->validate([\n            'email' => ['required', 'email'],\n            'password' => ['required', 'string'],\n        ]);\n\n        $user = User::where('email', $validated['email'])->first();\n\n        if (! $user || ! Hash::check($validated['password'], $user->password)) {\n          ..."
+        },
+        {
+          "file_path": "/Users/ziet/WorkSpace/ziet's project/testing/frontend/src/main.js",
+          "reason": "frontend api path match, frontend keyword:auth, frontend keyword:register, frontend keyword:app",
+          "score": 98,
+          "snippet": "= useAuthStore(pinia)\n      const requestUrl = String(error?.config?.url || '')\n      const isAuthEndpoint = requestUrl.includes('/api/auth/login')\n        || requestUrl.includes('/api/auth/register')\n        || requestUrl.includes('/api/auth/logout')\n\n      if (!isAuthEndpoint && authStore.token && !isHandlingUnauthorized) {\n        isHandlingUnauthorized = true\n        authStore.clearSession()\n\n        if (router.currentRoute.value.name !== 'login') {\n          await router.push({ name: 'login' })\n        }\n\n        isHandlingUnauthorized = false\n      }\n    } else {\n      toastStore.error(extractErrorMessage(error))\n    }\n\n    return Promise.reject(error)\n  }\n)\n\napp.config.errorHandler = (error, instance, info) => {\n  const toastStore = useToastStore(pinia)\n  toastStore.error('Ứng dụng gặp lỗi. Vui lòng tải lại trang.')\n  console.error('Vue error:', error, info, instance)\n}\n\nwindow.addEventListener('unhandledrejection', (event) => {\n  const toastStore = useToastStore(pinia)\n  toastStore.error('Tác vụ thất bại. Vui lòng thử lại.')\n  console.error('Unhandled promise rejection:', event.reason)\n})\n\napp.use(pinia)\napp.use(router)\n\napp.mount('#app')"
+        },
+        {
+          "file_path": "/Users/ziet/WorkSpace/ziet's project/testing/frontend/src/stores/authStore.js",
+          "reason": "frontend api path match, frontend keyword:auth, frontend keyword:register, frontend keyword:app",
+          "score": 98,
+          "snippet": "false\n      } finally {\n        this.loading = false\n      }\n    },\n\n    async register(payload) {\n      this.loading = true\n      try {\n        const response = await axios.post('/api/auth/register', payload)\n        const token = response?.data?.token\n\n        if (!token) {\n          return { success: false, message: 'Đăng ký thành công nhưng không nhận được token.' }\n        }\n\n        this.token = token\n        localStorage.setItem('auth_token', this.token)\n        this.applyAuthHeader(this.token)\n\n        if (response?.data?.user) {\n          this.user = response.data.user\n        } else {\n          await this.fetchUser()\n        }\n\n        return { success: true }\n      } catch (err) {\n        const message = err?.response?.data?.message || 'Không thể đăng ký tài khoản.'\n        return { success: false, message }\n      } finally {\n        this.loading = false\n      }\n    },\n\n    async fetchUser() {\n      if (!this.token) return\n      this.applyAuthHeader(this.token)\n      try {\n        const response = await axios.get('/api/auth/me')\n        this.user = response.data\n      } catch (err) {\n        this.clearSession()\n      }\n    },\n\n    async logout() {\n      if (this.token) {"
+        },
+        {
+          "file_path": "/Users/ziet/WorkSpace/ziet's project/testing/backend/app/Providers/AppServiceProvider.php",
+          "reason": "action name match, keyword:App, keyword:register",
+          "score": 65,
+          "snippet": "<?php\n\nnamespace App\\Providers;\n\nuse Illuminate\\Support\\ServiceProvider;\n\nclass AppServiceProvider extends ServiceProvider\n{\n    /**\n     * Register any application services.\n     */\n    public function register(): void\n    {\n        //\n    }\n\n    /**\n     * Bootstrap any application services.\n     */\n    public function boot(): void\n    {\n        //\n    }\n}"
+        },
+        {
+          "file_path": "/Users/ziet/WorkSpace/ziet's project/testing/backend/routes/api.php",
+          "reason": "controller reference, keyword:POST, keyword:App, keyword:Http, keyword:Controllers, keyword:AuthController, keyword:register, keyword:auth",
+          "score": 60,
+          "snippet": "App\\Http\\Controllers\\AuthController;\nuse Illuminate\\Http\\Request;\nuse Illuminate\\Support\\Facades\\Route;\n\nRoute::prefix('auth')->group(function () {\n    Route::post('/register', [AuthController::class, 'register']);\n    Route::post('/login', [AuthController::class, 'login']);\n\n    Route::middleware('auth:sanctum')->group(function () {\n        Route::get('/me', [AuthController::class, 'me']);\n        Route::post('/logout', [AuthController::class, 'logout']);\n    });\n});\n\nRoute::get('/user', function (Request $request) {\n    return $request->user();\n})->middleware('auth:sanctum');\n\nRoute::middleware(['throttle:120,1'])->prefix('v1')->group(function (): void {\n    Route::get('products', [ProductController::class, 'index']);\n    Route::get('products/{product}/reviews', [ReviewController::class, 'forProduct']);\n    Route::get('products/{product}', [ProductController::class, 'show']);\n\n    Route::get('coupons', [CouponController::class, 'index']);\n    Route::get('coupons/{code}/preview', [CouponController::class, 'preview']);\n\n    Route::get('shipping-zones', [ShippingZoneController::class, 'index']);\n\n    Route::post('build/validate', [BuildCompatibilityController::class, 'validateBuild"
+        },
+        {
+          "file_path": "/Users/ziet/WorkSpace/ziet's project/testing/backend/tests/Feature/AuthApiTest.php",
+          "reason": "keyword:POST, keyword:/auth/register, keyword:App, keyword:register, keyword:auth",
+          "score": 30,
+          "snippet": "lass AuthApiTest extends TestCase\n{\n    use RefreshDatabase;\n\n    public function test_register_returns_token_and_user(): void\n    {\n        $response = $this->postJson('/api/auth/register', [\n            'name' => 'Test User',\n            'email' => 'test@example.com',\n            'password' => 'password123',\n            'password_confirmation' => 'password123',\n        ]);\n\n        $response->assertCreated()\n            ->assertJsonStructure([\n                'message',\n                'token',\n                'user' => ['id', 'name', 'email'],\n            ]);\n\n        $this->assertDatabaseHas('users', [\n            'email' => 'test@example.com',\n            'name' => 'Test User',\n            'role' => User::ROLE_CUSTOMER,\n        ]);\n    }\n\n    public function test_register_validates_required_fields(): void\n    {\n        $response = $this->postJson('/api/auth/register', []);\n\n        $response->assertUnprocessable()\n            ->assertJsonValidationErrors(['name', 'email', 'password']);\n    }\n\n    public function test_login_returns_token_for_valid_credentials(): void\n    {\n        User::factory()->create([\n            'email' => 'test@example.com',\n            'password' => 'pa"
+        },
+        {
+          "file_path": "/Users/ziet/WorkSpace/ziet's project/testing/frontend/src/router/index.js",
+          "reason": "frontend keyword:auth, frontend keyword:register",
+          "score": 12,
+          "snippet": "import { createRouter, createWebHistory } from 'vue-router'\nimport { useAuthStore } from '@/stores/authStore'\nimport Home from '../views/Home.vue'\n\nconst router = createRouter({\n  history: createWebHistory(import.meta.env.BASE_URL),\n  routes: [\n    { path: '/', name: 'home', component: Home },\n    { path: '/builder', name: 'builder', component: () => import('../views/PcBuilder.vue') },\n    { path: '/products', name: 'products', component: () => import('../views/ProductList.vue') },\n    { path: '/products/:id', name: 'product-detail', component: () => import('../views/ProductDetail.vue') },\n    { path: '/cart', name: 'cart', component: () => import('../views/Cart.vue') },\n    { path: '/login', name: 'login', component: () => import('../views/Login.vue') },\n    { path: '/register', name: 'register', component: () => import('../views/Register.vue') },\n    { path: '/checkout', name: 'checkout', component: () => import('../views/Checkout.vue') },\n    { path: '/order-success/:id', name: 'order-success', component: () => import('../views/OrderSuccess.vue') },\n    { \n      path: '/profile', \n      name: 'profile', \n      component: () => import('../views/Profile.vue'),\n      meta: { requir"
+        }
+      ],
+      "raw_model_output": null
+    },
+    {
+      "api_id": "post_auth_login",
+      "endpoint": "/auth/login",
+      "method": "POST",
+      "testcases": [
+        {
+          "name": "POST /auth/login returns success",
+          "description": "Happy path generated without an external model.",
+          "request": {
+            "headers": {
+              "Accept": "application/json"
+            },
+            "query": {},
+            "path_params": {},
+            "body": {}
+          },
+          "expected": {
+            "status": 201,
+            "body_contains": [],
+            "notes": "Update with concrete assertions after connecting an LLM."
+          }
+        }
+      ],
+      "retrieved_context": [
+        {
+          "file_path": "/Users/ziet/WorkSpace/ziet's project/testing/backend/app/Http/Controllers/AuthController.php",
+          "reason": "controller action",
+          "score": 100,
+          "snippet": "oken = $user->createToken('auth-token')->plainTextToken;\n\n        return response()->json([\n            'message' => 'Registered successfully.',\n            'token' => $token,\n            'user' => $user,\n        ], 201);\n    }\n\n    public function login(Request $request): JsonResponse\n    {\n        $validated = $request->validate([\n            'email' => ['required', 'email'],\n            'password' => ['required', 'string'],\n        ]);\n\n        $user = User::where('email', $validated['email'])->first();\n\n        if (! $user || ! Hash::check($validated['password'], $user->password)) {\n            return response()->json([\n                'message' => 'Invalid credentials.',\n            ], 401);\n        }\n\n        $token = $user->createToken('auth-token')->plainTextToken;\n\n        return response()->json([\n            'message' => 'Logged in successfully.',\n            'token' => $token,\n            'user' => $user,\n        ]);\n    }\n\n    public function me(Request $request): JsonResponse\n    {\n        return response()->json($request->user());\n    }\n\n    public function logout(Request $request): JsonResponse\n    {\n        $request->user()->currentAccessToken()?->delete();\n\n      ..."
+        },
+        {
+          "file_path": "/Users/ziet/WorkSpace/ziet's project/testing/frontend/src/main.js",
+          "reason": "frontend api path match, frontend keyword:auth, frontend keyword:login, frontend keyword:app",
+          "score": 98,
+          "snippet": "response?.status === 401) {\n      const authStore = useAuthStore(pinia)\n      const requestUrl = String(error?.config?.url || '')\n      const isAuthEndpoint = requestUrl.includes('/api/auth/login')\n        || requestUrl.includes('/api/auth/register')\n        || requestUrl.includes('/api/auth/logout')\n\n      if (!isAuthEndpoint && authStore.token && !isHandlingUnauthorized) {\n        isHandlingUnauthorized = true\n        authStore.clearSession()\n\n        if (router.currentRoute.value.name !== 'login') {\n          await router.push({ name: 'login' })\n        }\n\n        isHandlingUnauthorized = false\n      }\n    } else {\n      toastStore.error(extractErrorMessage(error))\n    }\n\n    return Promise.reject(error)\n  }\n)\n\napp.config.errorHandler = (error, instance, info) => {\n  const toastStore = useToastStore(pinia)\n  toastStore.error('Ứng dụng gặp lỗi. Vui lòng tải lại trang.')\n  console.error('Vue error:', error, info, instance)\n}\n\nwindow.addEventListener('unhandledrejection', (event) => {\n  const toastStore = useToastStore(pinia)\n  toastStore.error('Tác vụ thất bại. Vui lòng thử lại.')\n  console.error('Unhandled promise rejection:', event.reason)\n})\n\napp.use(pinia)\napp.use(router)\n\napp"
+        },
+        {
+          "file_path": "/Users/ziet/WorkSpace/ziet's project/testing/frontend/src/stores/authStore.js",
+          "reason": "frontend api path match, frontend keyword:auth, frontend keyword:login, frontend keyword:app",
+          "score": 98,
+          "snippet": "moveItem('auth_token')\n      this.applyAuthHeader(null)\n    },\n\n    async login(email, password) {\n      this.loading = true\n      try {\n        const response = await axios.post('/api/auth/login', { email, password })\n        this.token = response.data.token\n        localStorage.setItem('auth_token', this.token)\n        this.applyAuthHeader(this.token)\n        await this.fetchUser()\n        return true\n      } catch (err) {\n        console.error('Lỗi đăng nhập:', err)\n        return false\n      } finally {\n        this.loading = false\n      }\n    },\n\n    async register(payload) {\n      this.loading = true\n      try {\n        const response = await axios.post('/api/auth/register', payload)\n        const token = response?.data?.token\n\n        if (!token) {\n          return { success: false, message: 'Đăng ký thành công nhưng không nhận được token.' }\n        }\n\n        this.token = token\n        localStorage.setItem('auth_token', this.token)\n        this.applyAuthHeader(this.token)\n\n        if (response?.data?.user) {\n          this.user = response.data.user\n        } else {\n          await this.fetchUser()\n        }\n\n        return { success: true }\n      } catch (err) {\n        co"
+        },
+        {
+          "file_path": "/Users/ziet/WorkSpace/ziet's project/testing/backend/routes/api.php",
+          "reason": "controller reference, keyword:POST, keyword:App, keyword:Http, keyword:Controllers, keyword:AuthController, keyword:login, keyword:auth",
+          "score": 60,
+          "snippet": "App\\Http\\Controllers\\AuthController;\nuse Illuminate\\Http\\Request;\nuse Illuminate\\Support\\Facades\\Route;\n\nRoute::prefix('auth')->group(function () {\n    Route::post('/register', [AuthController::class, 'register']);\n    Route::post('/login', [AuthController::class, 'login']);\n\n    Route::middleware('auth:sanctum')->group(function () {\n        Route::get('/me', [AuthController::class, 'me']);\n        Route::post('/logout', [AuthController::class, 'logout']);\n    });\n});\n\nRoute::get('/user', function (Request $request) {\n    return $request->user();\n})->middleware('auth:sanctum');\n\nRoute::middleware(['throttle:120,1'])->prefix('v1')->group(function (): void {\n    Route::get('products', [ProductController::class, 'index']);\n    Route::get('products/{product}/reviews', [ReviewController::class, 'forProduct']);\n    Route::get('products/{product}', [ProductController::class, 'show']);\n\n    Route::get('coupons', [CouponController::class, 'index']);\n    Route::get('coupons/{code}/preview', [CouponController::class, 'preview']);\n\n    Route::get('shipping-zones', [ShippingZoneController::class, 'index']);\n\n    Route::post('build/validate', [BuildCompatibilityController::class, 'validateBuild"
+        },
+        {
+          "file_path": "/Users/ziet/WorkSpace/ziet's project/testing/backend/tests/Feature/AuthApiTest.php",
+          "reason": "keyword:POST, keyword:/auth/login, keyword:App, keyword:login, keyword:auth",
+          "score": 30,
+          "snippet": "lass AuthApiTest extends TestCase\n{\n    use RefreshDatabase;\n\n    public function test_register_returns_token_and_user(): void\n    {\n        $response = $this->postJson('/api/auth/register', [\n            'name' => 'Test User',\n            'email' => 'test@example.com',\n            'password' => 'password123',\n            'password_confirmation' => 'password123',\n        ]);\n\n        $response->assertCreated()\n            ->assertJsonStructure([\n                'message',\n                'token',\n                'user' => ['id', 'name', 'email'],\n            ]);\n\n        $this->assertDatabaseHas('users', [\n            'email' => 'test@example.com',\n            'name' => 'Test User',\n            'role' => User::ROLE_CUSTOMER,\n        ]);\n    }\n\n    public function test_register_validates_required_fields(): void\n    {\n        $response = $this->postJson('/api/auth/register', []);\n\n        $response->assertUnprocessable()\n            ->assertJsonValidationErrors(['name', 'email', 'password']);\n    }\n\n    public function test_login_returns_token_for_valid_credentials(): void\n    {\n        User::factory()->create([\n            'email' => 'test@example.com',\n            'password' => 'pa"
+        },
+        {
+          "file_path": "/Users/ziet/WorkSpace/ziet's project/testing/backend/storage/framework/views/19d1ca22cd8db231f88e0685e9c3a20e.php",
+          "reason": "keyword:App, keyword:Http, keyword:login, keyword:auth",
+          "score": 25,
+          "snippet": "<!DOCTYPE html>\n<html lang=\"<?php echo e(str_replace('_', '-', app()->getLocale())); ?>\">\n    <head>\n        <meta charset=\"utf-8\">\n        <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n\n        <title><?php echo e(config('app.name', 'Laravel')); ?></title>\n\n        <!-- Fonts -->\n        <link rel=\"preconnect\" href=\"https://fonts.bunny.net\">\n        <link href=\"https://fonts.bunny.net/css?family=instrument-sans:400,500,600\" rel=\"stylesheet\" />\n\n        <!-- Styles / Scripts -->\n        <?php if(file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot'))): ?>\n            <?php echo app('Illuminate\\Foundation\\Vite')(['resources/css/app.css', 'resources/js/app.js']); ?>\n        <?php else: ?>\n            <style>\n                /*! tailwindcss v4.0.7 | MIT License | https://tailwindcss.com */@layer theme{:root,:host{--font-sans:'Instrument Sans',ui-sans-serif,system-ui,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\",\"Segoe UI Symbol\",\"Noto Color Emoji\";--font-serif:ui-serif,Georgia,Cambria,\"Times New Roman\",Times,serif;--font-mono:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,\"Liberation Mono\",\"Courier New\",monospace;--color-red-50:ok"
+        },
+        {
+          "file_path": "/Users/ziet/WorkSpace/ziet's project/testing/frontend/src/App.vue",
+          "reason": "frontend keyword:auth, frontend keyword:login, frontend keyword:app",
+          "score": 18,
+          "snippet": "rView, RouterLink, useRouter } from \"vue-router\";\nimport { ShoppingCart, Cpu, User, LogOut } from \"lucide-vue-next\";\nimport { useCartStore } from \"@/stores/cartStore\";\nimport { useAuthStore } from \"@/stores/authStore\";\nimport ToastContainer from \"@/components/ToastContainer.vue\";\n\nconst cartStore = useCartStore();\nconst authStore = useAuthStore();\nconst router = useRouter();\n\nconst handleLogout = async () => {\n  await authStore.logout();\n  if (router.currentRoute.value.name !== \"home\") {\n    await router.push({ name: \"home\" });\n  }\n};\n\nonMounted(() => {\n  cartStore.fetchCart();\n  authStore.applyAuthHeader();\n  authStore.fetchUser();\n});\n</script>\n\n<template>\n  <nav class=\"glass-panel main-nav\">\n    <div class=\"nav-logo\">\n      <RouterLink to=\"/\" class=\"logo-link\">\n        <div class=\"logo-icon\">\n          <Cpu :size=\"20\" color=\"white\" />\n        </div>\n        <h1 class=\"gradient-text logo-text\">ZIET.PC</h1>\n      </RouterLink>\n    </div>\n\n    <div class=\"nav-links\">\n      <RouterLink to=\"/\" class=\"nav-link\">Home</RouterLink>\n      <RouterLink to=\"/builder\" class=\"nav-link\">PC Builder</RouterLink>\n      <RouterLink to=\"/products\" class=\"nav-link\">Products</RouterLink>\n      <Router"
+        }
+      ],
+      "raw_model_output": null
+    },
+    {
+      "api_id": "get_auth_me",
+      "endpoint": "/auth/me",
+      "method": "GET",
+      "testcases": [
+        {
+          "name": "GET /auth/me returns success",
+          "description": "Happy path generated without an external model.",
+          "request": {
+            "headers": {
+              "Accept": "application/json"
+            },
+            "query": {},
+            "path_params": {},
+            "body": {}
+          },
+          "expected": {
+            "status": 200,
+            "body_contains": [],
+            "notes": "Update with concrete assertions after connecting an LLM."
+          }
+        },
+        {
+          "name": "GET /auth/me rejects unauthenticated requests",
+          "description": "Guard middleware suggests authentication is required.",
+          "request": {
+            "headers": {
+              "Accept": "application/json"
+            },
+            "query": {},
+            "path_params": {},
+            "body": {}
+          },
+          "expected": {
+            "status": 401,
+            "body_contains": [],
+            "notes": "Verify exact framework response shape."
+          }
+        }
+      ],
+      "retrieved_context": [
+        {
+          "file_path": "/Users/ziet/WorkSpace/ziet's project/testing/backend/app/Http/Controllers/AuthController.php",
+          "reason": "controller action",
+          "score": 100,
+          "snippet": "$token = $user->createToken('auth-token')->plainTextToken;\n\n        return response()->json([\n            'message' => 'Logged in successfully.',\n            'token' => $token,\n            'user' => $user,\n        ]);\n    }\n\n    public function me(Request $request): JsonResponse\n    {\n        return response()->json($request->user());\n    }\n\n    public function logout(Request $request): JsonResponse\n    {\n        $request->user()->currentAccessToken()?->delete();\n\n        return response()->json([\n            'message' => 'Logged out successfully.',\n        ]);\n    }\n}"
+        },
+        {
+          "file_path": "/Users/ziet/WorkSpace/ziet's project/testing/frontend/src/stores/authStore.js",
+          "reason": "frontend api path match, frontend keyword:auth, frontend keyword:me, frontend keyword:app",
+          "score": 98,
+          "snippet": ".loading = false\n      }\n    },\n\n    async fetchUser() {\n      if (!this.token) return\n      this.applyAuthHeader(this.token)\n      try {\n        const response = await axios.get('/api/auth/me')\n        this.user = response.data\n      } catch (err) {\n        this.clearSession()\n      }\n    },\n\n    async logout() {\n      if (this.token) {\n        try {\n          this.applyAuthHeader(this.token)\n          await axios.post('/api/auth/logout')\n        } catch (err) {\n          console.error('Lỗi đăng xuất:', err)\n        }\n      }\n\n      this.clearSession()\n    }\n  }\n})"
+        },
+        {
+          "file_path": "/Users/ziet/WorkSpace/ziet's project/testing/frontend/src/views/Profile.vue",
+          "reason": "frontend api path match, frontend keyword:auth, frontend keyword:me, frontend keyword:app",
+          "score": 98,
+          "snippet": "payload.password = accountForm.value.password;\n      payload.password_confirmation = accountForm.value.password_confirmation;\n    }\n\n    const response = await axios.patch(\"/api/auth/me\", payload);\n    auth.user = response.data;\n\n    accountForm.value.current_password = \"\";\n    accountForm.value.password = \"\";\n    accountForm.value.password_confirmation = \"\";\n    accountErrors.value = {};\n    toastStore.success(\"Đã cập nhật thông tin tài khoản.\");\n  } catch (err) {\n    const validation = err.response?.data?.errors;\n    if (validation && typeof validation === \"object\") {\n      accountErrors.value = {\n        ...accountErrors.value,\n        ...Object.fromEntries(\n          Object.entries(validation).map(([k, v]) => [\n            k,\n            Array.isArray(v) ? v[0] : v,\n          ]),\n        ),\n      };\n    }\n    toastStore.error(\n      err.response?.data?.message || \"Không cập nhật được tài khoản.\",\n    );\n  } finally {\n    accountSaving.value = false;\n  }\n};\n\nconst openOrderDetail = async (orderId) => {\n  orderDetailLoading.value = true;\n  try {\n    const response = await axios.get(`/api/v1/orders/${orderId}`);\n    selectedOrder.value = response.data;\n    cancelReason.valu"
+        },
+        {
+          "file_path": "/Users/ziet/WorkSpace/ziet's project/testing/backend/routes/api.php",
+          "reason": "controller reference, keyword:GET, keyword:App, keyword:Http, keyword:Controllers, keyword:AuthController, keyword:me, keyword:auth",
+          "score": 60,
+          "snippet": "r::class, 'register']);\n    Route::post('/login', [AuthController::class, 'login']);\n\n    Route::middleware('auth:sanctum')->group(function () {\n        Route::get('/me', [AuthController::class, 'me']);\n        Route::post('/logout', [AuthController::class, 'logout']);\n    });\n});\n\nRoute::get('/user', function (Request $request) {\n    return $request->user();\n})->middleware('auth:sanctum');\n\nRoute::middleware(['throttle:120,1'])->prefix('v1')->group(function (): void {\n    Route::get('products', [ProductController::class, 'index']);\n    Route::get('products/{product}/reviews', [ReviewController::class, 'forProduct']);\n    Route::get('products/{product}', [ProductController::class, 'show']);\n\n    Route::get('coupons', [CouponController::class, 'index']);\n    Route::get('coupons/{code}/preview', [CouponController::class, 'preview']);\n\n    Route::get('shipping-zones', [ShippingZoneController::class, 'index']);\n\n    Route::post('build/validate', [BuildCompatibilityController::class, 'validateBuild']);\n\n    Route::post('newsletter/subscribe', [NewsletterController::class, 'subscribe']);\n    Route::post('newsletter/unsubscribe', [NewsletterController::class, 'unsubscribe']);\n\n    Route::"
+        },
+        {
+          "file_path": "/Users/ziet/WorkSpace/ziet's project/testing/backend/bootstrap/app.php",
+          "reason": "keyword:GET, keyword:App, keyword:Http, keyword:me, keyword:auth",
+          "score": 30,
+          "snippet": "'message' => 'Tài nguyên không tồn tại.'\n                ], 404);\n            }\n\n            $status = $e instanceof HttpExceptionInterface ? $e->getStatusCode() : 500;\n            $message = $status >= 500 ? 'Internal Server Error.' : ($e->getMessage() ?: 'Request failed.');\n\n            return response()->json([\n                'message' => $message,\n            ], $status);\n        });\n    })->create();"
+        },
+        {
+          "file_path": "/Users/ziet/WorkSpace/ziet's project/testing/backend/storage/framework/views/19d1ca22cd8db231f88e0685e9c3a20e.php",
+          "reason": "keyword:GET, keyword:App, keyword:Http, keyword:me, keyword:auth",
+          "score": 30,
+          "snippet": "<!DOCTYPE html>\n<html lang=\"<?php echo e(str_replace('_', '-', app()->getLocale())); ?>\">\n    <head>\n        <meta charset=\"utf-8\">\n        <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n\n        <title><?php echo e(config('app.name', 'Laravel')); ?></title>\n\n        <!-- Fonts -->\n        <link rel=\"preconnect\" href=\"https://fonts.bunny.net\">\n        <link href=\"https://fonts.bunny.net/css?family=instrument-sans:400,500,600\" rel=\"stylesheet\" />\n\n        <!-- Styles / Scripts -->\n        <?php if(file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot'))): ?>\n            <?php echo app('Illuminate\\Foundation\\Vite')(['resources/css/app.css', 'resources/js/app.js']); ?>\n        <?php else: ?>\n            <style>\n                /*! tailwindcss v4.0.7 | MIT License | https://tailwindcss.com */@layer theme{:root,:host{--font-sans:'Instrument Sans',ui-sans-serif,system-ui,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\",\"Segoe UI Symbol\",\"Noto Color Emoji\";--font-serif:ui-serif,Georgia,Cambria,\"Times New Roman\",Times,serif;--font-mono:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,\"Liberation Mono\",\"Courier New\",monospace;--color-red-50:ok"
+        },
+        {
+          "file_path": "/Users/ziet/WorkSpace/ziet's project/testing/frontend/src/main.js",
+          "reason": "frontend keyword:auth, frontend keyword:me, frontend keyword:app",
+          "score": 18,
+          "snippet": "import { createApp } from 'vue'\nimport { createPinia } from 'pinia'\nimport axios from 'axios'\nimport App from './App.vue'\nimport router from './router'\nimport { useAuthStore } from './stores/authStore'\nimport { useToastStore } from './stores/toastStore'\nimport './index.css'\n\nconst app = createApp(App)\nconst pinia = createPinia()\n\nlet isHandlingUnauthorized = false\n\nfunction extractErrorMessage(error) {\n  const responseData = error?.response?.data\n\n  if (typeof responseData?.message === 'string' && responseData.message.trim() !== '') {\n    return responseData.message\n  }\n\n  if (responseData?.errors && typeof responseData.errors === 'object') {\n    const firstError = Object.values(responseData.errors)?.[0]\n    if (Array.isArray(firstError) && firstError.length > 0) {\n      return String(firstError[0])\n    }\n  }\n\n  if (typeof error?.message === 'string' && error.message.trim() !== '') {\n    return error.message\n  }\n\n  return 'Có lỗi xảy ra. Vui lòng thử lại.'\n}\n\naxios.interceptors.response.use(\n  (response) => response,\n  async (error) => {\n    const toastStore = useToastStore(pinia)\n\n    if (error?.response?.status === 401) {\n      const authStore = useAuthStore(pinia)\n      const re"
+        }
+      ],
+      "raw_model_output": null
+    }
+  ]
+}
