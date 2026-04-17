@@ -1,87 +1,83 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import axios from "axios";
-import { Eye, CheckCircle } from "lucide-vue-next";
+import {
+  Eye,
+  RefreshCcw,
+  Box,
+  Truck,
+  CheckCircle2,
+  Save,
+  X,
+  Wallet,
+} from "lucide-vue-next";
+import { useToastStore } from "@/stores/toastStore";
+
+const toastStore = useToastStore();
 
 const orders = ref([]);
 const loading = ref(true);
+const loadError = ref("");
 const selectedOrder = ref(null);
 const isUpdating = ref(false);
 const isSavingFulfillment = ref(false);
 
-const fetchOrders = async () => {
-  loading.value = true;
-  try {
-    const response = await axios.get("/api/v1/admin/orders");
-    orders.value = response.data.data || [];
-  } catch (err) {
-    console.error("Lỗi tải đơn hàng:", err);
-  } finally {
-    loading.value = false;
-  }
+const statusLabelMap = {
+  pending: "Chờ thanh toán",
+  paid: "Đã thanh toán",
+  packed: "Đã xử lý",
+  shipped: "Đang giao",
+  delivered: "Đã giao",
+  cancelled: "Đã hủy",
 };
 
-const updateStatus = async (orderId, status) => {
-  isUpdating.value = true;
-  try {
-    await axios.patch(`/api/v1/admin/orders/${orderId}/status`, { status });
-    await fetchOrders();
-    selectedOrder.value = null;
-  } catch (err) {
-    alert(
-      "Không thể cập nhật trạng thái: " +
-        (err.response?.data?.message || err.message),
-    );
-  } finally {
-    isUpdating.value = false;
-  }
+const allowedTransitions = {
+  pending: ["paid", "cancelled"],
+  paid: ["packed", "cancelled"],
+  packed: ["shipped"],
+  shipped: ["delivered"],
+  delivered: [],
+  cancelled: [],
 };
 
-const saveFulfillment = async () => {
-  if (!selectedOrder.value) return;
+const parseApiError = (err, fallback) => {
+  const message = err?.response?.data?.message;
+  const errors = err?.response?.data?.errors;
+  if (typeof message === "string" && message.trim() !== "") return message;
+  if (errors && typeof errors === "object") {
+    const first = Object.values(errors)[0];
+    if (Array.isArray(first) && first[0]) return String(first[0]);
+  }
+  return fallback;
+};
 
-  isSavingFulfillment.value = true;
+const orderItems = (order) => order?.order_items || order?.orderItems || [];
+
+const normalizeOrder = (order) => ({
+  ...order,
+  order_items: orderItems(order),
+});
+
+const cloneOrder = (order) => {
+  const normalized = normalizeOrder(order);
+
   try {
-    const payload = {
-      tracking_number: selectedOrder.value.tracking_number || null,
-      tracking_carrier: selectedOrder.value.tracking_carrier || null,
-      internal_note: selectedOrder.value.internal_note || null,
-      items: (selectedOrder.value.order_items || []).map((item) => ({
-        id: item.id,
-        serial_number: item.serial_number || null,
+    return JSON.parse(JSON.stringify(normalized));
+  } catch (e) {
+    return {
+      ...normalized,
+      user: normalized.user ? { ...normalized.user } : null,
+      shipping_address: normalized.shipping_address
+        ? { ...normalized.shipping_address }
+        : null,
+      shipping_address_snapshot: normalized.shipping_address_snapshot
+        ? { ...normalized.shipping_address_snapshot }
+        : null,
+      order_items: orderItems(normalized).map((item) => ({
+        ...item,
+        product: item.product ? { ...item.product } : null,
       })),
     };
-
-    const response = await axios.patch(
-      `/api/v1/admin/orders/${selectedOrder.value.id}/fulfillment`,
-      payload,
-    );
-    selectedOrder.value = response.data;
-    await fetchOrders();
-  } catch (err) {
-    alert(
-      "Không thể cập nhật fulfillment: " +
-        (err.response?.data?.message || err.message),
-    );
-  } finally {
-    isSavingFulfillment.value = false;
-  }
-};
-
-const getStatusClass = (status) => {
-  switch (status) {
-    case "paid":
-      return "status-paid";
-    case "processing":
-      return "status-processing";
-    case "shipped":
-      return "status-shipped";
-    case "delivered":
-      return "status-delivered";
-    case "cancelled":
-      return "status-cancelled";
-    default:
-      return "status-pending";
   }
 };
 
@@ -89,7 +85,125 @@ const formatPrice = (cents) => {
   return new Intl.NumberFormat("vi-VN", {
     style: "currency",
     currency: "VND",
-  }).format(cents || 0);
+  }).format(Number(cents || 0));
+};
+
+const formatDateTime = (value) => {
+  if (!value) return "-";
+  return new Date(value).toLocaleString("vi-VN");
+};
+
+const getStatusClass = (status) => `status-${status || "pending"}`;
+
+const statusLabel = (status) => statusLabelMap[status] || status || "Unknown";
+
+const canTransition = (fromStatus, toStatus) => {
+  return (allowedTransitions[fromStatus] || []).includes(toStatus);
+};
+
+const openOrder = (order) => {
+  selectedOrder.value = cloneOrder(order);
+};
+
+const closeOrder = () => {
+  if (isUpdating.value || isSavingFulfillment.value) return;
+  selectedOrder.value = null;
+};
+
+const fetchOrders = async () => {
+  loading.value = true;
+  loadError.value = "";
+  try {
+    const response = await axios.get("/api/v1/admin/orders");
+    orders.value = (response.data.data || []).map(normalizeOrder);
+  } catch (err) {
+    loadError.value = parseApiError(err, "Không thể tải danh sách đơn hàng.");
+    toastStore.error(loadError.value);
+  } finally {
+    loading.value = false;
+  }
+};
+
+const syncOrderInList = (updatedOrder) => {
+  const normalized = normalizeOrder(updatedOrder);
+  const idx = orders.value.findIndex((row) => row.id === normalized.id);
+  if (idx >= 0) {
+    orders.value[idx] = normalized;
+  }
+  if (selectedOrder.value?.id === normalized.id) {
+    selectedOrder.value = cloneOrder(normalized);
+  }
+};
+
+const buildFulfillmentPayload = (order) => ({
+  tracking_number: order.tracking_number || null,
+  tracking_carrier: order.tracking_carrier || null,
+  internal_note: order.internal_note || null,
+  items: orderItems(order).map((item) => ({
+    id: item.id,
+    serial_number: item.serial_number || null,
+  })),
+});
+
+const updateStatus = async (orderId, status) => {
+  isUpdating.value = true;
+  try {
+    const response = await axios.patch(
+      `/api/v1/admin/orders/${orderId}/status`,
+      {
+        status,
+      },
+    );
+    syncOrderInList(response.data);
+    toastStore.success("Đã cập nhật trạng thái đơn hàng.");
+  } catch (err) {
+    toastStore.error(parseApiError(err, "Không thể cập nhật trạng thái."));
+  } finally {
+    isUpdating.value = false;
+  }
+};
+
+const triggerTransition = async (toStatus) => {
+  if (!selectedOrder.value) return;
+
+  if (toStatus === "shipped") {
+    const tracking = String(selectedOrder.value.tracking_number || "").trim();
+    if (!tracking) {
+      toastStore.error("Cần nhập mã vận đơn trước khi giao hàng.");
+      return;
+    }
+  }
+
+  // Persist fulfillment draft before changing status to prevent losing local edits.
+  const saved = await saveFulfillment({ silentSuccess: true });
+  if (!saved) return;
+
+  await updateStatus(selectedOrder.value.id, toStatus);
+};
+
+const saveFulfillment = async ({ silentSuccess = false } = {}) => {
+  if (!selectedOrder.value) return false;
+
+  isSavingFulfillment.value = true;
+  try {
+    const payload = buildFulfillmentPayload(selectedOrder.value);
+
+    const response = await axios.patch(
+      `/api/v1/admin/orders/${selectedOrder.value.id}/fulfillment`,
+      payload,
+    );
+
+    syncOrderInList(response.data);
+    if (!silentSuccess) {
+      toastStore.success("Đã lưu thông tin xử lý đơn.");
+    }
+    return true;
+  } catch (err) {
+    toastStore.error(parseApiError(err, "Không thể lưu thông tin xử lý."));
+    return false;
+  } finally {
+    isSavingFulfillment.value = false;
+  }
 };
 
 onMounted(fetchOrders);
@@ -97,30 +211,21 @@ onMounted(fetchOrders);
 
 <template>
   <div class="order-manager">
-    <div
-      style="
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 32px;
-      "
-    >
-      <h2 style="font-size: 1.75rem; font-weight: 700">
-        Quản lý <span class="gradient-text">Đơn hàng</span>
-      </h2>
-      <button
-        @click="fetchOrders"
-        class="btn"
-        style="
-          border: 1px solid var(--border-color);
-          color: var(--text-primary);
-        "
-      >
+    <header class="page-head">
+      <div>
+        <h2>Quản lý <span class="gradient-text">Đơn hàng</span></h2>
+        <p>Theo dõi và xử lý đơn theo đúng luồng vận hành.</p>
+      </div>
+      <button class="refresh-btn" @click="fetchOrders" :disabled="loading">
+        <RefreshCcw :size="16" />
         Làm mới
       </button>
-    </div>
+    </header>
 
     <div v-if="loading" class="state-msg">Đang tải đơn hàng...</div>
+    <div v-else-if="loadError" class="state-msg state-error">
+      {{ loadError }}
+    </div>
 
     <div v-else class="orders-table-container glass-panel">
       <table class="orders-table">
@@ -131,40 +236,46 @@ onMounted(fetchOrders);
             <th>Ngày đặt</th>
             <th>Tổng tiền</th>
             <th>Trạng thái</th>
-            <th>Thao tác</th>
+            <th>Hành động</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="order in orders" :key="order.id">
             <td>#{{ order.id }}</td>
             <td>
-              <div style="font-weight: 600">
-                {{ order.user?.name || "Guest" }}
-              </div>
-              <div style="font-size: 0.8rem; color: var(--text-secondary)">
-                {{ order.user?.email }}
-              </div>
+              <div class="customer-name">{{ order.user?.name || "Guest" }}</div>
+              <div class="customer-email">{{ order.user?.email || "-" }}</div>
             </td>
-            <td>
-              {{ new Date(order.created_at).toLocaleDateString("vi-VN") }}
-            </td>
+            <td>{{ formatDateTime(order.created_at) }}</td>
             <td>{{ formatPrice(order.total_cents) }}</td>
             <td>
               <span class="status-badge" :class="getStatusClass(order.status)">
-                {{ order.status }}
+                {{ statusLabel(order.status) }}
               </span>
             </td>
             <td>
-              <div style="display: flex; gap: 12px">
-                <button class="action-btn" @click="selectedOrder = order">
-                  <Eye :size="18" />
+              <div class="table-actions">
+                <button
+                  class="icon-btn"
+                  @click="openOrder(order)"
+                  title="Xem chi tiết"
+                >
+                  <Eye :size="17" />
                 </button>
                 <button
-                  class="action-btn"
-                  v-if="order.status === 'pending'"
-                  @click="updateStatus(order.id, 'paid')"
+                  v-if="canTransition(order.status, 'packed')"
+                  class="mini-btn"
+                  @click="updateStatus(order.id, 'packed')"
+                  :disabled="isUpdating"
                 >
-                  <CheckCircle :size="18" />
+                  Xử lý
+                </button>
+                <button
+                  v-if="canTransition(order.status, 'shipped')"
+                  class="mini-btn mini-btn-primary"
+                  @click="openOrder(order)"
+                >
+                  Giao hàng
                 </button>
               </div>
             </td>
@@ -173,270 +284,621 @@ onMounted(fetchOrders);
       </table>
     </div>
 
-    <!-- Modal Chi tiết -->
-    <div
-      v-if="selectedOrder"
-      class="modal-overlay"
-      @click.self="selectedOrder = null"
-    >
-      <div class="modal-content glass-panel">
-        <header class="modal-header">
-          <h3>Chi tiết đơn hàng #{{ selectedOrder.id }}</h3>
-          <button @click="selectedOrder = null" class="close-btn">X</button>
-        </header>
-
-        <div class="modal-body">
-          <section class="order-details-grid">
+    <Teleport to="body">
+      <div v-if="selectedOrder" class="modal-overlay" @click.self="closeOrder">
+        <div class="modal-content glass-panel">
+          <header class="modal-header">
             <div>
-              <label>Khách hàng:</label>
-              <div class="v">{{ selectedOrder.user?.name }}</div>
+              <h3>Đơn hàng #{{ selectedOrder.id }}</h3>
+              <p>{{ formatDateTime(selectedOrder.created_at) }}</p>
             </div>
-            <div>
-              <label>Số điện thoại:</label>
-              <div class="v">
+            <div class="modal-head-right">
+              <span
+                class="status-badge"
+                :class="getStatusClass(selectedOrder.status)"
+              >
+                {{ statusLabel(selectedOrder.status) }}
+              </span>
+              <button class="close-btn" @click="closeOrder">
+                <X :size="16" />
+              </button>
+            </div>
+          </header>
+
+          <section class="summary-grid">
+            <article class="summary-card">
+              <label>Khách hàng</label>
+              <div>{{ selectedOrder.user?.name || "Guest" }}</div>
+              <small>{{ selectedOrder.user?.email || "-" }}</small>
+            </article>
+            <article class="summary-card">
+              <label>Liên hệ giao hàng</label>
+              <div>
                 {{
                   selectedOrder.shipping_address?.phone ||
                   selectedOrder.shipping_address_snapshot?.phone ||
-                  "N/A"
+                  "-"
                 }}
+              </div>
+              <small>
+                {{
+                  selectedOrder.shipping_address_snapshot?.line1 ||
+                  selectedOrder.shipping_address?.line1 ||
+                  "Không có địa chỉ"
+                }}
+              </small>
+            </article>
+            <article class="summary-card summary-card-money">
+              <label>Tổng thanh toán</label>
+              <div>{{ formatPrice(selectedOrder.total_cents) }}</div>
+              <small>
+                <Wallet :size="14" />
+                Tạm tính {{ formatPrice(selectedOrder.subtotal_cents) }}
+              </small>
+            </article>
+          </section>
+
+          <section class="block">
+            <div class="block-title">Sản phẩm trong đơn</div>
+            <div class="order-items-list">
+              <div
+                v-for="item in orderItems(selectedOrder)"
+                :key="item.id"
+                class="item-row"
+              >
+                <div class="item-main">
+                  <div class="item-name">
+                    {{ item.name || item.product?.name || "Sản phẩm" }}
+                  </div>
+                  <div class="item-sub">SKU: {{ item.sku || "-" }}</div>
+                </div>
+                <div class="item-qty">x{{ item.quantity }}</div>
+                <div class="item-price">
+                  {{
+                    formatPrice(
+                      (item.quantity || 0) * (item.unit_price_cents || 0),
+                    )
+                  }}
+                </div>
               </div>
             </div>
           </section>
 
-          <h4 style="margin: 24px 0 12px">Sản phẩm</h4>
-          <div class="order-items-list">
-            <div
-              v-for="item in selectedOrder.order_items"
-              :key="item.id"
-              class="item-row"
-            >
-              <span class="qty">{{ item.quantity }}x</span>
-              <span class="n">{{ item.product?.name }}</span>
-              <span class="p">{{ formatPrice(item.unit_price_cents) }}</span>
-            </div>
-          </div>
-
-          <div class="status-actions">
-            <label>Fulfillment:</label>
-            <div class="fulfillment-grid">
+          <section class="block">
+            <div class="block-title">Thông tin xử lý và giao hàng</div>
+            <div class="form-grid">
               <input
                 v-model="selectedOrder.tracking_number"
                 class="f-input"
-                placeholder="Tracking number"
+                placeholder="Mã vận đơn"
               />
               <input
                 v-model="selectedOrder.tracking_carrier"
                 class="f-input"
-                placeholder="Carrier"
+                placeholder="Đơn vị vận chuyển"
               />
               <textarea
                 v-model="selectedOrder.internal_note"
                 class="f-input"
                 rows="2"
-                placeholder="Internal note"
+                placeholder="Ghi chú nội bộ"
               ></textarea>
             </div>
 
-            <h4 style="margin: 16px 0 8px">Serial theo từng item</h4>
-            <div
-              v-for="item in selectedOrder.order_items"
-              :key="`serial-${item.id}`"
-              class="serial-row"
-            >
-              <span>#{{ item.id }} - {{ item.product?.name || "Item" }}</span>
-              <input
-                v-model="item.serial_number"
-                class="f-input"
-                placeholder="Serial number"
-              />
+            <div class="serial-list">
+              <div class="serial-title">Serial theo item</div>
+              <div
+                v-for="item in orderItems(selectedOrder)"
+                :key="`serial-${item.id}`"
+                class="serial-row"
+              >
+                <span
+                  >#{{ item.id }} -
+                  {{ item.name || item.product?.name || "Item" }}</span
+                >
+                <input
+                  v-model="item.serial_number"
+                  class="f-input"
+                  placeholder="Serial number"
+                />
+              </div>
             </div>
+          </section>
 
+          <footer class="modal-footer">
             <button
-              class="btn btn-sm"
+              class="btn-outline"
               @click="saveFulfillment"
               :disabled="isSavingFulfillment"
             >
-              {{ isSavingFulfillment ? "Đang lưu..." : "Lưu fulfillment" }}
+              <Save :size="15" />
+              {{ isSavingFulfillment ? "Đang lưu..." : "Lưu thông tin" }}
             </button>
-          </div>
 
-          <div class="status-actions">
-            <label>Cập nhật trạng thái:</label>
-            <div style="display: flex; gap: 12px; margin-top: 12px">
+            <div class="status-action-group">
               <button
-                class="btn btn-sm"
-                @click="updateStatus(selectedOrder.id, 'processing')"
+                v-if="canTransition(selectedOrder.status, 'pending')"
+                class="btn-status"
                 :disabled="isUpdating"
+                @click="triggerTransition('pending')"
               >
-                Hành xử lý
+                Pending
               </button>
               <button
-                class="btn btn-sm btn-primary"
-                @click="updateStatus(selectedOrder.id, 'shipped')"
+                v-if="canTransition(selectedOrder.status, 'paid')"
+                class="btn-status"
                 :disabled="isUpdating"
+                @click="triggerTransition('paid')"
               >
+                <CheckCircle2 :size="15" />
+                Xác nhận đã thanh toán
+              </button>
+              <button
+                v-if="canTransition(selectedOrder.status, 'packed')"
+                class="btn-status"
+                :disabled="isUpdating"
+                @click="triggerTransition('packed')"
+              >
+                <Box :size="15" />
+                Xử lý đơn
+              </button>
+              <button
+                v-if="canTransition(selectedOrder.status, 'shipped')"
+                class="btn-status btn-status-primary"
+                :disabled="isUpdating"
+                @click="triggerTransition('shipped')"
+              >
+                <Truck :size="15" />
                 Giao hàng
               </button>
+              <button
+                v-if="canTransition(selectedOrder.status, 'delivered')"
+                class="btn-status"
+                :disabled="isUpdating"
+                @click="triggerTransition('delivered')"
+              >
+                Đã giao thành công
+              </button>
             </div>
-          </div>
+          </footer>
         </div>
       </div>
-    </div>
+    </Teleport>
   </div>
 </template>
 
 <style scoped>
+.page-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+.page-head h2 {
+  font-size: 1.75rem;
+  font-weight: 750;
+  margin: 0;
+}
+
+.page-head p {
+  margin: 8px 0 0;
+  color: var(--text-secondary);
+}
+
+.refresh-btn {
+  border: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--text-primary);
+  padding: 10px 14px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.refresh-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .orders-table-container {
   overflow-x: auto;
   padding: 0;
 }
+
 .orders-table {
   width: 100%;
   border-collapse: collapse;
 }
+
 .orders-table th,
 .orders-table td {
-  padding: 20px 24px;
+  padding: 18px 20px;
   text-align: left;
   border-bottom: 1px solid var(--border-color);
+  vertical-align: middle;
 }
+
 .orders-table th {
-  font-size: 0.85rem;
+  font-size: 0.78rem;
   color: var(--text-secondary);
   text-transform: uppercase;
-  font-weight: 700;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.customer-name {
+  font-weight: 650;
+}
+
+.customer-email {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
 }
 
 .status-badge {
   padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 0.75rem;
+  border-radius: 999px;
+  font-size: 0.74rem;
   font-weight: 700;
   text-transform: uppercase;
 }
+
 .status-pending {
-  background: rgba(234, 179, 8, 0.1);
-  color: #eab308;
-}
-.status-paid {
-  background: rgba(34, 197, 94, 0.1);
-  color: #22c55e;
-}
-.status-processing {
-  background: rgba(99, 102, 241, 0.1);
-  color: #6366f1;
-}
-.status-shipped {
-  background: rgba(168, 85, 247, 0.1);
-  color: #a855f7;
-}
-.status-delivered {
-  background: #22c55e;
-  color: white;
-}
-.status-cancelled {
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
+  background: rgba(234, 179, 8, 0.12);
+  color: #d97706;
 }
 
-.action-btn {
-  background: none;
-  border: none;
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: color 0.3s ease;
+.status-paid {
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
 }
-.action-btn:hover {
-  color: var(--accent-primary);
+
+.status-packed {
+  background: rgba(37, 99, 235, 0.11);
+  color: #2563eb;
+}
+
+.status-shipped {
+  background: rgba(14, 116, 144, 0.12);
+  color: #0e7490;
+}
+
+.status-delivered {
+  background: #16a34a;
+  color: #ffffff;
+}
+
+.status-cancelled {
+  background: rgba(239, 68, 68, 0.12);
+  color: #dc2626;
+}
+
+.table-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.icon-btn,
+.mini-btn {
+  border: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--text-primary);
+  cursor: pointer;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+.icon-btn {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mini-btn {
+  padding: 7px 11px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.mini-btn-primary {
+  background: rgba(37, 99, 235, 0.12);
+  color: #2563eb;
+  border-color: rgba(37, 99, 235, 0.32);
+}
+
+.icon-btn:hover,
+.mini-btn:hover {
+  transform: translateY(-1px);
 }
 
 .modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(4px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
+  inset: 0;
+  background: rgba(2, 6, 23, 0.36);
+  backdrop-filter: blur(6px);
+  display: grid;
+  place-items: center;
+  z-index: 1200;
+  padding: 24px;
 }
+
 .modal-content {
-  width: 90%;
-  max-width: 600px;
-  max-height: 85vh;
-  padding: 32px;
-  overflow-y: auto;
+  width: min(980px, 100%);
+  max-height: 90vh;
+  overflow: auto;
+  padding: 24px;
+  border-radius: 18px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.18);
 }
+
 .modal-header {
   display: flex;
+  align-items: flex-start;
   justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.modal-header p {
+  margin: 6px 0 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.modal-head-right {
+  display: flex;
   align-items: center;
-  margin-bottom: 32px;
+  gap: 10px;
+}
+
+.close-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: #ffffff;
+  color: var(--text-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.close-btn:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.summary-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 14px;
+  display: grid;
+  gap: 6px;
+  background: #ffffff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.summary-card label {
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.summary-card div {
+  font-weight: 650;
+}
+
+.summary-card small {
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.summary-card-money div {
+  font-size: 1.15rem;
+}
+
+.block {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 14px;
+  background: #ffffff;
+}
+
+.block-title {
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.order-items-list {
+  display: grid;
 }
 
 .item-row {
-  display: flex;
-  gap: 12px;
-  padding: 12px 0;
-  border-bottom: 1px solid var(--border-color);
-  font-size: 0.95rem;
-}
-.qty {
-  color: var(--accent-primary);
-  font-weight: 700;
-  width: 30px;
-}
-.n {
-  flex-grow: 1;
-}
-.p {
-  font-weight: 600;
-}
-
-.status-actions {
-  margin-top: 40px;
-  border-top: 1px solid var(--border-color);
-  padding-top: 24px;
-}
-.btn-sm {
-  padding: 8px 16px;
-  font-size: 0.85rem;
-  border: 1px solid var(--border-color);
-  background: none;
-  color: var(--text-primary);
-  cursor: pointer;
-  border-radius: 8px;
-}
-
-.fulfillment-grid {
   display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 14px;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px dashed #e2e8f0;
+}
+
+.item-row:last-child {
+  border-bottom: none;
+}
+
+.item-name {
+  font-weight: 620;
+}
+
+.item-sub {
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  margin-top: 4px;
+}
+
+.item-qty {
+  font-weight: 700;
+  color: #334155;
+}
+
+.item-price {
+  font-weight: 680;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 10px;
-  margin-top: 10px;
+}
+
+.form-grid textarea {
+  grid-column: span 2;
+}
+
+.f-input {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 9px;
+  background: #ffffff;
+  color: var(--text-primary);
+  padding: 10px;
+}
+
+.f-input:focus {
+  outline: none;
+  border-color: #64748b;
+  box-shadow: 0 0 0 3px rgba(100, 116, 139, 0.14);
+}
+
+.serial-list {
+  margin-top: 12px;
+}
+
+.serial-title {
+  font-size: 0.86rem;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
 }
 
 .serial-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(170px, 1fr) 1fr;
   gap: 10px;
   align-items: center;
   margin-bottom: 8px;
 }
 
-.f-input {
-  width: 100%;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  background: transparent;
+.modal-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.btn-outline,
+.btn-status {
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
   color: var(--text-primary);
-  padding: 8px 10px;
+  padding: 9px 12px;
+  font-weight: 620;
+  font-size: 0.86rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.btn-status-primary {
+  background: #0f172a;
+  border-color: #0f172a;
+  color: #ffffff;
+}
+
+.btn-outline:hover,
+.btn-status:hover {
+  border-color: #94a3b8;
+  background: #f8fafc;
+}
+
+.btn-status-primary:hover {
+  background: #1e293b;
+  border-color: #1e293b;
+}
+
+.btn-outline:disabled,
+.btn-status:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.status-action-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
 }
 
 .state-msg {
   text-align: center;
   padding: 80px;
   color: var(--text-secondary);
+}
+
+.state-error {
+  color: #ef4444;
+}
+
+@media (max-width: 960px) {
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-grid textarea {
+    grid-column: span 1;
+  }
+
+  .serial-row {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-content {
+    padding: 18px;
+  }
 }
 </style>

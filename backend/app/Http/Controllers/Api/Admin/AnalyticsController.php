@@ -43,7 +43,7 @@ class AnalyticsController extends Controller
     public function topProducts(Request $request): JsonResponse
     {
         $products = OrderItem::query()
-            ->select('product_id', DB::raw('SUM(quantity) as total_sold'), DB::raw('SUM(line_total_cents) as total_revenue'))
+            ->select('product_id', DB::raw('SUM(quantity) as total_sold'), DB::raw('SUM(quantity * unit_price_cents) as total_revenue'))
             ->with('product:id,name,image_url')
             ->groupBy('product_id')
             ->orderByDesc('total_sold')

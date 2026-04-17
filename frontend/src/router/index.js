@@ -11,6 +11,7 @@ const router = createRouter({
     { path: '/products/:id', name: 'product-detail', component: () => import('../views/ProductDetail.vue') },
     { path: '/cart', name: 'cart', component: () => import('../views/Cart.vue') },
     { path: '/login', name: 'login', component: () => import('../views/Login.vue') },
+    { path: '/register', name: 'register', component: () => import('../views/Register.vue') },
     { path: '/checkout', name: 'checkout', component: () => import('../views/Checkout.vue') },
     { path: '/order-success/:id', name: 'order-success', component: () => import('../views/OrderSuccess.vue') },
     { 
@@ -67,6 +68,11 @@ const router = createRouter({
           component: () => import('../views/admin/ProductsAdmin.vue')
         }
       ]
+    },
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'not-found',
+      component: () => import('../views/NotFound.vue')
     }
   ]
 })
@@ -79,7 +85,10 @@ router.beforeEach(async (to, from, next) => {
     await auth.fetchUser()
   }
 
-  if (to.meta.requiresStaff && (!auth.isLoggedIn || (auth.user.role !== 'admin' && auth.user.role !== 'staff'))) {
+  const userRole = auth.user?.role
+  const isStaffUser = userRole === 'admin' || userRole === 'staff'
+
+  if (to.meta.requiresStaff && (!auth.isLoggedIn || !isStaffUser)) {
     next({ name: 'home' })
   } else if (to.meta.requiresAuth && !auth.isLoggedIn) {
     next({ name: 'login' })

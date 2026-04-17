@@ -8,6 +8,8 @@ use App\Models\Order;
 use App\Services\Ecommerce\OrderTransitionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class OrderAdminController extends Controller
 {
@@ -19,7 +21,7 @@ class OrderAdminController extends Controller
     public function index(Request $request): JsonResponse
     {
         $orders = Order::query()
-            ->with(['orderItems.product', 'user', 'shippingAddress'])
+            ->with(['user', 'orderItems', 'shippingAddress'])
             ->orderByDesc('id')
             ->paginate(min((int) $request->query('per_page', 15), 100));
 
@@ -45,7 +47,7 @@ class OrderAdminController extends Controller
             $request->ip()
         );
 
-        return response()->json($order->load(['orderItems.product', 'statusEvents', 'shippingAddress', 'user']));
+        return response()->json($order->load(['user', 'shippingAddress', 'orderItems', 'statusEvents']));
     }
 
     public function updateFulfillment(Request $request, Order $order): JsonResponse
@@ -55,7 +57,7 @@ class OrderAdminController extends Controller
             'tracking_carrier' => ['sometimes', 'nullable', 'string', 'max:64'],
             'internal_note' => ['sometimes', 'nullable', 'string', 'max:5000'],
             'items' => ['sometimes', 'array'],
-            'items.*.id' => ['required_with:items', 'integer', 'exists:order_items,id'],
+            'items.*.id' => ['required_with:items', 'integer', 'distinct'],
             'items.*.serial_number' => ['nullable', 'string', 'max:128'],
         ]);
 
@@ -66,29 +68,36 @@ class OrderAdminController extends Controller
             }
         }
 
-        if ($payload !== []) {
-            $order->update($payload);
-        }
-
-        if (isset($validated['items'])) {
-            foreach ($validated['items'] as $itemData) {
-                $orderItem = $order->orderItems()->find($itemData['id']);
-                if ($orderItem) {
-                    $update = ['serial_number' => $itemData['serial_number']];
-
-                    // Nếu nhập serial number lần đầu, tính ngày hết hạn bảo hành dựa trên sản phẩm
-                    if ($itemData['serial_number'] && $orderItem->warranty_expires_at === null) {
-                        $product = $orderItem->product;
-                        if ($product && $product->warranty_months > 0) {
-                            $update['warranty_expires_at'] = now()->addMonths($product->warranty_months);
-                        }
-                    }
-
-                    $orderItem->update($update);
-                }
+        DB::transaction(function () use ($order, $payload, $validated): void {
+            if ($payload !== []) {
+                $order->update($payload);
             }
-        }
 
-        return response()->json($order->fresh()->load(['orderItems.product', 'statusEvents', 'shippingAddress', 'user']));
+            $items = $validated['items'] ?? [];
+            if ($items === []) {
+                return;
+            }
+
+            $itemIds = collect($items)->pluck('id')->values();
+            $orderItems = $order->orderItems()
+                ->whereIn('id', $itemIds)
+                ->get()
+                ->keyBy('id');
+
+            if ($orderItems->count() !== $itemIds->count()) {
+                throw ValidationException::withMessages([
+                    'items' => ['Một số item không thuộc đơn hàng này.'],
+                ]);
+            }
+
+            foreach ($items as $itemPayload) {
+                $item = $orderItems->get($itemPayload['id']);
+                $item?->update([
+                    'serial_number' => $itemPayload['serial_number'] ?? null,
+                ]);
+            }
+        });
+
+        return response()->json($order->fresh()->load(['user', 'shippingAddress', 'orderItems', 'statusEvents']));
     }
 }

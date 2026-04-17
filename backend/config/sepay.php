@@ -18,12 +18,6 @@ return [
 
     'transfer_content_prefix' => env('SEPAY_TRANSFER_CONTENT_PREFIX', 'TTECOMDZ'),
 
-    /**
-     * Số tiền cố định khi tạo QR để test nhanh (VD 2000).
-     * Để null/rỗng để dùng đúng total đơn hàng.
-     */
-    'fixed_qr_amount' => env('SEPAY_FIXED_QR_AMOUNT', 2000),
-
     /** Secret Key — đặt trong SePay dashboard (loại xác thực SECRET_KEY) */
     'secret_key' => env('SEPAY_SECRET_KEY'),
 

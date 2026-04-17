@@ -9,33 +9,9 @@ use Illuminate\Http\Request;
 
 class CouponAdminController extends Controller
 {
-    public function index(Request $request): JsonResponse
+    public function index(): JsonResponse
     {
-        $q = trim((string) $request->query('q', ''));
-        $active = $request->query('is_active');
-        $perPage = min(max((int) $request->query('per_page', 20), 1), 100);
-
-        $query = Coupon::query()->orderBy('code');
-
-        if ($q !== '') {
-            $query->where(function ($builder) use ($q): void {
-                $builder
-                    ->where('code', 'like', '%' . $q . '%')
-                    ->orWhere('discount_cents', 'like', '%' . $q . '%')
-                    ->orWhere('min_subtotal_cents', 'like', '%' . $q . '%');
-            });
-        }
-
-        if ($active !== null && $active !== '') {
-            $normalized = strtolower((string) $active);
-            if (in_array($normalized, ['1', 'true', 'yes'], true)) {
-                $query->where('is_active', true);
-            } elseif (in_array($normalized, ['0', 'false', 'no'], true)) {
-                $query->where('is_active', false);
-            }
-        }
-
-        return response()->json($query->paginate($perPage));
+        return response()->json(Coupon::query()->orderBy('code')->get());
     }
 
     public function store(Request $request): JsonResponse
@@ -66,7 +42,7 @@ class CouponAdminController extends Controller
     public function update(Request $request, Coupon $coupon): JsonResponse
     {
         $validated = $request->validate([
-            'code' => ['sometimes', 'string', 'max:32', 'unique:coupons,code,' . $coupon->id],
+            'code' => ['sometimes', 'string', 'max:32', 'unique:coupons,code,'.$coupon->id],
             'min_subtotal_cents' => ['nullable', 'integer', 'min:0'],
             'discount_cents' => ['sometimes', 'integer', 'min:0'],
             'is_active' => ['sometimes', 'boolean'],

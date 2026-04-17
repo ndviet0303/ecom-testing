@@ -13,16 +13,13 @@ class ReturnRequestAdminController extends Controller
 {
     public function __construct(
         private readonly ReturnTransitionService $returnTransitionService
-    ) {
-    }
+    ) {}
 
     public function index(Request $request): JsonResponse
     {
         $this->authorize('viewAny', ReturnRequest::class);
 
         $status = $request->query('status');
-        $search = trim((string) $request->query('q', ''));
-        $perPage = min(max((int) $request->query('per_page', 20), 1), 100);
 
         $q = ReturnRequest::query()
             ->with(['user', 'order', 'orderItem.product'])
@@ -32,22 +29,7 @@ class ReturnRequestAdminController extends Controller
             $q->where('status', $status);
         }
 
-        if ($search !== '') {
-            $q->where(function ($builder) use ($search): void {
-                $builder
-                    ->where('id', 'like', '%' . $search . '%')
-                    ->orWhere('order_id', 'like', '%' . $search . '%')
-                    ->orWhere('order_item_id', 'like', '%' . $search . '%')
-                    ->orWhere('reason', 'like', '%' . $search . '%')
-                    ->orWhereHas('user', function ($userQ) use ($search): void {
-                        $userQ
-                            ->where('email', 'like', '%' . $search . '%')
-                            ->orWhere('name', 'like', '%' . $search . '%');
-                    });
-            });
-        }
-
-        return response()->json($q->paginate($perPage));
+        return response()->json($q->paginate(50));
     }
 
     public function update(Request $request, ReturnRequest $returnRequest): JsonResponse

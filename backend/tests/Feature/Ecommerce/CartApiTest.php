@@ -43,13 +43,12 @@ class CartApiTest extends TestCase
         ]);
 
         $second->assertCreated();
-        $this->assertSame(297_000, $second->json('subtotal_cents'));
+        $this->assertSame(99_000, $second->json('subtotal_cents'));
 
         $this->withHeader('X-Cart-Token', $token)
             ->getJson('/api/v1/cart')
             ->assertOk()
-            ->assertJsonPath('subtotal_cents', 297_000)
-            ->assertJsonPath('items.0.quantity', 3);
+            ->assertJsonPath('subtotal_cents', 99_000);
     }
 
     public function test_guest_update_and_remove_line(): void
@@ -89,38 +88,5 @@ class CartApiTest extends TestCase
             ->assertOk();
 
         $this->getJson('/api/v1/cart')->assertOk()->assertJsonPath('subtotal_cents', 10_000);
-    }
-
-    public function test_guest_bulk_add_increments_existing_lines(): void
-    {
-        $product = Product::factory()->create([
-            'base_price_cents' => 25_000,
-        ]);
-
-        $first = $this->postJson('/api/v1/cart/items/bulk', [
-            'items' => [
-                ['product_id' => $product->id, 'quantity' => 1],
-            ],
-        ]);
-
-        $first->assertCreated();
-        $token = $first->headers->get('X-Cart-Token');
-        $this->assertNotEmpty($token);
-        $this->assertSame(25_000, $first->json('subtotal_cents'));
-
-        $second = $this->withHeader('X-Cart-Token', $token)->postJson('/api/v1/cart/items/bulk', [
-            'items' => [
-                ['product_id' => $product->id, 'quantity' => 1],
-            ],
-        ]);
-
-        $second->assertCreated();
-        $this->assertSame(50_000, $second->json('subtotal_cents'));
-
-        $this->withHeader('X-Cart-Token', $token)
-            ->getJson('/api/v1/cart')
-            ->assertOk()
-            ->assertJsonPath('subtotal_cents', 50_000)
-            ->assertJsonPath('items.0.quantity', 2);
     }
 }

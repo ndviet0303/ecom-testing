@@ -50,28 +50,4 @@ final class PcBuildCompatibility
             throw new InvalidDomainArgumentException('GPU is too long for this case.');
         }
     }
-
-    public function assertCoolerFitsCase(int $coolerHeightMm, int $caseMaxCoolerHeightMm): void
-    {
-        if ($coolerHeightMm <= 0 || $caseMaxCoolerHeightMm <= 0) {
-            throw new InvalidDomainArgumentException('Cooler/case height values must be positive.');
-        }
-
-        if ($coolerHeightMm > $caseMaxCoolerHeightMm) {
-            throw new InvalidDomainArgumentException('CPU Cooler is too tall for this case.');
-        }
-    }
-
-    /**
-     * @param  array<string, int>  $loadings  [tdp_cpu => 125, tbp_gpu => 350, base_load => 50]
-     */
-    public function calculateEstimatedWatts(array $loadings): int
-    {
-        $total = 0;
-        foreach ($loadings as $value) {
-            $total += max(0, $value);
-        }
-
-        return $total;
-    }
 }

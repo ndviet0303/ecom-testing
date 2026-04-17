@@ -8,8 +8,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class OrderItem extends Model
 {
-    protected $appends = ['is_under_warranty'];
-
     protected $fillable = [
         'order_id',
         'product_id',
@@ -17,8 +15,6 @@ class OrderItem extends Model
         'name',
         'quantity',
         'unit_price_cents',
-        'serial_number',
-        'warranty_expires_at',
     ];
 
     protected function casts(): array
@@ -26,17 +22,7 @@ class OrderItem extends Model
         return [
             'quantity' => 'integer',
             'unit_price_cents' => 'integer',
-            'warranty_expires_at' => 'datetime',
         ];
-    }
-
-    public function getIsUnderWarrantyAttribute(): bool
-    {
-        if ($this->warranty_expires_at === null) {
-            return false;
-        }
-
-        return $this->warranty_expires_at->isFuture();
     }
 
     public function order(): BelongsTo

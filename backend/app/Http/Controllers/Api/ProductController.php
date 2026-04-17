@@ -10,37 +10,31 @@ use App\Models\Product;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
-use Illuminate\Support\Facades\DB;
 
 class ProductController extends Controller
 {
     public function __construct(
         private readonly ProductPriceValidator $priceValidator
-    ) {
-    }
+    ) {}
 
     public function index(Request $request): JsonResponse
     {
-        $category = $request->query('category');
-        $search = $request->query('q');
-        $perPage = min((int) $request->query('per_page', 15), 100);
-
         $query = Product::query()->with('inventory');
 
-        if ($category) {
+        if ($category = $request->query('category')) {
             $query->where('category', $category);
         }
 
-        if ($search) {
+        if ($search = $request->query('q')) {
             $query->where(function ($q) use ($search): void {
-                $q->where('name', 'like', '%' . $search . '%')
-                    ->orWhere('sku', 'like', '%' . $search . '%');
+                $q->where('name', 'like', '%'.$search.'%')
+                    ->orWhere('sku', 'like', '%'.$search.'%');
             });
         }
 
-        $results = $query->orderBy('id')->paginate($perPage);
+        $perPage = min((int) $request->query('per_page', 15), 100);
 
-        return response()->json($results);
+        return response()->json($query->orderBy('id')->paginate($perPage));
     }
 
     public function show(Product $product): JsonResponse
@@ -61,8 +55,6 @@ class ProductController extends Controller
             'base_price_cents' => ['required', 'integer', 'min:1'],
             'sale_price_cents' => ['nullable', 'integer', 'min:0'],
             'specs' => ['nullable', 'array'],
-            'image_url' => ['nullable', 'string', 'max:500'],
-            'warranty_months' => ['nullable', 'integer', 'min:0'],
             'initial_on_hand' => ['nullable', 'integer', 'min:0'],
             'low_stock_threshold' => ['nullable', 'integer', 'min:0'],
         ]);
@@ -71,8 +63,8 @@ class ProductController extends Controller
             $this->priceValidator->validate(
                 (int) $validated['base_price_cents'],
                 array_key_exists('sale_price_cents', $validated) && $validated['sale_price_cents'] !== null
-                ? (int) $validated['sale_price_cents']
-                : null
+                    ? (int) $validated['sale_price_cents']
+                    : null
             );
         } catch (InvalidDomainArgumentException $e) {
             throw ValidationException::withMessages([
@@ -89,8 +81,6 @@ class ProductController extends Controller
             'base_price_cents' => $validated['base_price_cents'],
             'sale_price_cents' => $validated['sale_price_cents'] ?? null,
             'specs' => $validated['specs'] ?? null,
-            'image_url' => $validated['image_url'] ?? null,
-            'warranty_months' => (int) ($validated['warranty_months'] ?? 0),
         ]);
 
         Inventory::query()->create([
@@ -115,8 +105,6 @@ class ProductController extends Controller
             'base_price_cents' => ['sometimes', 'integer', 'min:1'],
             'sale_price_cents' => ['nullable', 'integer', 'min:0'],
             'specs' => ['nullable', 'array'],
-            'image_url' => ['nullable', 'string', 'max:500'],
-            'warranty_months' => ['sometimes', 'integer', 'min:0'],
             'low_stock_threshold' => ['sometimes', 'integer', 'min:0'],
         ]);
 
@@ -134,7 +122,7 @@ class ProductController extends Controller
             ]);
         }
 
-        foreach (['name', 'description', 'category', 'brand', 'specs', 'image_url', 'warranty_months'] as $field) {
+        foreach (['name', 'description', 'category', 'brand', 'specs'] as $field) {
             if (array_key_exists($field, $validated)) {
                 $product->{$field} = $validated[$field];
             }

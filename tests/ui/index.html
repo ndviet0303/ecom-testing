@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Automation Tester UI</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="page-shell">
+      <section class="hero-card">
+        <div class="hero-copy">
+          <span class="eyebrow">Demo UI</span>
+          <h1>Automation Tester</h1>
+          <p>
+            Web app local để generate collection, chọn file testcase JSON, rồi chạy
+            automation test cho API và UI dựa trên chính file collection đó.
+          </p>
+        </div>
+        <div class="hero-badges">
+          <span class="badge">Laravel + Vue</span>
+          <span class="badge">API Automation</span>
+          <span class="badge">Playwright UI Smoke</span>
+        </div>
+      </section>
+
+      <section class="grid-layout">
+        <article class="panel">
+          <div class="panel-head">
+            <h2>Generate Collection</h2>
+            <p>Tạo hoặc làm mới file testcase collection từ source code.</p>
+          </div>
+
+          <form id="generator-form" class="form-stack">
+            <label>
+              <span>Backend source</span>
+              <input id="backend-src" name="backend-src" type="text" />
+            </label>
+
+            <label>
+              <span>Frontend source</span>
+              <input id="frontend-src" name="frontend-src" type="text" />
+            </label>
+
+            <label>
+              <span>Output file</span>
+              <input id="output-file" name="output-file" type="text" />
+            </label>
+
+            <div class="inline-fields">
+              <label>
+                <span>Limit route</span>
+                <input id="limit" name="limit" type="number" min="1" placeholder="All" />
+              </label>
+
+              <label class="checkbox-field">
+                <span>Dry run</span>
+                <input id="dry-run" name="dry-run" type="checkbox" checked />
+              </label>
+            </div>
+
+            <div class="button-row">
+              <button id="scan-button" type="button" class="secondary-button">
+                Scan Routes
+              </button>
+              <button id="generate-button" type="submit" class="primary-button">
+                Generate Collection
+              </button>
+            </div>
+          </form>
+        </article>
+
+        <article class="panel">
+          <div class="panel-head">
+            <h2>Collection Loader</h2>
+            <p>Chọn file testcase JSON để chạy automation từ file đó.</p>
+          </div>
+
+          <div class="form-stack compact-top">
+            <label>
+              <span>Chọn file testcase collection</span>
+              <input id="collection-file" type="file" accept=".json,application/json" />
+            </label>
+            <div class="button-row">
+              <button id="load-collection-button" type="button" class="primary-button">
+                Load Collection
+              </button>
+            </div>
+          </div>
+
+          <div class="summary-grid compact-top">
+            <div class="summary-card">
+              <span class="summary-label">Project</span>
+              <strong id="summary-project">-</strong>
+            </div>
+            <div class="summary-card">
+              <span class="summary-label">API count</span>
+              <strong id="summary-count">-</strong>
+            </div>
+            <div class="summary-card">
+              <span class="summary-label">Generated at</span>
+              <strong id="summary-time">-</strong>
+            </div>
+          </div>
+
+          <div class="panel-section">
+            <span class="section-label">Collection path</span>
+            <code id="output-path">-</code>
+          </div>
+        </article>
+      </section>
+
+      <section class="grid-layout">
+        <article class="panel">
+          <div class="panel-head">
+            <h2>Route Preview</h2>
+            <p>Danh sách route scan được từ backend.</p>
+          </div>
+          <div id="routes-preview" class="scroll-panel empty-state">
+            Chưa scan route.
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-head">
+            <h2>Collection Preview</h2>
+            <p>Preview 5 API đầu tiên trong file output.</p>
+          </div>
+          <div id="collection-preview" class="scroll-panel empty-state">
+            Chưa có dữ liệu collection.
+          </div>
+        </article>
+      </section>
+
+      <section class="grid-layout">
+        <article class="panel">
+          <div class="panel-head">
+            <h2>API Automation</h2>
+            <p>Chạy test API dựa trên collection đã load.</p>
+          </div>
+
+          <div class="form-stack compact-top">
+            <label>
+              <span>API base URL</span>
+              <input id="api-base-url" type="text" value="http://127.0.0.1:8000/api" />
+            </label>
+
+            <div class="button-row">
+              <button id="run-api-button" type="button" class="primary-button">
+                Run API Tests
+              </button>
+            </div>
+          </div>
+
+          <div id="api-results-summary" class="summary-grid compact-top">
+            <div class="summary-card">
+              <span class="summary-label">Total</span>
+              <strong id="api-total">-</strong>
+            </div>
+            <div class="summary-card">
+              <span class="summary-label">Passed</span>
+              <strong id="api-passed">-</strong>
+            </div>
+            <div class="summary-card">
+              <span class="summary-label">Failed</span>
+              <strong id="api-failed">-</strong>
+            </div>
+          </div>
+
+          <div id="api-results" class="scroll-panel empty-state">Chưa chạy API automation.</div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-head">
+            <h2>UI Automation</h2>
+            <p>Chạy Playwright smoke test cho chính web app này theo collection đã load.</p>
+          </div>
+
+          <div class="button-row compact-top">
+            <button id="run-ui-button" type="button" class="secondary-button">
+              Run Playwright Smoke
+            </button>
+          </div>
+
+          <div class="panel-section">
+            <span class="section-label">Latest action</span>
+            <pre id="action-log" class="log-box">Chưa có thao tác nào.</pre>
+          </div>
+
+          <div class="panel-section">
+            <span class="section-label">Playwright output</span>
+            <pre id="ui-results" class="log-box">Chưa chạy UI automation.</pre>
+          </div>
+        </article>
+      </section>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

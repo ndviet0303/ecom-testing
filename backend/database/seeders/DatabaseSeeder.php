@@ -26,10 +26,9 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        $this->call([
-            UserRoleSeeder::class,
-            PcPartsSeeder::class,
-            CouponSeeder::class,
+        User::factory()->create([
+            'name' => 'Test User',
+            'email' => 'test@example.com',
         ]);
     }
 }

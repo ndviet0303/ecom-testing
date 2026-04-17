@@ -1,233 +1,656 @@
 {
-	"info": {
-		"_postman_id": "c7d8e9f0-a1b2-c3d4-e5f6-g7h8i9j0k1l2",
-		"name": "Backend Comprehensive Macro-Suite",
-		"description": "Enterprise-grade API test suite covering all roles, routes, and edge cases for the E-com PC store.",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-	},
-	"item": [
-		{
-			"name": "01. Public & Guest API",
-			"item": [
-				{
-					"name": "Catalog",
-					"item": [
-						{
-							"name": "List Products (Standard)",
-							"request": {
-								"method": "GET",
-								"url": "{{baseUrl}}/products"
-							}
-						},
-						{
-							"name": "Filter by Category (CPU)",
-							"request": {
-								"method": "GET",
-								"url": { "raw": "{{baseUrl}}/products?category=CPU", "host": ["{{baseUrl}}"], "query": [{ "key": "category", "value": "CPU" }] }
-							}
-						},
-						{
-							"name": "Product Detail (Show)",
-							"request": {
-								"method": "GET",
-								"url": "{{baseUrl}}/products/1"
-							}
-						}
-					]
-				},
-				{
-					"name": "PC Builder",
-					"item": [
-						{
-							"name": "Validate Build (Compatible)",
-							"request": {
-								"method": "POST",
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"product_ids\": [1, 2, 3],\n    \"psu_headroom\": 0.2\n}",
-									"options": { "raw": { "language": "json" } }
-								},
-								"url": "{{baseUrl}}/pc-builder/validate"
-							}
-						},
-						{
-							"name": "Validate Build (Incompatible - Socket Mismatch)",
-							"request": {
-								"method": "POST",
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"product_ids\": [1, 4]\n}",
-									"options": { "raw": { "language": "json" } }
-								},
-								"url": "{{baseUrl}}/pc-builder/validate"
-							}
-						}
-					]
-				},
-				{
-					"name": "Newsletter",
-					"item": [
-						{
-							"name": "Subscribe",
-							"request": {
-								"method": "POST",
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"email\": \"test@example.com\"\n}",
-									"options": { "raw": { "language": "json" } }
-								},
-								"url": "{{baseUrl}}/newsletter/subscribe"
-							}
-						}
-					]
-				}
-			]
-		},
-		{
-			"name": "02. Customer Portal",
-			"item": [
-				{
-					"name": "Account & Auth",
-					"item": [
-						{
-							"name": "Register New Customer",
-							"request": {
-								"method": "POST",
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"name\": \"John Doe\",\n    \"email\": \"john@example.com\",\n    \"password\": \"password\",\n    \"password_confirmation\": \"password\"\n}",
-									"options": { "raw": { "language": "json" } }
-								},
-								"url": "{{baseUrl}}/register"
-							}
-						},
-						{
-							"name": "Login Customer",
-							"event": [{ "listen": "test", "script": { "exec": ["var jsonData = pm.response.json(); pm.environment.set('customerToken', jsonData.token);"], "type": "text/javascript" } }],
-							"request": {
-								"method": "POST",
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"email\": \"john@example.com\",\n    \"password\": \"password\"\n}",
-									"options": { "raw": { "language": "json" } }
-								},
-								"url": "{{baseUrl}}/login"
-							}
-						}
-					]
-				},
-				{
-					"name": "Shopping & Orders",
-					"item": [
-						{
-							"name": "Add to Cart",
-							"request": {
-								"method": "POST",
-								"header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"product_id\": 1,\n    \"quantity\": 1\n}",
-									"options": { "raw": { "language": "json" } }
-								},
-								"url": "{{baseUrl}}/cart/items"
-							}
-						},
-						{
-							"name": "Checkout Order",
-							"request": {
-								"method": "POST",
-								"header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }],
-								"url": "{{baseUrl}}/checkout"
-							}
-						},
-						{
-							"name": "View Order History",
-							"request": {
-								"method": "GET",
-								"header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }],
-								"url": "{{baseUrl}}/orders"
-							}
-						}
-					]
-				}
-			]
-		},
-		{
-			"name": "03. Admin & Staff Operations",
-			"item": [
-				{
-					"name": "Login Admin/Staff",
-					"event": [{ "listen": "test", "script": { "exec": ["var jsonData = pm.response.json(); pm.environment.set('adminToken', jsonData.token); pm.environment.set('staffToken', jsonData.token);"], "type": "text/javascript" } }],
-					"request": {
-						"method": "POST",
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"email\": \"admin@ziet.dev\",\n    \"password\": \"password\"\n}",
-							"options": { "raw": { "language": "json" } }
-						},
-						"url": "{{baseUrl}}/login"
-					}
-				},
-				{
-					"name": "Order Management (Workflow)",
-					"item": [
-						{
-							"name": "Update Order Status (Staff)",
-							"request": {
-								"method": "PATCH",
-								"header": [{ "key": "Authorization", "value": "Bearer {{staffToken}}" }],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"status\": \"processing\"\n}",
-									"options": { "raw": { "language": "json" } }
-								},
-								"url": "{{baseUrl}}/admin/orders/1/status"
-							}
-						},
-						{
-							"name": "Update Fulfillment (Serial Numbers)",
-							"request": {
-								"method": "PATCH",
-								"header": [{ "key": "Authorization", "value": "Bearer {{staffToken}}" }],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"items\": [\n        {\n            \"id\": 1,\n            \"serial_number\": \"SN-BUILD-MACRO-123\"\n        }\n    ]\n}",
-									"options": { "raw": { "language": "json" } }
-								},
-								"url": "{{baseUrl}}/admin/orders/1/fulfillment"
-							}
-						}
-					]
-				}
-			]
-		},
-		{
-			"name": "04. External System Simulation",
-			"item": [
-				{
-					"name": "SePay Webhook (IPN)",
-					"request": {
-						"method": "POST",
-						"header": [{ "key": "X-Secret-Key", "value": "{{sepaySecretKey}}" }],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"transaction\": {\n        \"id\": \"AUTO_TXN_{{$timestamp}}\",\n        \"transaction_amount\": 10000000,\n        \"transaction_description\": \"TTECOMDZ 1\",\n        \"transaction_type\": \"PAYMENT\"\n    },\n    \"order\": {\n        \"order_id\": 1\n    }\n}",
-							"options": { "raw": { "language": "json" } }
-						},
-						"url": "{{baseUrl}}/webhooks/sepay"
-					}
-				}
-			]
-		}
-	],
-	"event": [
-		{
-			"listen": "prerequest",
-			"script": { "type": "text/javascript", "exec": [""] }
-		},
-		{
-			"listen": "test",
-			"script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]); });"] }
-		}
-	]
+  "info": {
+    "_postman_id": "c7d8e9f0-a1b2-c3d4-e5f6-g7h8i9j0k1l2",
+    "name": "Backend API Full Route Coverage",
+    "description": "Collection mapped to backend/routes/api.php with full endpoint coverage.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "00. Auth (/api/auth)",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Postman User\",\n  \"email\": \"postman+{{$timestamp}}@example.com\",\n  \"password\": \"password\",\n  \"password_confirmation\": \"password\"\n}"
+            },
+            "url": "{{apiBaseUrl}}/auth/register"
+          }
+        },
+        {
+          "name": "Login Customer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  var d = pm.response.json();",
+                  "  if (d.token) pm.environment.set('customerToken', d.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{customerEmail}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": "{{apiBaseUrl}}/auth/login"
+          }
+        },
+        {
+          "name": "Login Staff",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  var d = pm.response.json();",
+                  "  if (d.token) pm.environment.set('staffToken', d.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{staffEmail}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": "{{apiBaseUrl}}/auth/login"
+          }
+        },
+        {
+          "name": "Login Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  var d = pm.response.json();",
+                  "  if (d.token) pm.environment.set('adminToken', d.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": "{{apiBaseUrl}}/auth/login"
+          }
+        },
+        {
+          "name": "Me",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{customerToken}}" }
+            ],
+            "url": "{{apiBaseUrl}}/auth/me"
+          }
+        },
+        {
+          "name": "Update Me",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{customerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Customer Updated\"\n}"
+            },
+            "url": "{{apiBaseUrl}}/auth/me"
+          }
+        },
+        {
+          "name": "Login Logout Tester",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  var d = pm.response.json();",
+                  "  if (d.token) pm.environment.set('logoutTesterToken', d.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{logoutTesterEmail}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": "{{apiBaseUrl}}/auth/login"
+          }
+        },
+        {
+          "name": "Logout Logout Tester",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{logoutTesterToken}}" }
+            ],
+            "url": "{{apiBaseUrl}}/auth/logout"
+          }
+        }
+      ]
+    },
+    {
+      "name": "01. Public v1",
+      "item": [
+        { "name": "Products - List", "request": { "method": "GET", "url": "{{baseUrl}}/products" } },
+        { "name": "Products - Reviews For Product", "request": { "method": "GET", "url": "{{baseUrl}}/products/{{productId}}/reviews" } },
+        { "name": "Products - Detail", "request": { "method": "GET", "url": "{{baseUrl}}/products/{{productId}}" } },
+        { "name": "Coupons - List", "request": { "method": "GET", "url": "{{baseUrl}}/coupons" } },
+        { "name": "Coupons - Preview", "request": { "method": "GET", "url": "{{baseUrl}}/coupons/{{couponCode}}/preview?subtotal_cents=10000000" } },
+        {
+          "name": "Build Validate",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"product_ids\": [1, 2, 3],\n  \"psu_headroom\": 0.2\n}" },
+            "url": "{{baseUrl}}/build/validate"
+          }
+        },
+        {
+          "name": "PC Builder Validate",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"product_ids\": [1, 2, 3]\n}" },
+            "url": "{{baseUrl}}/pc-builder/validate"
+          }
+        },
+        {
+          "name": "Newsletter Subscribe",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"news+{{$timestamp}}@example.com\"\n}" },
+            "url": "{{baseUrl}}/newsletter/subscribe"
+          }
+        },
+        {
+          "name": "Newsletter Unsubscribe",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"news@example.com\"\n}" },
+            "url": "{{baseUrl}}/newsletter/unsubscribe"
+          }
+        },
+        { "name": "Payments SePay Placeholder", "request": { "method": "GET", "url": "{{baseUrl}}/payments/sepay" } },
+        {
+          "name": "Webhook SePay",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-Secret-Key", "value": "{{sepaySecretKey}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transaction\": {\n    \"id\": \"AUTO_TXN_{{$timestamp}}\",\n    \"transaction_amount\": 10000000,\n    \"transaction_description\": \"ORDER {{orderId}}\",\n    \"transaction_type\": \"PAYMENT\"\n  },\n  \"order\": {\n    \"order_id\": {{orderId}}\n  }\n}"
+            },
+            "url": "{{baseUrl}}/webhooks/sepay"
+          }
+        }
+      ]
+    },
+    {
+      "name": "02. Cart (Guest + Auth)",
+      "item": [
+        { "name": "Cart Show", "request": { "method": "GET", "url": "{{baseUrl}}/cart" } },
+        {
+          "name": "Cart Add Item",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"product_id\": {{productId}},\n  \"quantity\": 1\n}" },
+            "url": "{{baseUrl}}/cart/items"
+          }
+        },
+        {
+          "name": "Cart Add Second Item",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"product_id\": {{secondProductId}},\n  \"quantity\": 1\n}" },
+            "url": "{{baseUrl}}/cart/items"
+          }
+        },
+        {
+          "name": "Cart Update Item",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"quantity\": 2\n}" },
+            "url": "{{baseUrl}}/cart/items/{{productId}}"
+          }
+        },
+        { "name": "Cart Remove Item", "request": { "method": "DELETE", "url": "{{baseUrl}}/cart/items/{{productId}}" } },
+        {
+          "name": "Cart Merge",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{customerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{}" },
+            "url": "{{baseUrl}}/cart/merge"
+          }
+        }
+      ]
+    },
+    {
+      "name": "03. Customer Protected v1",
+      "item": [
+        {
+          "name": "Products - Resolve IDs",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var d = {};",
+                  "try {",
+                  "  d = pm.response.json();",
+                  "} catch (e) {",
+                  "  d = {};",
+                  "}",
+                  "",
+                  "var rows = Array.isArray(d) ? d : (Array.isArray(d.data) ? d.data : []);",
+                  "pm.test('Products list has at least 1 item', function () {",
+                  "  pm.expect(rows.length).to.be.above(0);",
+                  "});",
+                  "",
+                  "var eligible = rows.filter(function (p) {",
+                  "  var inv = (p && p.inventory) || {};",
+                  "  var onHand = Number(inv.on_hand || 0);",
+                  "  var reserved = Number(inv.reserved || 0);",
+                  "  return p && p.id && (onHand - reserved) > 0;",
+                  "});",
+                  "",
+                  "pm.test('Has at least 1 in-stock product', function () {",
+                  "  pm.expect(eligible.length).to.be.above(0);",
+                  "});",
+                  "",
+                  "if (eligible.length > 0 && eligible[0].id) {",
+                  "  pm.environment.set('productId', eligible[0].id);",
+                  "}",
+                  "if (eligible.length > 1 && eligible[1].id) {",
+                  "  pm.environment.set('secondProductId', eligible[1].id);",
+                  "} else if (eligible.length > 0 && eligible[0].id) {",
+                  "  pm.environment.set('secondProductId', eligible[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/products?per_page=50"
+          }
+        },
+        { "name": "Addresses - List", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }], "url": "{{baseUrl}}/addresses" } },
+        {
+          "name": "Addresses - Create",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  var d = pm.response.json();",
+                  "  if (d && d.id) pm.environment.set('addressId', d.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{customerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"label\": \"Nhà riêng\",\n  \"recipient_name\": \"Customer\",\n  \"phone\": \"0900000000\",\n  \"line1\": \"123 Đường ABC\",\n  \"ward\": \"Phường XYZ\",\n  \"district\": \"Ba Đình\",\n  \"province\": \"Thành phố Hà Nội\",\n  \"is_default\": true\n}"
+            },
+            "url": "{{baseUrl}}/addresses"
+          }
+        },
+        { "name": "Addresses - Show", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }], "url": "{{baseUrl}}/addresses/{{addressId}}" } },
+        {
+          "name": "Addresses - Update",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{customerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"label\": \"Văn phòng\"\n}" },
+            "url": "{{baseUrl}}/addresses/{{addressId}}"
+          }
+        },
+        {
+          "name": "Cart Ensure Item For Checkout",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{customerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"quantity\": 1\n}" },
+            "url": "{{baseUrl}}/cart/items/{{productId}}"
+          }
+        },
+        {
+          "name": "Checkout",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Checkout status is 201', function () {",
+                  "  pm.expect(pm.response.code).to.eql(201);",
+                  "});",
+                  "",
+                  "pm.test('Checkout response is JSON', function () {",
+                  "  var contentType = (pm.response.headers.get('Content-Type') || '').toLowerCase();",
+                  "  pm.expect(contentType).to.include('application/json');",
+                  "});",
+                  "",
+                  "var d = {};",
+                  "try {",
+                  "  d = pm.response.json();",
+                  "} catch (e) {",
+                  "  pm.test('Checkout body is valid JSON', function () {",
+                  "    throw new Error('Response is not JSON. Possible redirect/fallback to frontend.');",
+                  "  });",
+                  "}",
+                  "",
+                  "var order = d && d.order ? d.order : null;",
+                  "pm.test('Checkout returns order id', function () {",
+                  "  pm.expect(order && order.id, 'Missing order.id').to.exist;",
+                  "});",
+                  "",
+                  "if (order && order.id) pm.environment.set('orderId', order.id);",
+                  "var items = (order && (order.order_items || order.orderItems)) || [];",
+                  "if (Array.isArray(items) && items.length > 0 && items[0].id) {",
+                  "  pm.environment.set('orderItemId', items[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{customerToken}}" },
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fulfillment_method\": \"shipping\",\n  \"shipping_address_id\": {{addressId}},\n  \"weight_grams\": 15000,\n  \"tax_rate_basis_points\": 0,\n  \"payment_method\": \"sepay_qr\"\n}"
+            },
+            "url": "{{baseUrl}}/checkout"
+          }
+        },
+        { "name": "Orders - List", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }], "url": "{{baseUrl}}/orders" } },
+        { "name": "Orders - Detail", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }], "url": "{{baseUrl}}/orders/{{orderId}}" } },
+        { "name": "Orders - SePay QR", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }], "url": "{{baseUrl}}/orders/{{orderId}}/sepay-qr" } },
+
+        { "name": "Wishlist - List", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }], "url": "{{baseUrl}}/wishlist" } },
+        { "name": "Wishlist - Add", "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }], "url": "{{baseUrl}}/wishlist/{{productId}}" } },
+        { "name": "Wishlist - Remove", "request": { "method": "DELETE", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }], "url": "{{baseUrl}}/wishlist/{{productId}}" } },
+
+        { "name": "Compare - List", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }], "url": "{{baseUrl}}/compare" } },
+        { "name": "Compare - Add", "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }], "url": "{{baseUrl}}/compare/{{productId}}" } },
+        { "name": "Compare - Remove", "request": { "method": "DELETE", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }], "url": "{{baseUrl}}/compare/{{productId}}" } },
+
+        { "name": "Recent Views - List", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }], "url": "{{baseUrl}}/recent-views" } },
+        { "name": "Recent Views - Add", "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }], "url": "{{baseUrl}}/recent-views/{{productId}}" } },
+
+        {
+          "name": "Products - Create Review",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{customerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"rating\": 5,\n  \"content\": \"Excellent product\"\n}" },
+            "url": "{{baseUrl}}/products/{{productId}}/reviews"
+          }
+        },
+
+        { "name": "Return Requests - List", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }], "url": "{{baseUrl}}/return-requests" } },
+        {
+          "name": "Return Requests - Create",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  var d = pm.response.json();",
+                  "  if (d && d.id) pm.environment.set('returnRequestId', d.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{customerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"order_item_id\": {{orderItemId}},\n  \"quantity\": {{returnQuantity}},\n  \"reason\": \"Defective item\"\n}" },
+            "url": "{{baseUrl}}/return-requests"
+          }
+        },
+        { "name": "Return Requests - Show", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }], "url": "{{baseUrl}}/return-requests/{{returnRequestId}}" } },
+        { "name": "Orders - Cancel", "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }], "url": "{{baseUrl}}/orders/{{orderId}}/cancel" } },
+        { "name": "Addresses - Delete", "request": { "method": "DELETE", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }], "url": "{{baseUrl}}/addresses/{{addressId}}" } }
+      ]
+    },
+    {
+      "name": "04. Staff Admin Endpoints",
+      "item": [
+        { "name": "Admin Orders - List", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{staffToken}}" }], "url": "{{baseUrl}}/admin/orders" } },
+        {
+          "name": "Admin Orders - Update Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{staffToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"packed\"\n}" },
+            "url": "{{baseUrl}}/admin/orders/{{orderId}}/status"
+          }
+        },
+        {
+          "name": "Admin Orders - Update Fulfillment",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{staffToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"id\": 1,\n      \"serial_number\": \"SN-{{$timestamp}}\"\n    }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/admin/orders/{{orderId}}/fulfillment"
+          }
+        },
+        { "name": "Admin Inventory - Low Stock", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{staffToken}}" }], "url": "{{baseUrl}}/admin/inventory/low-stock" } },
+        { "name": "Admin Audit Logs", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{staffToken}}" }], "url": "{{baseUrl}}/admin/audit-logs" } },
+        { "name": "Admin Return Requests - List", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{staffToken}}" }], "url": "{{baseUrl}}/admin/return-requests" } },
+        {
+          "name": "Admin Return Requests - Update",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{staffToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"approved\"\n}" },
+            "url": "{{baseUrl}}/admin/return-requests/{{returnRequestId}}"
+          }
+        },
+        { "name": "Admin Analytics - Sales", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{staffToken}}" }], "url": "{{baseUrl}}/admin/analytics/sales" } },
+        { "name": "Admin Analytics - Top Products", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{staffToken}}" }], "url": "{{baseUrl}}/admin/analytics/top-products" } }
+      ]
+    },
+    {
+      "name": "05. Admin Only Endpoints",
+      "item": [
+        {
+          "name": "Admin Products - Create",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Postman Product {{$timestamp}}\",\n  \"category\": \"CPU\",\n  \"base_price_cents\": 1000000,\n  \"active\": true\n}"
+            },
+            "url": "{{baseUrl}}/admin/products"
+          }
+        },
+        {
+          "name": "Admin Products - Update",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Updated Product Name\"\n}" },
+            "url": "{{baseUrl}}/admin/products/{{productId}}"
+          }
+        },
+        { "name": "Admin Products - Delete", "request": { "method": "DELETE", "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }], "url": "{{baseUrl}}/admin/products/{{productId}}" } },
+
+        { "name": "Admin Coupons - List", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }], "url": "{{baseUrl}}/admin/coupons" } },
+        {
+          "name": "Admin Coupons - Create",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"PM{{$timestamp}}\",\n  \"discount_type\": \"fixed\",\n  \"discount_cents\": 10000\n}"
+            },
+            "url": "{{baseUrl}}/admin/coupons"
+          }
+        },
+        {
+          "name": "Admin Coupons - Update",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"discount_cents\": 20000\n}" },
+            "url": "{{baseUrl}}/admin/coupons/{{couponId}}"
+          }
+        },
+        { "name": "Admin Coupons - Delete", "request": { "method": "DELETE", "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }], "url": "{{baseUrl}}/admin/coupons/{{couponId}}" } }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "pm.test('Response status is not 5xx', function () {",
+          "  pm.expect(pm.response.code).to.be.below(500);",
+          "});"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    { "key": "apiBaseUrl", "value": "http://localhost:8000/api" },
+    { "key": "baseUrl", "value": "http://localhost:8000/api/v1" },
+    { "key": "password", "value": "password" },
+    { "key": "customerEmail", "value": "customer@ziet.dev" },
+    { "key": "logoutTesterEmail", "value": "logout.tester@ziet.dev" },
+    { "key": "staffEmail", "value": "staff@ziet.dev" },
+    { "key": "adminEmail", "value": "admin@ziet.dev" },
+    { "key": "customerToken", "value": "" },
+    { "key": "logoutTesterToken", "value": "" },
+    { "key": "staffToken", "value": "" },
+    { "key": "adminToken", "value": "" },
+    { "key": "sepaySecretKey", "value": "ttecom_secret_test" },
+    { "key": "productId", "value": "1" },
+    { "key": "secondProductId", "value": "2" },
+    { "key": "orderId", "value": "1" },
+    { "key": "orderItemId", "value": "1" },
+    { "key": "returnQuantity", "value": "1" },
+    { "key": "addressId", "value": "1" },
+    { "key": "couponCode", "value": "WELCOME10" },
+    { "key": "couponId", "value": "1" },
+    { "key": "returnRequestId", "value": "1" }
+  ]
 }
