@@ -10,8 +10,15 @@ const runApiButton = document.querySelector("#run-api-button");
 const runUiButton = document.querySelector("#run-ui-button");
 const scanButton = document.querySelector("#scan-button");
 const generateButton = document.querySelector("#generate-button");
-const actionLog = document.querySelector("#action-log");
+const languageSelect = document.querySelector("#language-select");
+const themeToggleButton = document.querySelector("#theme-toggle-button");
 const outputPath = document.querySelector("#output-path");
+const copyPathButton = document.querySelector("#copy-path-button");
+const routesFilterInput = document.querySelector("#routes-filter");
+const collectionFilterInput = document.querySelector("#collection-filter");
+const statusDot = document.querySelector("#status-dot");
+const statusTitle = document.querySelector("#status-title");
+const statusDetail = document.querySelector("#status-detail");
 const routesPreview = document.querySelector("#routes-preview");
 const collectionPreview = document.querySelector("#collection-preview");
 const apiResults = document.querySelector("#api-results");
@@ -23,47 +30,184 @@ const apiTotal = document.querySelector("#api-total");
 const apiPassed = document.querySelector("#api-passed");
 const apiFailed = document.querySelector("#api-failed");
 
+const allActionButtons = [scanButton, generateButton, loadCollectionButton, runApiButton, runUiButton];
+let cachedRoutes = [];
+let cachedApis = [];
+let currentLanguage = localStorage.getItem("automation-ui-lang") || "vi";
+let currentTheme = localStorage.getItem("automation-ui-theme") || "light";
+
+const MESSAGES = {
+  vi: {
+    heroEyebrow: "Automation Suite",
+    heroTitle: "Automation Tester",
+    heroDesc: "Công cụ tự động hóa chuyên nghiệp cho web app hiện đại. Generate collection, scan route và chạy test API & UI với độ chính xác cao.",
+    languageLabel: "Ngôn ngữ",
+    generateTitle: "Generate Collection",
+    generateDesc: "Trích xuất và xây dựng bộ testcase từ mã nguồn.",
+    backendSource: "Backend path",
+    frontendSource: "Frontend path",
+    outputFile: "Output file",
+    limitRoute: "Giới hạn route",
+    dryRun: "Chạy thử (Dry Run)",
+    scanRoutes: "Scan Routes",
+    loaderTitle: "Collection Loader",
+    loaderDesc: "Chọn file collection JSON để bắt đầu kiểm thử.",
+    chooseCollection: "File Collection Testcase",
+    loadCollection: "Load Collection",
+    projectLabel: "Dự án",
+    apiCountLabel: "APIs",
+    generatedAtLabel: "Ngày tạo",
+    collectionPath: "Đường dẫn file",
+    copyPath: "Copy",
+    apiAutomation: "API Automation",
+    apiAutomationDesc: "Chạy test API tự động với phản hồi thời gian thực.",
+    apiBaseUrl: "API Base URL mục tiêu",
+    runApiTests: "Chạy API Suite",
+    passedLabel: "Thành công",
+    failedLabel: "Thất bại",
+    uiAutomation: "UI Smoke Test",
+    uiAutomationDesc: "Tự động hóa trình duyệt bằng Playwright.",
+    runUiSmoke: "Chạy Playwright Suite",
+    playwrightOutput: "Log tự động hóa",
+    statusReady: "Hệ thống sẵn sàng",
+    statusReadyDetail: "Khởi tạo bằng cách scan route hoặc load collection.",
+    scanning: "Đang scan route...",
+    generating: "Đang generate...",
+    runningApi: "Đang chạy API suite...",
+    runningUi: "Đang chạy Playwright...",
+    themeToLight: "Sáng",
+    themeToDark: "Tối",
+  },
+  en: {
+    heroEyebrow: "Automation Suite",
+    heroTitle: "Automation Tester",
+    heroDesc: "Professional-grade automation engine for modern web apps. Generate collections, scan routes, and execute full-suite API & UI tests with high precision.",
+    languageLabel: "Lang",
+    generateTitle: "Generate Collection",
+    generateDesc: "Extract and build testcase collections from source code.",
+    backendSource: "Backend path",
+    frontendSource: "Frontend path",
+    outputFile: "Output JSON file",
+    limitRoute: "Route Limit",
+    dryRun: "Dry Run",
+    scanRoutes: "Scan Routes",
+    loaderTitle: "Collection Loader",
+    loaderDesc: "Select an existing JSON collection to begin testing.",
+    chooseCollection: "Testcase Collection File",
+    loadCollection: "Load Collection",
+    projectLabel: "Project",
+    apiCountLabel: "APIs",
+    generatedAtLabel: "Created",
+    collectionPath: "File Path",
+    copyPath: "Copy",
+    apiAutomation: "API Automation",
+    apiAutomationDesc: "Run automated API tests with real-time feedback.",
+    apiBaseUrl: "Target API Base URL",
+    runApiTests: "Execute API Suite",
+    passedLabel: "Passed",
+    failedLabel: "Failed",
+    uiAutomation: "UI Smoke Test",
+    uiAutomationDesc: "Headless browser automation using Playwright.",
+    runUiSmoke: "Run Playwright Suite",
+    playwrightOutput: "Automation Logs",
+    statusReady: "System Ready",
+    statusReadyDetail: "Initialize by scanning routes or loading a collection.",
+    scanning: "Scanning routes...",
+    generating: "Generating collection...",
+    runningApi: "Running API suite...",
+    runningUi: "Running Playwright...",
+    themeToLight: "Light",
+    themeToDark: "Dark",
+  },
+};
+
+function t(key) {
+  return MESSAGES[currentLanguage]?.[key] || key;
+}
+
+function applyTranslations() {
+  document.documentElement.lang = currentLanguage;
+  document.querySelectorAll("[data-i18n]").forEach((node) => {
+    const key = node.dataset.i18n;
+    if (key) node.textContent = t(key);
+  });
+  
+  document.title = `Automation Tester | ${currentTheme === 'dark' ? 'Pro Max' : 'Light'}`;
+  
+  scanButton.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> ${t("scanRoutes")}`;
+  loadCollectionButton.textContent = t("loadCollection");
+  runApiButton.textContent = t("runApiTests");
+  runUiButton.textContent = t("runUiSmoke");
+  copyPathButton.textContent = t("copyPath");
+}
+
+function applyTheme() {
+  document.documentElement.setAttribute("data-theme", currentTheme);
+  const nextThemeLabel = currentTheme === "dark" ? t("themeToLight") : t("themeToDark");
+  themeToggleButton.innerHTML = currentTheme === "dark" 
+    ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg> ${nextThemeLabel}`
+    : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg> ${nextThemeLabel}`;
+}
+
 async function apiFetch(url, options = {}) {
   const response = await fetch(url, {
     ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
-    },
+    headers: { "Content-Type": "application/json", ...(options.headers || {}) },
   });
   const rawText = await response.text();
   const contentType = response.headers.get("content-type") || "";
 
   if (!contentType.includes("application/json")) {
-    throw new Error(
-      `Endpoint ${url} không trả JSON. Có thể bạn đang mở nhầm instance UI cũ. Status ${response.status}.`,
-    );
+    throw new Error(`Endpoint ${url} error: No JSON response.`);
   }
 
-  let data;
-  try {
-    data = JSON.parse(rawText);
-  } catch {
-    throw new Error(`Không parse được JSON từ ${url}.`);
-  }
-
-  if (!response.ok) {
-    throw new Error(data.message || `Request tới ${url} thất bại với status ${response.status}.`);
-  }
-
+  const data = JSON.parse(rawText);
+  if (!response.ok) throw new Error(data.message || `Error ${response.status}`);
   return data;
 }
 
-function setBusy(isBusy) {
-  scanButton.disabled = isBusy;
-  generateButton.disabled = isBusy;
-  loadCollectionButton.disabled = isBusy;
-  runApiButton.disabled = isBusy;
-  runUiButton.disabled = isBusy;
+function setBusy(isBusy, btn = null, loadingKey = null) {
+  allActionButtons.forEach(b => b.disabled = isBusy);
+  if (btn && loadingKey) {
+    if (isBusy) {
+      btn.dataset.prevText = btn.innerHTML;
+      btn.textContent = t(loadingKey);
+    } else {
+      btn.innerHTML = btn.dataset.prevText;
+    }
+  }
 }
 
-function updateLog(message) {
-  actionLog.textContent = message;
+function setStatus(type, titleKey, detail) {
+  statusDot.className = "status-dot";
+  if (type === "running") {
+    statusDot.classList.add("active", "pulse");
+    statusDot.style.background = "var(--accent-secondary)";
+  } else if (type === "success") {
+    statusDot.classList.add("active");
+    statusDot.style.background = "var(--accent-success)";
+    statusDot.style.boxShadow = "0 0 12px var(--accent-success)";
+  } else if (type === "error") {
+    statusDot.classList.add("active");
+    statusDot.style.background = "var(--accent-danger)";
+    statusDot.style.boxShadow = "0 0 12px var(--accent-danger)";
+    shakeUI();
+  } else {
+    statusDot.style.background = "var(--text-muted)";
+    statusDot.style.boxShadow = "none";
+  }
+
+  statusTitle.textContent = t(titleKey) || titleKey;
+  statusDetail.textContent = detail || "";
+}
+
+function shakeUI() {
+  document.body.animate([
+    { transform: 'translateX(0)' },
+    { transform: 'translateX(-5px)' },
+    { transform: 'translateX(5px)' },
+    { transform: 'translateX(0)' }
+  ], { duration: 300, iterations: 2 });
 }
 
 function methodClass(method) {
@@ -71,240 +215,223 @@ function methodClass(method) {
 }
 
 function renderRoutes(routes = []) {
-  if (!routes.length) {
-    routesPreview.className = "scroll-panel empty-state";
-    routesPreview.textContent = "Chưa có route để hiển thị.";
+  cachedRoutes = routes;
+  const query = routesFilterInput.value.trim().toLowerCase();
+  const filtered = routes.filter(r => `${r.method} ${r.path}`.toLowerCase().includes(query));
+
+  if (!filtered.length) {
+    routesPreview.innerHTML = `<div style="color:var(--text-muted);text-align:center;padding-top:40px;">No routes found</div>`;
     return;
   }
 
-  routesPreview.className = "scroll-panel";
-  routesPreview.innerHTML = routes
-    .map(
-      (route) => `
-        <div class="route-item">
-          <div><span class="pill ${methodClass(route.method)}">${route.method}</span><code>${route.path}</code></div>
-          <div class="muted-line">${route.controller || "Closure"} :: ${route.action || "-"}</div>
-        </div>
-      `,
-    )
-    .join("");
+  routesPreview.innerHTML = filtered.map(r => `
+    <div style="padding: 12px 0; border-bottom: 1px solid var(--panel-border);">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <span class="pill ${methodClass(r.method)}">${r.method}</span>
+        <code style="word-break:break-all;">${r.path}</code>
+      </div>
+      <div style="color:var(--text-muted); font-size:0.8rem; margin-top:4px;">${r.controller || "Closure"}@${r.action || "-"}</div>
+    </div>
+  `).join("");
 }
 
 function renderCollection(apis = []) {
-  if (!apis.length) {
-    collectionPreview.className = "scroll-panel empty-state";
-    collectionPreview.textContent = "Chưa có collection để preview.";
+  cachedApis = apis;
+  const query = collectionFilterInput.value.trim().toLowerCase();
+  const filtered = apis.filter(a => `${a.method} ${a.endpoint}`.toLowerCase().includes(query));
+
+  if (!filtered.length) {
+    collectionPreview.innerHTML = `<div style="color:var(--text-muted);text-align:center;padding-top:40px;">Collection empty or filtered</div>`;
     return;
   }
 
-  collectionPreview.className = "scroll-panel";
-  collectionPreview.innerHTML = apis
-    .map(
-      (api) => `
-        <div class="api-preview-item">
-          <div><span class="pill ${methodClass(api.method)}">${api.method}</span><code>${api.endpoint}</code></div>
-          <div class="muted-line">Testcases: ${api.testcases?.length || 0}</div>
-          <div class="muted-line">Context: ${api.retrieved_context?.length || 0}</div>
-        </div>
-      `,
-    )
-    .join("");
+  collectionPreview.innerHTML = filtered.map(a => `
+    <div style="padding: 12px 0; border-bottom: 1px solid var(--panel-border);">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <span class="pill ${methodClass(a.method)}">${a.method}</span>
+        <code style="word-break:break-all;">${a.endpoint}</code>
+      </div>
+      <div style="color:var(--text-muted); font-size:0.8rem; margin-top:4px;">Testcases: ${a.testcases?.length || 0} | Context: ${a.retrieved_context?.length || 0}</div>
+    </div>
+  `).join("");
 }
 
 function renderSummary(summary, path) {
   summaryProject.textContent = summary?.project || "-";
   summaryCount.textContent = summary?.api_count ?? "-";
-  summaryTime.textContent = summary?.generated_at || "-";
+  summaryTime.textContent = summary?.generated_at?.split('T')[0] || "-";
   outputPath.textContent = path || "-";
+  copyPathButton.disabled = !path;
 }
 
-function renderApiSummary(summary) {
+function renderApiResults(results = [], summary = null) {
   apiTotal.textContent = summary?.total ?? "-";
   apiPassed.textContent = summary?.passed ?? "-";
   apiFailed.textContent = summary?.failed ?? "-";
-}
 
-function renderApiResults(results = []) {
   if (!results.length) {
-    apiResults.className = "scroll-panel empty-state";
-    apiResults.textContent = "Chưa có kết quả API automation.";
+    apiResults.innerHTML = `<div style="color:var(--text-muted);text-align:center;padding-top:60px;">Ready for execution</div>`;
     return;
   }
 
-  apiResults.className = "scroll-panel";
-  apiResults.innerHTML = results
-    .map(
-      (api) => `
-        <div class="api-preview-item">
-          <div><span class="pill ${methodClass(api.method)}">${api.method}</span><code>${api.endpoint}</code></div>
-          <div class="muted-line">Passed ${api.passed}/${api.total}</div>
-          ${(api.testcases || [])
-            .map(
-              (testcase) => `
-                <div class="muted-line ${testcase.ok ? "status-pass" : "status-fail"}">
-                  ${testcase.ok ? "PASS" : "FAIL"} · ${testcase.name}
-                  ${testcase.status_actual ? `(status ${testcase.status_actual})` : ""}
-                  ${testcase.error ? `- ${testcase.error}` : ""}
-                </div>
-              `,
-            )
-            .join("")}
-        </div>
-      `,
-    )
-    .join("");
-}
-
-function payloadFromForm() {
-  return {
-    backend_src: backendInput.value.trim(),
-    frontend_src: frontendInput.value.trim(),
-    output_file: outputInput.value.trim(),
-    limit: limitInput.value.trim(),
-    dry_run: dryRunInput.checked,
-  };
+  apiResults.innerHTML = results.map(a => `
+    <div style="margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--panel-border);">
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+        <span class="pill ${methodClass(a.method)}">${a.method}</span>
+        <code>${a.endpoint}</code>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:4px;">
+        ${(a.testcases || []).map(t => `
+          <div style="font-size:0.85rem; color:${t.ok ? 'var(--accent-success)' : 'var(--accent-danger)'}; display:flex; justify-content:space-between;">
+            <span>${t.ok ? '✓' : '✗'} ${t.name}</span>
+            <span style="opacity:0.7;">${t.status_actual || ''}</span>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+  `).join("");
 }
 
 async function refreshState() {
   const data = await apiFetch("/api/state");
-  backendInput.value = data.backend_default;
-  frontendInput.value = data.frontend_default;
-  outputInput.value = data.output_default;
-  const loadedCollection = data.uploaded_collection?.exists ? data.uploaded_collection : data.existing_output;
-  renderSummary(loadedCollection?.summary, loadedCollection?.path);
-  renderCollection(loadedCollection?.preview || []);
-  renderApiSummary(null);
+  backendInput.value = data.backend_default || "";
+  frontendInput.value = data.frontend_default || "";
+  outputInput.value = data.output_default || "";
+  const loaded = data.uploaded_collection?.exists ? data.uploaded_collection : data.existing_output;
+  renderSummary(loaded?.summary, loaded?.path);
+  renderCollection(loaded?.preview || []);
+  renderApiResults([], null);
+  setStatus("idle", "statusReady", "Persistent state restored.");
 }
 
-scanButton.addEventListener("click", async () => {
-  setBusy(true);
-  updateLog("Đang scan route...");
+routesFilterInput.addEventListener("input", () => renderRoutes(cachedRoutes));
+collectionFilterInput.addEventListener("input", () => renderCollection(cachedApis));
+
+languageSelect.addEventListener("change", () => {
+  currentLanguage = languageSelect.value;
+  localStorage.setItem("automation-ui-lang", currentLanguage);
+  applyTranslations();
+  renderRoutes(cachedRoutes);
+  renderCollection(cachedApis);
+});
+
+themeToggleButton.addEventListener("click", () => {
+  currentTheme = currentTheme === "dark" ? "light" : "dark";
+  localStorage.setItem("automation-ui-theme", currentTheme);
+  applyTheme();
+  applyTranslations();
+});
+
+copyPathButton.addEventListener("click", async () => {
+  const path = outputPath.textContent.trim();
+  if (!path || path === "-") return;
   try {
-    const data = await apiFetch("/api/scan", {
-      method: "POST",
-      body: JSON.stringify(payloadFromForm()),
-    });
-
-    if (!data.ok) {
-      updateLog(data.stderr || data.stdout || "Scan thất bại.");
-      renderRoutes([]);
-      return;
-    }
-
-    renderRoutes(data.routes || []);
-    updateLog(`Scan thành công: tìm thấy ${data.count} route.`);
-  } catch (error) {
-    updateLog(`Scan lỗi: ${error.message}`);
-  } finally {
-    setBusy(false);
+    await navigator.clipboard.writeText(path);
+    const prevText = copyPathButton.textContent;
+    copyPathButton.textContent = "Copied!";
+    setTimeout(() => copyPathButton.textContent = prevText, 2000);
+  } catch (e) {
+    setStatus("error", "Copy Failed", e.message);
   }
 });
 
-document.querySelector("#generator-form").addEventListener("submit", async (event) => {
-  event.preventDefault();
-  setBusy(true);
-  updateLog("Đang generate collection...");
+scanButton.addEventListener("click", async () => {
+  setBusy(true, scanButton, "scanning");
+  setStatus("running", "scanning", "Reading backend architecture...");
   try {
-    const data = await apiFetch("/api/generate", {
+    const data = await apiFetch("/api/scan", {
       method: "POST",
-      body: JSON.stringify(payloadFromForm()),
+      body: JSON.stringify({ backend_src: backendInput.value.trim() }),
     });
+    renderRoutes(data.routes || []);
+    setStatus("success", "Scan Complete", `Found ${data.count} routes.`);
+  } catch (e) {
+    setStatus("error", "Scan Error", e.message);
+  } finally {
+    setBusy(false, scanButton);
+  }
+});
 
-    if (!data.ok) {
-      updateLog(data.stderr || data.stdout || "Generate thất bại.");
-      return;
-    }
-
+document.querySelector("#generator-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  setBusy(true, generateButton, "generating");
+  setStatus("running", "generating", "Building test vectors...");
+  try {
+    const payload = {
+      backend_src: backendInput.value.trim(),
+      frontend_src: frontendInput.value.trim(),
+      output_file: outputInput.value.trim(),
+      limit: limitInput.value.trim(),
+      dry_run: dryRunInput.checked,
+    };
+    const data = await apiFetch("/api/generate", { method: "POST", body: JSON.stringify(payload) });
     const output = await apiFetch("/api/output");
     renderSummary(output.summary, data.output_file || output.path);
     renderCollection(output.preview || []);
-    updateLog((data.stdout || "Generate thành công.").trim());
-  } catch (error) {
-    updateLog(`Generate lỗi: ${error.message}`);
+    setStatus("success", "Generation Complete", data.output_file || "Collection ready.");
+  } catch (e) {
+    setStatus("error", "Generation Error", e.message);
   } finally {
-    setBusy(false);
+    setBusy(false, generateButton);
   }
 });
 
 loadCollectionButton.addEventListener("click", async () => {
   const file = collectionFileInput.files?.[0];
-  if (!file) {
-    updateLog("Hãy chọn file collection JSON trước.");
-    return;
-  }
-
-  setBusy(true);
-  updateLog(`Đang nạp collection: ${file.name}...`);
-
+  if (!file) return setStatus("error", "No File", "Please select a JSON collection.");
+  
+  setBusy(true, loadCollectionButton);
+  setStatus("running", "Loading Collection", file.name);
   try {
     const content = await file.text();
     const data = await apiFetch("/api/load_collection", {
       method: "POST",
       body: JSON.stringify({ filename: file.name, content }),
     });
-
-    if (!data.ok) {
-      updateLog(data.message || "Không nạp được collection.");
-      return;
-    }
-
     renderSummary(data.summary, data.path);
     renderCollection(data.preview || []);
-    renderApiSummary(null);
-    renderApiResults([]);
-    uiResults.textContent = "Chưa chạy UI automation.";
-    updateLog(`Đã load collection ${data.filename}.`);
-  } catch (error) {
-    updateLog(`Load collection lỗi: ${error.message}`);
+    setStatus("success", "Collection Loaded", `${data.summary?.api_count || 0} APIs ready.`);
+  } catch (e) {
+    setStatus("error", "Load Error", e.message);
   } finally {
-    setBusy(false);
+    setBusy(false, loadCollectionButton);
   }
 });
 
 runApiButton.addEventListener("click", async () => {
-  setBusy(true);
-  updateLog("Đang chạy API automation...");
+  setBusy(true, runApiButton, "runningApi");
+  setStatus("running", "runningApi", "Executing test cases...");
   try {
     const data = await apiFetch("/api/run_api_tests", {
       method: "POST",
       body: JSON.stringify({ base_url: apiBaseUrlInput.value.trim() }),
     });
-
-    if (!data.ok) {
-      updateLog(data.message || data.stderr || "API automation thất bại.");
-      return;
-    }
-
-    renderApiSummary(data.summary);
-    renderApiResults(data.results || []);
-    updateLog(`API automation xong: ${data.summary.passed}/${data.summary.total} passed.`);
-  } catch (error) {
-    updateLog(`API automation lỗi: ${error.message}`);
+    renderApiResults(data.results || [], data.summary);
+    setStatus(data.summary?.failed > 0 ? "error" : "success", "API Suite Complete", `${data.summary?.passed}/${data.summary?.total} passed.`);
+  } catch (e) {
+    setStatus("error", "Execution Error", e.message);
   } finally {
-    setBusy(false);
+    setBusy(false, runApiButton);
   }
 });
 
 runUiButton.addEventListener("click", async () => {
-  setBusy(true);
-  updateLog("Đang chạy Playwright smoke...");
-  uiResults.textContent = "Đang chạy Playwright...";
+  setBusy(true, runUiButton, "runningUi");
+  setStatus("running", "runningUi", "Launching Playwright...");
+  uiResults.textContent = ">>> PLAYWRIGHT EXECUTION STARTED...";
   try {
-    const data = await apiFetch("/api/run_ui_smoke", {
-      method: "POST",
-      body: JSON.stringify({}),
-    });
-
-    uiResults.textContent = [data.stdout, data.stderr].filter(Boolean).join("\n").trim() || "Không có output.";
-    updateLog(data.ok ? "Playwright smoke chạy thành công." : (data.message || "Playwright smoke thất bại."));
-  } catch (error) {
-    uiResults.textContent = `Lỗi: ${error.message}`;
-    updateLog(`UI automation lỗi: ${error.message}`);
+    const data = await apiFetch("/api/run_ui_smoke", { method: "POST", body: JSON.stringify({}) });
+    uiResults.textContent = [data.stdout, data.stderr].filter(Boolean).join("\n").trim();
+    setStatus(data.ok ? "success" : "error", data.ok ? "UI Tests Passed" : "UI Tests Failed", "See output for details.");
+  } catch (e) {
+    uiResults.textContent = `>>> ERROR: ${e.message}`;
+    setStatus("error", "UI Automation Error", e.message);
   } finally {
-    setBusy(false);
+    setBusy(false, runUiButton);
   }
 });
 
-refreshState().catch((error) => {
-  updateLog(`Không tải được trạng thái ban đầu: ${error.message}`);
-});
+applyTheme();
+applyTranslations();
+refreshState().catch(console.error);
+languageSelect.value = currentLanguage;

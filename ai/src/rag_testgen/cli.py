@@ -5,6 +5,7 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
+from .db_context import DatabaseContextIndex
 from .frontend_context import FrontendContextIndex
 from .models import GeneratedApiTestcases, TestCollection
 from .prompting import DEFAULT_PROMPT_TEMPLATE, build_fallback_testcases, build_prompt
@@ -30,6 +31,7 @@ def main() -> None:
     generate_parser.add_argument("--provider", choices=["ollama", "openai"], default=DEFAULT_PROVIDER)
     generate_parser.add_argument("--model", default=DEFAULT_MODEL)
     generate_parser.add_argument("--frontend-src", help="Optional frontend source root for API usage context.")
+    generate_parser.add_argument("--env-file", help="Optional explicit env file for database settings.")
     generate_parser.add_argument("--prompt-file", help="Optional custom prompt template file.")
     generate_parser.add_argument("--limit", type=int, help="Generate only the first N routes.")
     generate_parser.add_argument("--dry-run", action="store_true", help="Skip model calls and use fallback testcases.")
@@ -50,13 +52,15 @@ def main() -> None:
     provider = None if args.dry_run else HttpLlmProvider(args.provider, args.model)
     retrieval_index = RetrievalIndex(args.src)
     frontend_index = FrontendContextIndex(args.frontend_src) if args.frontend_src else None
+    db_index = DatabaseContextIndex(args.src, env_file=args.env_file)
     generated: list[GeneratedApiTestcases] = []
 
     for route in routes:
         contexts = retrieval_index.retrieve_context(route)
         if frontend_index is not None:
             contexts.extend(frontend_index.retrieve_context(route))
-            contexts.sort(key=lambda item: item.score, reverse=True)
+        contexts.extend(db_index.retrieve_context(route))
+        contexts.sort(key=lambda item: item.score, reverse=True)
         payload, raw_output = _generate_for_route(route, contexts, prompt_template, provider)
         generated.append(
             GeneratedApiTestcases(
