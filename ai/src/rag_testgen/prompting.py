@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 
 from .models import RetrievedContext, RouteInfo
 
@@ -43,16 +44,99 @@ Retrieved context:
 __CONTEXT_JSON__
 """
 
+DEFAULT_SINGLE_TESTCASE_PROMPT_TEMPLATE = """You are an expert QA engineer.
+
+Generate exactly ONE complete HTTP/API testcase as a single JSON object (not an array).
+
+Scenario to cover:
+- Title: __SCENARIO_TITLE__
+- Hints (skeleton from static analysis): __SCENARIO_JSON__
+
+Requirements:
+- The testcase must be self-contained: realistic headers, query, path_params, body as applicable.
+- Align expected status and assertions with the scenario (positive, 401, 422, etc.).
+- Return valid JSON only using this shape:
+{
+  "name": "string",
+  "description": "string",
+  "request": {
+    "headers": {},
+    "query": {},
+    "path_params": {},
+    "body": {}
+  },
+  "expected": {
+    "status": 200,
+    "body_contains": [],
+    "notes": "string"
+  }
+}
+
+API metadata:
+__API_JSON__
+
+Retrieved context:
+__CONTEXT_JSON__
+"""
+
+
+def truncate_contexts(contexts: list[RetrievedContext], max_chars: int | None = None) -> list[RetrievedContext]:
+    """Keep highest-scoring snippets until max_chars total snippet length."""
+    if max_chars is None:
+        max_chars = int(os.environ.get("RAG_TESTGEN_MAX_CONTEXT_CHARS", "12000"))
+    if max_chars <= 0:
+        return list(contexts)
+    ordered = sorted(contexts, key=lambda c: c.score, reverse=True)
+    out: list[RetrievedContext] = []
+    used = 0
+    for item in ordered:
+        chunk = len(item.snippet) + len(item.file_path) + 32
+        if used + chunk > max_chars and out:
+            break
+        out.append(item)
+        used += chunk
+    return out or ordered[:1]
+
 
 def build_prompt(
     route: RouteInfo,
     contexts: list[RetrievedContext],
     prompt_template: str = DEFAULT_PROMPT_TEMPLATE,
+    max_context_chars: int | None = None,
+    compact_route: bool = False,
 ) -> str:
-    api_json = json.dumps(route.to_dict(), indent=2, ensure_ascii=False)
-    context_json = json.dumps([item.to_dict() for item in contexts], indent=2, ensure_ascii=False)
+    route_payload = route.to_dict()
+    if compact_route:
+        route_payload.pop("source_snippet", None)
+    api_json = json.dumps(route_payload, indent=2, ensure_ascii=False)
+    trimmed = truncate_contexts(contexts, max_context_chars)
+    context_json = json.dumps([item.to_dict() for item in trimmed], indent=2, ensure_ascii=False)
     return (
         prompt_template.replace("__API_JSON__", api_json).replace("__CONTEXT_JSON__", context_json)
+    )
+
+
+def build_single_testcase_prompt(
+    route: RouteInfo,
+    contexts: list[RetrievedContext],
+    scenario: dict,
+    prompt_template: str | None = None,
+    max_context_chars: int | None = None,
+) -> str:
+    """One LLM call = one testcase. `scenario` is typically one entry from build_fallback_testcases()."""
+    template = prompt_template or DEFAULT_SINGLE_TESTCASE_PROMPT_TEMPLATE
+    if "__SCENARIO_TITLE__" not in template:
+        template = DEFAULT_SINGLE_TESTCASE_PROMPT_TEMPLATE
+    api_json = json.dumps(route.to_dict(), indent=2, ensure_ascii=False)
+    trimmed = truncate_contexts(contexts, max_context_chars)
+    context_json = json.dumps([item.to_dict() for item in trimmed], indent=2, ensure_ascii=False)
+    title = str(scenario.get("name") or "Testcase")
+    scenario_json = json.dumps(scenario, indent=2, ensure_ascii=False)
+    return (
+        template.replace("__API_JSON__", api_json)
+        .replace("__CONTEXT_JSON__", context_json)
+        .replace("__SCENARIO_TITLE__", title)
+        .replace("__SCENARIO_JSON__", scenario_json)
     )
 
 

@@ -12,8 +12,10 @@ const scanButton = document.querySelector("#scan-button");
 const generateButton = document.querySelector("#generate-button");
 const languageSelect = document.querySelector("#language-select");
 const themeToggleButton = document.querySelector("#theme-toggle-button");
+const screenToggleButton = document.querySelector("#screen-toggle-button");
 const outputPath = document.querySelector("#output-path");
 const copyPathButton = document.querySelector("#copy-path-button");
+const downloadCollectionButton = document.querySelector("#download-collection-button");
 const routesFilterInput = document.querySelector("#routes-filter");
 const collectionFilterInput = document.querySelector("#collection-filter");
 const statusDot = document.querySelector("#status-dot");
@@ -29,12 +31,18 @@ const summaryTime = document.querySelector("#summary-time");
 const apiTotal = document.querySelector("#api-total");
 const apiPassed = document.querySelector("#api-passed");
 const apiFailed = document.querySelector("#api-failed");
+const sidebarTabs = Array.from(document.querySelectorAll("[data-sidebar-tab]"));
+const sidebarSections = Array.from(document.querySelectorAll("[data-sidebar-section]"));
+const screenScopedNodes = Array.from(document.querySelectorAll("[data-screen]"));
 
 const allActionButtons = [scanButton, generateButton, loadCollectionButton, runApiButton, runUiButton];
 let cachedRoutes = [];
 let cachedApis = [];
 let currentLanguage = localStorage.getItem("automation-ui-lang") || "vi";
 let currentTheme = localStorage.getItem("automation-ui-theme") || "light";
+let currentScreenMode = localStorage.getItem("automation-ui-screen-mode") || "normal";
+let currentSidebarTab = localStorage.getItem("automation-ui-sidebar-tab") || "generate";
+let currentOutputPath = "";
 
 const MESSAGES = {
   vi: {
@@ -59,6 +67,7 @@ const MESSAGES = {
     generatedAtLabel: "Ngày tạo",
     collectionPath: "Đường dẫn file",
     copyPath: "Copy",
+    downloadCollection: "Tải JSON",
     apiAutomation: "API Automation",
     apiAutomationDesc: "Chạy test API tự động với phản hồi thời gian thực.",
     apiBaseUrl: "API Base URL mục tiêu",
@@ -77,6 +86,8 @@ const MESSAGES = {
     runningUi: "Đang chạy Playwright...",
     themeToLight: "Sáng",
     themeToDark: "Tối",
+    screenToFocus: "Focus",
+    screenToNormal: "Normal",
   },
   en: {
     heroEyebrow: "Automation Suite",
@@ -100,6 +111,7 @@ const MESSAGES = {
     generatedAtLabel: "Created",
     collectionPath: "File Path",
     copyPath: "Copy",
+    downloadCollection: "Download JSON",
     apiAutomation: "API Automation",
     apiAutomationDesc: "Run automated API tests with real-time feedback.",
     apiBaseUrl: "Target API Base URL",
@@ -118,6 +130,8 @@ const MESSAGES = {
     runningUi: "Running Playwright...",
     themeToLight: "Light",
     themeToDark: "Dark",
+    screenToFocus: "Focus",
+    screenToNormal: "Normal",
   },
 };
 
@@ -139,6 +153,13 @@ function applyTranslations() {
   runApiButton.textContent = t("runApiTests");
   runUiButton.textContent = t("runUiSmoke");
   copyPathButton.textContent = t("copyPath");
+  if (downloadCollectionButton) {
+    downloadCollectionButton.textContent = t("downloadCollection");
+  }
+  if (screenToggleButton) {
+    screenToggleButton.textContent =
+      currentScreenMode === "focus" ? t("screenToNormal") : t("screenToFocus");
+  }
 }
 
 function applyTheme() {
@@ -147,6 +168,32 @@ function applyTheme() {
   themeToggleButton.innerHTML = currentTheme === "dark" 
     ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg> ${nextThemeLabel}`
     : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg> ${nextThemeLabel}`;
+}
+
+function applyScreenMode() {
+  document.body.classList.toggle("screen-focus", currentScreenMode === "focus");
+  if (screenToggleButton) {
+    screenToggleButton.textContent =
+      currentScreenMode === "focus" ? t("screenToNormal") : t("screenToFocus");
+  }
+}
+
+function applySidebarTab() {
+  sidebarTabs.forEach((tab) => {
+    const isActive = tab.dataset.sidebarTab === currentSidebarTab;
+    tab.classList.toggle("active", isActive);
+  });
+
+  screenScopedNodes.forEach((node) => {
+    const scope = node.dataset.screen || "all";
+    if (scope === "all") {
+      node.classList.remove("screen-hidden");
+      return;
+    }
+    const targets = scope.split(",").map((item) => item.trim());
+    const visible = targets.includes(currentSidebarTab);
+    node.classList.toggle("screen-hidden", !visible);
+  });
 }
 
 async function apiFetch(url, options = {}) {
@@ -168,13 +215,17 @@ async function apiFetch(url, options = {}) {
 
 function setBusy(isBusy, btn = null, loadingKey = null) {
   allActionButtons.forEach(b => b.disabled = isBusy);
-  if (btn && loadingKey) {
-    if (isBusy) {
-      btn.dataset.prevText = btn.innerHTML;
-      btn.textContent = t(loadingKey);
-    } else {
-      btn.innerHTML = btn.dataset.prevText;
-    }
+  if (!btn) return;
+
+  if (isBusy && loadingKey) {
+    btn.dataset.prevText = btn.innerHTML;
+    btn.textContent = t(loadingKey);
+    return;
+  }
+
+  if (!isBusy && btn.dataset.prevText) {
+    btn.innerHTML = btn.dataset.prevText;
+    delete btn.dataset.prevText;
   }
 }
 
@@ -260,8 +311,12 @@ function renderSummary(summary, path) {
   summaryProject.textContent = summary?.project || "-";
   summaryCount.textContent = summary?.api_count ?? "-";
   summaryTime.textContent = summary?.generated_at?.split('T')[0] || "-";
-  outputPath.textContent = path || "-";
-  copyPathButton.disabled = !path;
+  currentOutputPath = path || "";
+  outputPath.textContent = currentOutputPath || "-";
+  copyPathButton.disabled = !currentOutputPath;
+  if (downloadCollectionButton) {
+    downloadCollectionButton.disabled = !currentOutputPath;
+  }
 }
 
 function renderApiResults(results = [], summary = null) {
@@ -322,6 +377,22 @@ themeToggleButton.addEventListener("click", () => {
   applyTranslations();
 });
 
+if (screenToggleButton) {
+  screenToggleButton.addEventListener("click", () => {
+    currentScreenMode = currentScreenMode === "focus" ? "normal" : "focus";
+    localStorage.setItem("automation-ui-screen-mode", currentScreenMode);
+    applyScreenMode();
+  });
+}
+
+sidebarTabs.forEach((tab) => {
+  tab.addEventListener("click", () => {
+    currentSidebarTab = tab.dataset.sidebarTab || "generate";
+    localStorage.setItem("automation-ui-sidebar-tab", currentSidebarTab);
+    applySidebarTab();
+  });
+});
+
 copyPathButton.addEventListener("click", async () => {
   const path = outputPath.textContent.trim();
   if (!path || path === "-") return;
@@ -334,6 +405,32 @@ copyPathButton.addEventListener("click", async () => {
     setStatus("error", "Copy Failed", e.message);
   }
 });
+
+if (downloadCollectionButton) {
+  downloadCollectionButton.addEventListener("click", async () => {
+    if (!currentOutputPath) return;
+    try {
+      const res = await fetch(`/api/download_output?path=${encodeURIComponent(currentOutputPath)}`);
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || `HTTP ${res.status}`);
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      const fallbackName = currentOutputPath.split("/").pop() || "generated-testcases.json";
+      link.download = fallbackName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      setStatus("success", "Collection Ready", `Downloaded ${fallbackName}`);
+    } catch (e) {
+      setStatus("error", "Download Error", e.message);
+    }
+  });
+}
 
 scanButton.addEventListener("click", async () => {
   setBusy(true, scanButton, "scanning");
@@ -363,6 +460,8 @@ document.querySelector("#generator-form").addEventListener("submit", async (e) =
       output_file: outputInput.value.trim(),
       limit: limitInput.value.trim(),
       dry_run: dryRunInput.checked,
+      provider: "groq",
+      model: "llama-3.1-8b-instant",
     };
     const data = await apiFetch("/api/generate", { method: "POST", body: JSON.stringify(payload) });
     const output = await apiFetch("/api/output");
@@ -433,5 +532,7 @@ runUiButton.addEventListener("click", async () => {
 
 applyTheme();
 applyTranslations();
+applyScreenMode();
+applySidebarTab();
 refreshState().catch(console.error);
 languageSelect.value = currentLanguage;

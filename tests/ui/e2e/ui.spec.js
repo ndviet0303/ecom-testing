@@ -8,12 +8,14 @@ test("load collection and run tester smoke flow", async ({ page }) => {
 
   await page.goto(baseUrl);
 
+  await page.click('[data-sidebar-tab="collection"]');
   await page.setInputFiles("#collection-file", collectionFile);
   await page.click("#load-collection-button");
 
   await expect(page.locator("#summary-count")).not.toHaveText("-");
   await expect(page.locator("#collection-preview")).toContainText("/");
 
+  await page.click('[data-sidebar-tab="generate"]');
   await page.click("#scan-button");
   await expect(page.locator("#routes-preview")).toContainText("/");
 });

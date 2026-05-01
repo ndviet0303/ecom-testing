@@ -53,6 +53,7 @@ Route::middleware(['throttle:120,1'])->prefix('v1')->group(function (): void {
     Route::get('shipping-zones', [ShippingZoneController::class, 'index']);
 
     Route::post('build/validate', [BuildCompatibilityController::class, 'validateBuild']);
+    Route::post('pc-builder/validate', [BuildCompatibilityController::class, 'validateBuild']);
 
     Route::post('newsletter/subscribe', [NewsletterController::class, 'subscribe']);
     Route::post('newsletter/unsubscribe', [NewsletterController::class, 'unsubscribe']);

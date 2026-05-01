@@ -42,7 +42,9 @@ class GeneratedApiTestcases:
     raw_model_output: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
-        return asdict(self)
+        payload = asdict(self)
+        payload.pop("retrieved_context", None)
+        return payload
 
 
 @dataclass(slots=True)

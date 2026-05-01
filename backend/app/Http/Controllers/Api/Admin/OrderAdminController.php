@@ -92,8 +92,13 @@ class OrderAdminController extends Controller
 
             foreach ($items as $itemPayload) {
                 $item = $orderItems->get($itemPayload['id']);
+                $serialNumber = $itemPayload['serial_number'] ?? null;
+                $warrantyMonths = (int) ($item?->product?->warranty_months ?? 0);
                 $item?->update([
-                    'serial_number' => $itemPayload['serial_number'] ?? null,
+                    'serial_number' => $serialNumber,
+                    'warranty_expires_at' => $serialNumber && $warrantyMonths > 0
+                        ? now()->addMonths($warrantyMonths)
+                        : null,
                 ]);
             }
         });

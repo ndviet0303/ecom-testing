@@ -15,6 +15,8 @@ class OrderItem extends Model
         'name',
         'quantity',
         'unit_price_cents',
+        'serial_number',
+        'warranty_expires_at',
     ];
 
     protected function casts(): array
@@ -22,8 +24,11 @@ class OrderItem extends Model
         return [
             'quantity' => 'integer',
             'unit_price_cents' => 'integer',
+            'warranty_expires_at' => 'datetime',
         ];
     }
+
+    protected $appends = ['is_under_warranty'];
 
     public function order(): BelongsTo
     {
@@ -38,5 +43,10 @@ class OrderItem extends Model
     public function returnRequests(): HasMany
     {
         return $this->hasMany(ReturnRequest::class);
+    }
+
+    public function getIsUnderWarrantyAttribute(): bool
+    {
+        return $this->warranty_expires_at !== null && $this->warranty_expires_at->isFuture();
     }
 }

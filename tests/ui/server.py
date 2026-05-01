@@ -100,6 +100,11 @@ class UiHandler(BaseHTTPRequestHandler):
         if parsed.path == "/api/output":
             self._json_response(self._load_output())
             return
+        if parsed.path == "/api/download_output":
+            query = parse.parse_qs(parsed.query)
+            target = query.get("path", [""])[0]
+            self._download_output(target)
+            return
         if parsed.path == "/api/collection":
             self._json_response(self._load_collection())
             return
@@ -151,6 +156,22 @@ class UiHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def _download_output(self, target_path: str | None) -> None:
+        if target_path:
+            file_path = Path(target_path).expanduser().resolve()
+        else:
+            file_path = DEFAULT_OUTPUT.resolve()
+        if not file_path.exists() or not file_path.is_file():
+            self.send_error(HTTPStatus.NOT_FOUND, "Output file not found")
+            return
+        body = file_path.read_bytes()
+        self.send_response(HTTPStatus.OK)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Content-Disposition", f'attachment; filename="{file_path.name}"')
+        self.end_headers()
+        self.wfile.write(body)
+
     def _scan(self, payload: dict) -> dict:
         backend_src = payload.get("backend_src") or "../backend"
         process = _run_cli(["python3", "-m", "rag_testgen.cli", "scan", "--src", backend_src])
@@ -175,8 +196,17 @@ class UiHandler(BaseHTTPRequestHandler):
         backend_src = payload.get("backend_src") or "../backend"
         frontend_src = payload.get("frontend_src") or "../frontend"
         output_file = payload.get("output_file") or "./generated-testcases.json"
-        dry_run = bool(payload.get("dry_run", True))
+        dry_run = bool(payload.get("dry_run", False))
         limit = str(payload.get("limit", "")).strip()
+        provider = str(payload.get("provider") or os.environ.get("RAG_TESTGEN_PROVIDER") or "groq").strip()
+        if provider == "gemini":
+            model = str(payload.get("model") or os.environ.get("RAG_TESTGEN_MODEL") or "gemini-2.5-flash")
+        elif provider == "groq":
+            model = str(payload.get("model") or os.environ.get("RAG_TESTGEN_MODEL") or "llama-3.1-8b-instant")
+        elif provider == "openai":
+            model = str(payload.get("model") or os.environ.get("RAG_TESTGEN_MODEL") or "gpt-4o-mini")
+        else:
+            model = str(payload.get("model") or os.environ.get("RAG_TESTGEN_MODEL") or "qwen2.5-coder:7b")
 
         command = [
             "python3",
@@ -189,6 +219,10 @@ class UiHandler(BaseHTTPRequestHandler):
             frontend_src,
             "--out",
             output_file,
+            "--provider",
+            provider,
+            "--model",
+            model,
         ]
 
         if dry_run:
@@ -289,6 +323,7 @@ class UiHandler(BaseHTTPRequestHandler):
         if not collection_info["exists"]:
             return {"ok": False, "message": "Chưa có collection được nạp."}
 
+        _ensure_runtime()
         base_url = str(payload.get("base_url") or "").strip() or "http://127.0.0.1:8000/api"
         collection = json.loads(UPLOADED_COLLECTION.read_text(encoding="utf-8"))
         api_results: list[dict] = []
@@ -362,7 +397,7 @@ class UiHandler(BaseHTTPRequestHandler):
                 }
             )
 
-        return {
+        report_payload = {
             "ok": True,
             "summary": {
                 "total": total,
@@ -372,6 +407,10 @@ class UiHandler(BaseHTTPRequestHandler):
             },
             "results": api_results,
         }
+        report_path = RUNTIME_DIR / "api-test-results.json"
+        report_path.write_text(json.dumps(report_payload, indent=2, ensure_ascii=False), encoding="utf-8")
+        report_payload["result_file"] = str(report_path)
+        return report_payload
 
     def _run_ui_smoke(self) -> dict:
         collection_info = self._load_collection()
