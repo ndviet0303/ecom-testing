@@ -6,11 +6,11 @@
 
 ## Thông Tin Nhóm
 
-| STT | Họ và tên    | MSSV   | Vai trò                                                         |
-| --- | ------------ | ------ | --------------------------------------------------------------- |
-| 1   | Thành viên 1 | MSSV 1 | Trưởng nhóm, Thiết kế và thực thi test backend/API, frontend/UI |
-| 2   | Thành viên 2 | MSSV 2 |                                                                 |
-| 3   | Thành viên 3 | MSSV 3 |                                                                 |
+| STT | Họ và tên       | MSSV     | Vai trò                                                         |
+| --- | --------------- | -------- | --------------------------------------------------------------- |
+| 1   | Nghiêm Đức Việt | 23010636 | Trưởng nhóm, Thiết kế và thực thi test backend/API, frontend/UI |
+| 2   | Nguyễn Duy Minh | MSSV 2   |                                                                 |
+| 3   | Đặng Nhất Nhất  | MSSV 3   |                                                                 |
 
 ## Mục Tiêu Báo Cáo
 
@@ -245,5 +245,3 @@ Dự án mô phỏng quy trình kiểm thử phần mềm cho ứng dụng web g
 - Cập nhật tên thành viên, MSSV và kết quả thực tế trước khi nộp báo cáo.
 - Nếu môi trường không có `python3.14`, có thể thử bằng `python3` nếu package tương thích.
 - Nên lưu ảnh chụp màn hình kết quả test trong báo cáo chính hoặc phụ lục.
-
-##
