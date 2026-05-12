@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Domain\Ecommerce\Compatibility\PcBuildCompatibility;
 use App\Domain\Ecommerce\Exception\InvalidDomainArgumentException;
 use App\Http\Controllers\Controller;
+use App\Models\Product;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -12,6 +13,10 @@ class BuildCompatibilityController extends Controller
 {
     public function validateBuild(Request $request, PcBuildCompatibility $checker): JsonResponse
     {
+        if (is_array($request->input('product_ids'))) {
+            return $this->validateByProductIds($request, $checker);
+        }
+
         $validated = $request->validate([
             'cpu_socket' => ['nullable', 'string', 'max:50'],
             'motherboard_socket' => ['nullable', 'string', 'max:50'],
@@ -61,5 +66,57 @@ class BuildCompatibilityController extends Controller
         }
 
         return response()->json(['ok' => true, 'message' => 'Build checks passed for provided fields.']);
+    }
+
+    private function validateByProductIds(Request $request, PcBuildCompatibility $checker): JsonResponse
+    {
+        $validated = $request->validate([
+            'product_ids' => ['required', 'array', 'min:1'],
+            'product_ids.*' => ['integer', 'exists:products,id'],
+        ]);
+        $products = Product::query()->whereIn('id', $validated['product_ids'])->get();
+
+        $cpu = $products->first(fn (Product $product): bool => strtoupper((string) $product->category) === 'CPU');
+        $mb = $products->first(
+            fn (Product $product): bool => strtoupper((string) $product->category) === 'MOTHERBOARD'
+        );
+        $ram = $products->first(fn (Product $product): bool => strtoupper((string) $product->category) === 'RAM');
+        $gpu = $products->first(fn (Product $product): bool => strtoupper((string) $product->category) === 'GPU');
+        $psu = $products->first(fn (Product $product): bool => strtoupper((string) $product->category) === 'PSU');
+
+        $estimatedWatts = 50
+            + (int) data_get($cpu?->specs, 'tdp', 0)
+            + (int) data_get($gpu?->specs, 'tbp', 0);
+        $errors = [];
+
+        try {
+            if ($cpu && $mb) {
+                $checker->assertCpuSocketMatchesMotherboard(
+                    (string) data_get($cpu->specs, 'socket', ''),
+                    (string) data_get($mb->specs, 'socket', '')
+                );
+            }
+            if ($ram && $mb) {
+                $checker->assertRamTypeMatchesMotherboard(
+                    (string) data_get($ram->specs, 'ram_type', ''),
+                    (string) data_get($mb->specs, 'ram_type', '')
+                );
+            }
+            if ($psu) {
+                $checker->assertPsuAdequate(
+                    (int) data_get($psu->specs, 'wattage', 0),
+                    $estimatedWatts,
+                    0.2
+                );
+            }
+        } catch (InvalidDomainArgumentException $e) {
+            $errors[] = $e->getMessage();
+        }
+
+        return response()->json([
+            'valid' => count($errors) === 0,
+            'errors' => $errors,
+            'estimated_wattage' => $estimatedWatts,
+        ]);
     }
 }

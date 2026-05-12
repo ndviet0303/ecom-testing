@@ -6,7 +6,7 @@ Web app local cho demo automation testing, đặt trong `tests/ui`.
 
 ```bash
 cd tests/ui
-python3 server.py
+python3.14 server.py
 ```
 
 Mặc định app sẽ thử chạy tại:
@@ -23,7 +23,7 @@ Nếu cổng này đang bận, server sẽ tự nhảy sang cổng trống tiế
 - chọn file `collection testcase` JSON
 - preview collection đã load
 - chạy `API automation` theo collection đã chọn
-- chạy `UI automation` bằng Playwright smoke cho chính web app này
+- chạy `UI automation` bằng Playwright smoke theo đúng luồng Run: dùng collection đang upload trong `.runtime/uploaded-collection.json` hoặc `RAG_COLLECTION_FILE`, rồi bấm API Suite
 - xem log và kết quả pass/fail ngay trên trình duyệt
 
 ## Ghi chú
@@ -33,3 +33,4 @@ Nếu cổng này đang bận, server sẽ tự nhảy sang cổng trống tiế
 - dependency Playwright nằm riêng trong `tests/ui/package.json`
 - để demo nhanh nên dùng `Dry run` khi generate collection
 - để chạy API test thật, backend của bạn phải đang chạy ở base URL tương ứng
+- Playwright smoke có thể dùng `RAG_API_BASE_URL` để chỉ định API target; mặc định là `https://ecom.ziet.dev//api`

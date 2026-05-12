@@ -1,0 +1,142 @@
+{
+  "config": {
+    "rootDir": "/Users/ziet/WorkSpace/ziet's project/testing/tests/ui",
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/ziet/WorkSpace/ziet's project/testing/tests/ui/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/Users/ziet/WorkSpace/ziet's project/testing/tests/ui",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "line"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.59.1",
+    "workers": 4,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "e2e/ui.spec.js",
+      "file": "e2e/ui.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "run ecommerce UI journeys compiled from selected collection",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 48699,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "home page loads against target site",
+                      "duration": 673
+                    },
+                    {
+                      "title": "auth/login UI: /api/auth/login, /v1/addresses, /v1/addresses, /v1/addresses/{addresse}, /v1/addresses/{addresse}, /v1/addresses/{addresse}, /v1/wishlist, /v1/wishlist/{product}, /v1/wishlist/{product}",
+                      "duration": 20770
+                    },
+                    {
+                      "title": "auth/register UI: /api/auth/register",
+                      "duration": 370
+                    },
+                    {
+                      "title": "product catalog UI: /v1/products, /v1/products/{product}/reviews, /v1/products/{product}, /v1/products/{product}/reviews, /v1/admin/products, /v1/admin/products/{product}, /v1/admin/products/{product}",
+                      "duration": 1311
+                    },
+                    {
+                      "title": "PC builder UI: /v1/build/validate, /v1/pc-builder/validate",
+                      "duration": 1626
+                    },
+                    {
+                      "title": "cart UI: /v1/cart, /v1/cart/items, /v1/cart/items/{productId}, /v1/cart/items/{productId}, /v1/cart/merge",
+                      "duration": 1065
+                    },
+                    {
+                      "title": "checkout UI: /v1/coupons, /v1/coupons/{code}/preview, /v1/shipping-zones, /v1/payments/sepay, /v1/checkout, /v1/orders, /v1/orders/{order}, /v1/orders/{order}/sepay-qr, /v1/orders/{order}/cancel, /v1/admin/orders, /v1/admin/orders/{order}/status, /v1/admin/orders/{order}/fulfillment, /v1/admin/coupons, /v1/admin/coupons, /v1/admin/coupons/{coupon}, /v1/admin/coupons/{coupon}, /v1/admin/shipping-zones, /v1/admin/shipping-zones, /v1/admin/shipping-zones/{shipping_zone}, /v1/admin/shipping-zones/{shipping_zone}",
+                      "duration": 20633
+                    },
+                    {
+                      "title": "admin access UI: /v1/admin/orders, /v1/admin/orders/{order}/status, /v1/admin/orders/{order}/fulfillment, /v1/admin/inventory/low-stock, /v1/admin/audit-logs, /v1/admin/return-requests, /v1/admin/return-requests/{returnRequest}, /v1/admin/products, /v1/admin/products/{product}, /v1/admin/products/{product}, /v1/admin/coupons, /v1/admin/coupons, /v1/admin/coupons/{coupon}, /v1/admin/coupons/{coupon}, /v1/admin/shipping-zones, /v1/admin/shipping-zones, /v1/admin/shipping-zones/{shipping_zone}, /v1/admin/shipping-zones/{shipping_zone}",
+                      "duration": 1757
+                    }
+                  ],
+                  "startTime": "2026-05-12T16:53:00.478Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "e798a48fbfeeb2c533fe-1925f73e0f5866f31ab3",
+          "file": "e2e/ui.spec.js",
+          "line": 241,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-05-12T16:53:00.176Z",
+    "duration": 49868.843,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

@@ -3,195 +3,303 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Automation Tester UI</title>
+    <title>Automation Tester | Pro Max</title>
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
     <main class="page-shell">
-      <section class="hero-card">
+      <header class="glass-panel hero-card">
         <div class="hero-copy">
-          <span class="eyebrow">Demo UI</span>
-          <h1>Automation Tester</h1>
-          <p>
-            Web app local để generate collection, chọn file testcase JSON, rồi chạy
-            automation test cho API và UI dựa trên chính file collection đó.
+          <span class="eyebrow" data-i18n="heroEyebrow">Automation Suite</span>
+          <h1 data-i18n="heroTitle">Automation Tester</h1>
+          <p data-i18n="heroDesc">
+            Professional-grade automation engine for modern web apps.
           </p>
         </div>
-        <div class="hero-badges">
-          <span class="badge">Laravel + Vue</span>
-          <span class="badge">API Automation</span>
-          <span class="badge">Playwright UI Smoke</span>
+        <div class="top-controls">
+          <label class="control-inline">
+            <span data-i18n="languageLabel">Lang</span>
+            <select id="language-select">
+              <option value="vi">Tiếng Việt</option>
+              <option value="en">English</option>
+            </select>
+          </label>
+          <button id="screen-toggle-button" type="button" class="ghost-button">Focus</button>
+          <button id="theme-toggle-button" type="button" class="ghost-button">Theme</button>
         </div>
-      </section>
+      </header>
 
-      <section class="grid-layout">
-        <article class="panel">
-          <div class="panel-head">
-            <h2>Generate Collection</h2>
-            <p>Tạo hoặc làm mới file testcase collection từ source code.</p>
-          </div>
+      <section class="app-layout">
+        <aside class="sidebar">
+          <nav class="glass-panel sidebar-tabs" aria-label="Sidebar Sections">
+            <button type="button" class="sidebar-tab active" data-sidebar-tab="generate">Generate</button>
+            <button type="button" class="sidebar-tab" data-sidebar-tab="collection">Collection</button>
+            <button type="button" class="sidebar-tab" data-sidebar-tab="run">Run</button>
+            <button type="button" class="sidebar-tab" data-sidebar-tab="analysis">Analyze</button>
+            <button type="button" class="sidebar-tab" data-sidebar-tab="settings" data-i18n="settingsTab">Settings</button>
+          </nav>
 
-          <form id="generator-form" class="form-stack">
-            <label>
-              <span>Backend source</span>
-              <input id="backend-src" name="backend-src" type="text" />
-            </label>
-
-            <label>
-              <span>Frontend source</span>
-              <input id="frontend-src" name="frontend-src" type="text" />
-            </label>
-
-            <label>
-              <span>Output file</span>
-              <input id="output-file" name="output-file" type="text" />
-            </label>
-
-            <div class="inline-fields">
+          <article class="glass-panel panel sidebar-panel" data-sidebar-section="generate" data-screen="generate">
+            <div class="panel-head">
+              <h2 data-i18n="generateTitle">Generate Collection</h2>
+              <p data-i18n="generateDesc">Extract and build testcase collections from source code.</p>
+            </div>
+            <form id="generator-form" class="form-stack">
               <label>
-                <span>Limit route</span>
-                <input id="limit" name="limit" type="number" min="1" placeholder="All" />
+                <span data-i18n="backendSource">Backend path</span>
+                <div class="input-picker">
+                  <input id="backend-src" name="backend-src" type="text" placeholder="/path/to/backend" />
+                  <button id="choose-backend-button" type="button" class="ghost-button picker-button" data-i18n="browsePath">Choose</button>
+                </div>
               </label>
-
-              <label class="checkbox-field">
-                <span>Dry run</span>
-                <input id="dry-run" name="dry-run" type="checkbox" checked />
+              <label>
+                <span data-i18n="frontendSource">Frontend path</span>
+                <div class="input-picker">
+                  <input id="frontend-src" name="frontend-src" type="text" placeholder="/path/to/frontend" />
+                  <button id="choose-frontend-button" type="button" class="ghost-button picker-button" data-i18n="browsePath">Choose</button>
+                </div>
               </label>
-            </div>
-
-            <div class="button-row">
-              <button id="scan-button" type="button" class="secondary-button">
-                Scan Routes
+              <div class="form-inline-grid">
+                <label>
+                  <span data-i18n="limitRoute">Route Limit</span>
+                  <input id="limit" name="limit" type="number" min="1" placeholder="All" />
+                </label>
+                <label class="checkbox-inline">
+                  <span data-i18n="dryRun">Dry Run</span>
+                  <input id="dry-run" name="dry-run" type="checkbox" />
+                </label>
+              </div>
+              <div class="button-row">
+                <button id="scan-button" type="button" class="secondary-button button-grow-1">Scan Routes</button>
+                <button id="generate-button" type="submit" class="primary-button button-grow-2">Generate</button>
+              </div>
+              <button id="download-generated-button" type="button" class="secondary-button button-full" disabled data-i18n="downloadGenerated">
+                Download generated JSON
               </button>
-              <button id="generate-button" type="submit" class="primary-button">
-                Generate Collection
+            </form>
+          </article>
+
+          <article class="glass-panel panel sidebar-panel" data-sidebar-section="collection" data-screen="collection">
+            <div class="panel-head">
+              <h2 data-i18n="loaderTitle">Collection Loader</h2>
+              <p data-i18n="loaderDesc">Select an existing JSON collection to begin testing.</p>
+            </div>
+            <div class="form-stack">
+              <label>
+                <span data-i18n="chooseCollection">Testcase Collection File</span>
+                <input id="collection-file" type="file" accept=".json,application/json" />
+              </label>
+              <button id="load-collection-button" type="button" class="primary-button button-full">Load Collection</button>
+            </div>
+            <div class="panel-footer">
+              <span class="summary-label" data-i18n="collectionPath">File Path</span>
+              <div class="path-copy-row">
+                <code id="output-path" class="output-path">-</code>
+                <button id="copy-path-button" type="button" class="ghost-button path-copy-button">Copy</button>
+                <button id="download-collection-button" type="button" class="ghost-button path-copy-button" disabled>Download</button>
+              </div>
+            </div>
+          </article>
+
+          <article class="glass-panel panel sidebar-panel" data-sidebar-section="settings" data-screen="settings">
+            <div class="panel-head">
+              <h2 data-i18n="settingsTitle">Settings</h2>
+              <p data-i18n="settingsDesc">Configure the AI provider used when Generate runs without Dry Run.</p>
+            </div>
+            <div class="form-stack">
+              <div class="settings-card">
+                <div class="settings-card-head">
+                  <strong data-i18n="aiSettingsTitle">AI Settings</strong>
+                  <span id="ai-key-status" class="inline-status">Not configured</span>
+                </div>
+                <label>
+                  <span data-i18n="aiProvider">Provider</span>
+                  <select id="ai-provider">
+                    <option value="groq">Groq</option>
+                    <option value="ollama">Ollama</option>
+                    <option value="openai">OpenAI-compatible</option>
+                    <option value="gemini">Gemini</option>
+                  </select>
+                </label>
+                <label>
+                  <span data-i18n="aiModel">Model</span>
+                  <input id="ai-model" type="text" placeholder="llama-3.1-8b-instant" />
+                </label>
+                <label>
+                  <span data-i18n="aiApiKey">API key</span>
+                  <div class="secret-input">
+                    <input id="ai-api-key" type="password" placeholder="Paste key, then save" autocomplete="off" />
+                    <button id="toggle-api-key-button" type="button" class="ghost-button secret-toggle" data-i18n="showSecret">Show</button>
+                  </div>
+                </label>
+                <button id="save-ai-settings-button" type="button" class="secondary-button button-full" data-i18n="saveAiSettings">
+                  Save AI Settings
+                </button>
+              </div>
+            </div>
+          </article>
+
+          <article class="glass-panel panel sidebar-panel" data-sidebar-section="run" data-screen="run">
+            <div class="panel-head">
+              <h2 data-i18n="apiAutomation">API Automation</h2>
+              <p data-i18n="apiAutomationDesc">Run automated API tests with real-time feedback.</p>
+            </div>
+            <div class="form-stack">
+              <label>
+                <span data-i18n="chooseCollection">Testcase Collection File</span>
+                <input id="run-collection-file" type="file" accept=".json,application/json" />
+              </label>
+              <label>
+                <span data-i18n="apiBaseUrl">Target API Base URL</span>
+                <input id="api-base-url" type="text" value="http://127.0.0.1:8000/api" />
+              </label>
+              <label>
+                <span data-i18n="siteBaseUrl">Target Site URL</span>
+                <input id="site-base-url" type="text" value="https://ecom.ziet.dev/" />
+              </label>
+              <button id="run-api-button" type="button" class="primary-button button-full">Execute API Suite</button>
+              <div class="button-row">
+                <button id="download-result-button" type="button" class="ghost-button button-grow-1" disabled>Download Result JSON</button>
+                <button id="toggle-raw-result-button" type="button" class="ghost-button button-grow-1" disabled>Raw JSON</button>
+              </div>
+              <label class="checkbox-inline">
+                <span data-i18n="showPlaywrightUi">Show Playwright UI</span>
+                <input id="show-playwright-ui" type="checkbox" />
+              </label>
+              <button id="run-ui-button" type="button" class="secondary-button button-full" data-i18n="runUiSmoke">Run Playwright Suite</button>
+              <button id="download-playwright-report-button" type="button" class="ghost-button button-full" disabled data-i18n="downloadPlaywrightReport">
+                Download Playwright report JSON
               </button>
             </div>
-          </form>
-        </article>
+          </article>
 
-        <article class="panel">
-          <div class="panel-head">
-            <h2>Collection Loader</h2>
-            <p>Chọn file testcase JSON để chạy automation từ file đó.</p>
-          </div>
-
-          <div class="form-stack compact-top">
-            <label>
-              <span>Chọn file testcase collection</span>
-              <input id="collection-file" type="file" accept=".json,application/json" />
-            </label>
-            <div class="button-row">
-              <button id="load-collection-button" type="button" class="primary-button">
-                Load Collection
+          <article class="glass-panel panel sidebar-panel" data-sidebar-section="analysis" data-screen="analysis">
+            <div class="panel-head">
+              <h2 data-i18n="analysisTitle">Groq Analysis</h2>
+              <p data-i18n="analysisDesc">Train on the latest run context, then analyze the result JSON.</p>
+            </div>
+            <div class="form-stack">
+              <label>
+                <span data-i18n="analysisApiResult">API suite result JSON</span>
+                <input id="analysis-api-result-file" type="file" accept=".json,application/json" />
+              </label>
+              <label>
+                <span data-i18n="analysisPlaywrightResult">Playwright suite report JSON</span>
+                <input id="analysis-playwright-result-file" type="file" accept=".json,application/json" />
+              </label>
+              <button id="analyze-result-button" type="button" class="primary-button button-full" data-i18n="analyzeResults">
+                Analyze with Groq
+              </button>
+              <button id="download-analysis-button" type="button" class="ghost-button button-full" disabled data-i18n="downloadAnalysis">
+                Download analysis JSON
               </button>
             </div>
-          </div>
+          </article>
+        </aside>
 
-          <div class="summary-grid compact-top">
+        <section class="content-column">
+          <section class="status-strip" aria-live="polite" data-screen="all">
+            <div class="status-main">
+              <div class="status-dot-container">
+                <span class="status-dot active pulse" id="status-dot"></span>
+              </div>
+              <strong id="status-title">System Ready</strong>
+              <span id="status-detail" class="text-muted">Initialize by scanning routes or loading a collection.</span>
+            </div>
+          </section>
+
+          <section class="summary-grid" data-screen="collection,run,analysis">
             <div class="summary-card">
-              <span class="summary-label">Project</span>
+              <span class="summary-label" data-i18n="projectLabel">Project</span>
               <strong id="summary-project">-</strong>
             </div>
             <div class="summary-card">
-              <span class="summary-label">API count</span>
+              <span class="summary-label" data-i18n="apiCountLabel">APIs</span>
               <strong id="summary-count">-</strong>
             </div>
             <div class="summary-card">
-              <span class="summary-label">Generated at</span>
+              <span class="summary-label" data-i18n="generatedAtLabel">Created</span>
               <strong id="summary-time">-</strong>
             </div>
-          </div>
-
-          <div class="panel-section">
-            <span class="section-label">Collection path</span>
-            <code id="output-path">-</code>
-          </div>
-        </article>
-      </section>
-
-      <section class="grid-layout">
-        <article class="panel">
-          <div class="panel-head">
-            <h2>Route Preview</h2>
-            <p>Danh sách route scan được từ backend.</p>
-          </div>
-          <div id="routes-preview" class="scroll-panel empty-state">
-            Chưa scan route.
-          </div>
-        </article>
-
-        <article class="panel">
-          <div class="panel-head">
-            <h2>Collection Preview</h2>
-            <p>Preview 5 API đầu tiên trong file output.</p>
-          </div>
-          <div id="collection-preview" class="scroll-panel empty-state">
-            Chưa có dữ liệu collection.
-          </div>
-        </article>
-      </section>
-
-      <section class="grid-layout">
-        <article class="panel">
-          <div class="panel-head">
-            <h2>API Automation</h2>
-            <p>Chạy test API dựa trên collection đã load.</p>
-          </div>
-
-          <div class="form-stack compact-top">
-            <label>
-              <span>API base URL</span>
-              <input id="api-base-url" type="text" value="http://127.0.0.1:8000/api" />
-            </label>
-
-            <div class="button-row">
-              <button id="run-api-button" type="button" class="primary-button">
-                Run API Tests
-              </button>
-            </div>
-          </div>
-
-          <div id="api-results-summary" class="summary-grid compact-top">
             <div class="summary-card">
               <span class="summary-label">Total</span>
               <strong id="api-total">-</strong>
             </div>
-            <div class="summary-card">
-              <span class="summary-label">Passed</span>
-              <strong id="api-passed">-</strong>
+            <div class="summary-card summary-success">
+              <span class="summary-label" data-i18n="passedLabel">Passed</span>
+              <strong id="api-passed" class="text-success">-</strong>
             </div>
-            <div class="summary-card">
-              <span class="summary-label">Failed</span>
-              <strong id="api-failed">-</strong>
+            <div class="summary-card summary-danger">
+              <span class="summary-label" data-i18n="failedLabel">Failed</span>
+              <strong id="api-failed" class="text-danger">-</strong>
             </div>
-          </div>
+          </section>
 
-          <div id="api-results" class="scroll-panel empty-state">Chưa chạy API automation.</div>
-        </article>
+          <section class="grid-layout compact-grid" data-screen="generate,collection">
+            <article class="glass-panel panel panel-min-height" data-screen="generate">
+              <div class="panel-head"><h2>Route Inventory</h2></div>
+              <input id="routes-filter" type="text" placeholder="Filter routes..." class="filter-input" />
+              <div id="routes-preview" class="scroll-panel preview-panel"></div>
+            </article>
+            <article class="glass-panel panel panel-min-height" data-screen="collection">
+              <div class="panel-head"><h2>Collection Preview</h2></div>
+              <input id="collection-filter" type="text" placeholder="Filter collection..." class="filter-input" />
+              <div id="collection-preview" class="scroll-panel preview-panel"></div>
+            </article>
+          </section>
 
-        <article class="panel">
-          <div class="panel-head">
-            <h2>UI Automation</h2>
-            <p>Chạy Playwright smoke test cho chính web app này theo collection đã load.</p>
-          </div>
+          <section class="grid-layout compact-grid" data-screen="run">
+            <article class="glass-panel panel">
+              <div class="panel-head result-head">
+                <div>
+                  <h2>API Result</h2>
+                  <p id="api-result-meta">No execution yet.</p>
+                </div>
+              </div>
+              <div id="api-results" class="scroll-panel">Waiting for execution...</div>
+              <pre id="api-result-raw" class="scroll-panel raw-result-panel screen-hidden"></pre>
+            </article>
+            <article class="glass-panel panel">
+              <div class="panel-head"><h2 data-i18n="playwrightOutput">Automation Logs</h2></div>
+              <pre id="ui-results" class="scroll-panel log-panel">No logs yet.</pre>
+            </article>
+          </section>
 
-          <div class="button-row compact-top">
-            <button id="run-ui-button" type="button" class="secondary-button">
-              Run Playwright Smoke
-            </button>
-          </div>
+          <section class="grid-layout compact-grid" data-screen="analysis">
+            <article class="glass-panel panel">
+              <div class="panel-head result-head">
+                <div>
+                  <h2 data-i18n="analysisResultTitle">AI Analysis</h2>
+                  <p id="analysis-meta">No analysis yet.</p>
+                </div>
+              </div>
+              <div id="analysis-results" class="scroll-panel analysis-panel">Waiting for Groq analysis...</div>
+            </article>
+          </section>
 
-          <div class="panel-section">
-            <span class="section-label">Latest action</span>
-            <pre id="action-log" class="log-box">Chưa có thao tác nào.</pre>
-          </div>
-
-          <div class="panel-section">
-            <span class="section-label">Playwright output</span>
-            <pre id="ui-results" class="log-box">Chưa chạy UI automation.</pre>
-          </div>
-        </article>
+          <section class="grid-layout compact-grid" data-screen="settings">
+            <article class="glass-panel panel">
+              <div class="panel-head">
+                <h2 data-i18n="settingsGuideTitle">AI Configuration</h2>
+                <p data-i18n="settingsGuideDesc">Settings are saved locally to ai/.env and are not committed.</p>
+              </div>
+              <div class="settings-guide">
+                <div>
+                  <span class="summary-label">Default</span>
+                  <strong>Groq / llama-3.1-8b-instant</strong>
+                </div>
+                <div>
+                  <span class="summary-label">Env file</span>
+                  <code>ai/.env</code>
+                </div>
+                <div>
+                  <span class="summary-label">Dry Run</span>
+                  <p>Dry Run skips the model and uses fallback testcases. Turn it off after saving a key.</p>
+                </div>
+              </div>
+            </article>
+          </section>
+        </section>
       </section>
     </main>
 

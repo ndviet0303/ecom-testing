@@ -6,6 +6,8 @@ docker/.env
 .shared/
 .codex/
 .cursor/
+ai/.env
+tests/ui/.env
 
 # Backend ignoring
 backend/vendor/
