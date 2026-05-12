@@ -245,3 +245,5 @@ Dự án mô phỏng quy trình kiểm thử phần mềm cho ứng dụng web g
 - Cập nhật tên thành viên, MSSV và kết quả thực tế trước khi nộp báo cáo.
 - Nếu môi trường không có `python3.14`, có thể thử bằng `python3` nếu package tương thích.
 - Nên lưu ảnh chụp màn hình kết quả test trong báo cáo chính hoặc phụ lục.
+
+##
