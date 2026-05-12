@@ -1,0 +1,47 @@
+{
+  "ok": true,
+  "model": "llama-3.1-8b-instant",
+  "training_stats": {
+    "mode": "single_request_compacted_context",
+    "max_input_tokens": 3200,
+    "estimated_input_tokens": 784,
+    "failure_samples": 8,
+    "response_chars_per_sample": 240
+  },
+  "rate_limit": {
+    "limit_requests": "14400",
+    "remaining_requests": "14399",
+    "reset_requests": "6s",
+    "limit_tokens": "6000",
+    "remaining_tokens": "4235",
+    "reset_tokens": "17.65s",
+    "estimated_request_tokens": 1584
+  },
+  "analysis": {
+    "summary": "Tất cả các endpoint đều được chạy thành công.",
+    "risk_level": "low",
+    "pass_rate": 100,
+    "root_causes": [
+      {
+        "title": "Không có lỗi nào được phát hiện.",
+        "evidence": [],
+        "likely_owner": "unknown",
+        "confidence": "high"
+      }
+    ],
+    "recommended_actions": [
+      {
+        "priority": "P0",
+        "action": "Không cần thực hiện hành động nào.",
+        "why": "Tất cả các endpoint đều được chạy thành công."
+      }
+    ],
+    "regression_notes": [
+      "Không có gì để theo dõi trong lần chạy tiếp theo."
+    ],
+    "trained_context_notes": [
+      "Không có mẫu nào quan trọng từ training context."
+    ]
+  },
+  "analysis_file": "/Users/ziet/WorkSpace/ziet's project/testing/tests/ui/.runtime/api-result-analysis.json"
+}

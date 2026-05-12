@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
+#
+# Dừng process đang giữ port của tool tests/ui (giống run_all: UI_PORT hoặc RAG_TESTGEN_UI_PORT).
 
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
-BACKEND_PORT="${BACKEND_PORT:-8000}"
-UI_PORT="${UI_PORT:-8765}"
+PORT="${UI_PORT:-${RAG_TESTGEN_UI_PORT:-8765}}"
 
 kill_port_processes() {
   local port="$1"
@@ -20,8 +19,7 @@ kill_port_processes() {
   fi
 }
 
-echo "Stopping services started by this project..."
-kill_port_processes "$BACKEND_PORT"
-kill_port_processes "$UI_PORT"
+echo "Stopping tests/ui (port ${PORT})..."
+kill_port_processes "$PORT"
 
 echo "Done."

@@ -35,6 +35,8 @@
             <button type="button" class="sidebar-tab active" data-sidebar-tab="generate">Generate</button>
             <button type="button" class="sidebar-tab" data-sidebar-tab="collection">Collection</button>
             <button type="button" class="sidebar-tab" data-sidebar-tab="run">Run</button>
+            <button type="button" class="sidebar-tab" data-sidebar-tab="analysis">Analyze</button>
+            <button type="button" class="sidebar-tab" data-sidebar-tab="settings" data-i18n="settingsTab">Settings</button>
           </nav>
 
           <article class="glass-panel panel sidebar-panel" data-sidebar-section="generate" data-screen="generate">
@@ -45,15 +47,17 @@
             <form id="generator-form" class="form-stack">
               <label>
                 <span data-i18n="backendSource">Backend path</span>
-                <input id="backend-src" name="backend-src" type="text" placeholder="/path/to/backend" />
+                <div class="input-picker">
+                  <input id="backend-src" name="backend-src" type="text" placeholder="/path/to/backend" />
+                  <button id="choose-backend-button" type="button" class="ghost-button picker-button" data-i18n="browsePath">Choose</button>
+                </div>
               </label>
               <label>
                 <span data-i18n="frontendSource">Frontend path</span>
-                <input id="frontend-src" name="frontend-src" type="text" placeholder="/path/to/frontend" />
-              </label>
-              <label>
-                <span data-i18n="outputFile">Output JSON file</span>
-                <input id="output-file" name="output-file" type="text" placeholder="collection.json" />
+                <div class="input-picker">
+                  <input id="frontend-src" name="frontend-src" type="text" placeholder="/path/to/frontend" />
+                  <button id="choose-frontend-button" type="button" class="ghost-button picker-button" data-i18n="browsePath">Choose</button>
+                </div>
               </label>
               <div class="form-inline-grid">
                 <label>
@@ -69,6 +73,9 @@
                 <button id="scan-button" type="button" class="secondary-button button-grow-1">Scan Routes</button>
                 <button id="generate-button" type="submit" class="primary-button button-grow-2">Generate</button>
               </div>
+              <button id="download-generated-button" type="button" class="secondary-button button-full" disabled data-i18n="downloadGenerated">
+                Download generated JSON
+              </button>
             </form>
           </article>
 
@@ -94,6 +101,44 @@
             </div>
           </article>
 
+          <article class="glass-panel panel sidebar-panel" data-sidebar-section="settings" data-screen="settings">
+            <div class="panel-head">
+              <h2 data-i18n="settingsTitle">Settings</h2>
+              <p data-i18n="settingsDesc">Configure the AI provider used when Generate runs without Dry Run.</p>
+            </div>
+            <div class="form-stack">
+              <div class="settings-card">
+                <div class="settings-card-head">
+                  <strong data-i18n="aiSettingsTitle">AI Settings</strong>
+                  <span id="ai-key-status" class="inline-status">Not configured</span>
+                </div>
+                <label>
+                  <span data-i18n="aiProvider">Provider</span>
+                  <select id="ai-provider">
+                    <option value="groq">Groq</option>
+                    <option value="ollama">Ollama</option>
+                    <option value="openai">OpenAI-compatible</option>
+                    <option value="gemini">Gemini</option>
+                  </select>
+                </label>
+                <label>
+                  <span data-i18n="aiModel">Model</span>
+                  <input id="ai-model" type="text" placeholder="llama-3.1-8b-instant" />
+                </label>
+                <label>
+                  <span data-i18n="aiApiKey">API key</span>
+                  <div class="secret-input">
+                    <input id="ai-api-key" type="password" placeholder="Paste key, then save" autocomplete="off" />
+                    <button id="toggle-api-key-button" type="button" class="ghost-button secret-toggle" data-i18n="showSecret">Show</button>
+                  </div>
+                </label>
+                <button id="save-ai-settings-button" type="button" class="secondary-button button-full" data-i18n="saveAiSettings">
+                  Save AI Settings
+                </button>
+              </div>
+            </div>
+          </article>
+
           <article class="glass-panel panel sidebar-panel" data-sidebar-section="run" data-screen="run">
             <div class="panel-head">
               <h2 data-i18n="apiAutomation">API Automation</h2>
@@ -101,11 +146,53 @@
             </div>
             <div class="form-stack">
               <label>
+                <span data-i18n="chooseCollection">Testcase Collection File</span>
+                <input id="run-collection-file" type="file" accept=".json,application/json" />
+              </label>
+              <label>
                 <span data-i18n="apiBaseUrl">Target API Base URL</span>
                 <input id="api-base-url" type="text" value="http://127.0.0.1:8000/api" />
               </label>
+              <label>
+                <span data-i18n="siteBaseUrl">Target Site URL</span>
+                <input id="site-base-url" type="text" value="https://ecom.ziet.dev/" />
+              </label>
               <button id="run-api-button" type="button" class="primary-button button-full">Execute API Suite</button>
+              <div class="button-row">
+                <button id="download-result-button" type="button" class="ghost-button button-grow-1" disabled>Download Result JSON</button>
+                <button id="toggle-raw-result-button" type="button" class="ghost-button button-grow-1" disabled>Raw JSON</button>
+              </div>
+              <label class="checkbox-inline">
+                <span data-i18n="showPlaywrightUi">Show Playwright UI</span>
+                <input id="show-playwright-ui" type="checkbox" />
+              </label>
               <button id="run-ui-button" type="button" class="secondary-button button-full" data-i18n="runUiSmoke">Run Playwright Suite</button>
+              <button id="download-playwright-report-button" type="button" class="ghost-button button-full" disabled data-i18n="downloadPlaywrightReport">
+                Download Playwright report JSON
+              </button>
+            </div>
+          </article>
+
+          <article class="glass-panel panel sidebar-panel" data-sidebar-section="analysis" data-screen="analysis">
+            <div class="panel-head">
+              <h2 data-i18n="analysisTitle">Groq Analysis</h2>
+              <p data-i18n="analysisDesc">Train on the latest run context, then analyze the result JSON.</p>
+            </div>
+            <div class="form-stack">
+              <label>
+                <span data-i18n="analysisApiResult">API suite result JSON</span>
+                <input id="analysis-api-result-file" type="file" accept=".json,application/json" />
+              </label>
+              <label>
+                <span data-i18n="analysisPlaywrightResult">Playwright suite report JSON</span>
+                <input id="analysis-playwright-result-file" type="file" accept=".json,application/json" />
+              </label>
+              <button id="analyze-result-button" type="button" class="primary-button button-full" data-i18n="analyzeResults">
+                Analyze with Groq
+              </button>
+              <button id="download-analysis-button" type="button" class="ghost-button button-full" disabled data-i18n="downloadAnalysis">
+                Download analysis JSON
+              </button>
             </div>
           </article>
         </aside>
@@ -121,7 +208,7 @@
             </div>
           </section>
 
-          <section class="summary-grid" data-screen="collection,run">
+          <section class="summary-grid" data-screen="collection,run,analysis">
             <div class="summary-card">
               <span class="summary-label" data-i18n="projectLabel">Project</span>
               <strong id="summary-project">-</strong>
@@ -163,12 +250,53 @@
 
           <section class="grid-layout compact-grid" data-screen="run">
             <article class="glass-panel panel">
-              <div class="panel-head"><h2>API Result</h2></div>
+              <div class="panel-head result-head">
+                <div>
+                  <h2>API Result</h2>
+                  <p id="api-result-meta">No execution yet.</p>
+                </div>
+              </div>
               <div id="api-results" class="scroll-panel">Waiting for execution...</div>
+              <pre id="api-result-raw" class="scroll-panel raw-result-panel screen-hidden"></pre>
             </article>
             <article class="glass-panel panel">
               <div class="panel-head"><h2 data-i18n="playwrightOutput">Automation Logs</h2></div>
               <pre id="ui-results" class="scroll-panel log-panel">No logs yet.</pre>
+            </article>
+          </section>
+
+          <section class="grid-layout compact-grid" data-screen="analysis">
+            <article class="glass-panel panel">
+              <div class="panel-head result-head">
+                <div>
+                  <h2 data-i18n="analysisResultTitle">AI Analysis</h2>
+                  <p id="analysis-meta">No analysis yet.</p>
+                </div>
+              </div>
+              <div id="analysis-results" class="scroll-panel analysis-panel">Waiting for Groq analysis...</div>
+            </article>
+          </section>
+
+          <section class="grid-layout compact-grid" data-screen="settings">
+            <article class="glass-panel panel">
+              <div class="panel-head">
+                <h2 data-i18n="settingsGuideTitle">AI Configuration</h2>
+                <p data-i18n="settingsGuideDesc">Settings are saved locally to ai/.env and are not committed.</p>
+              </div>
+              <div class="settings-guide">
+                <div>
+                  <span class="summary-label">Default</span>
+                  <strong>Groq / llama-3.1-8b-instant</strong>
+                </div>
+                <div>
+                  <span class="summary-label">Env file</span>
+                  <code>ai/.env</code>
+                </div>
+                <div>
+                  <span class="summary-label">Dry Run</span>
+                  <p>Dry Run skips the model and uses fallback testcases. Turn it off after saving a key.</p>
+                </div>
+              </div>
             </article>
           </section>
         </section>

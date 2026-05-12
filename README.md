@@ -18,7 +18,7 @@ php artisan serve --host=127.0.0.1 --port=8000
 Terminal 2 - chay AI generate testcase:
 
 ```bash
-python3 -m ai.src.rag_testgen.cli generate \
+python3.14 -m ai.src.rag_testgen.cli generate \
   --src backend \
   --out ai/generated-testcases.json \
   --dry-run
@@ -58,13 +58,13 @@ php artisan test --testsuite=Feature
 Chay command tu thu muc goc project:
 
 ```bash
-python3 -m ai.src.rag_testgen.cli <command> [options]
+python3.14 -m ai.src.rag_testgen.cli <command> [options]
 ```
 
 ### 3) Scan route
 
 ```bash
-python3 -m ai.src.rag_testgen.cli scan --src backend --pretty
+python3.14 -m ai.src.rag_testgen.cli scan --src backend --pretty
 ```
 
 Tham so:
@@ -74,7 +74,7 @@ Tham so:
 ### 4) Generate testcase (dry-run)
 
 ```bash
-python3 -m ai.src.rag_testgen.cli generate \
+python3.14 -m ai.src.rag_testgen.cli generate \
   --src backend \
   --out ai/generated-testcases.json \
   --dry-run
@@ -87,7 +87,7 @@ Dung khi muon kiem tra luong retrieve/context ma khong goi LLM.
 #### Ollama
 
 ```bash
-python3 -m ai.src.rag_testgen.cli generate \
+python3.14 -m ai.src.rag_testgen.cli generate \
   --src backend \
   --out ai/generated-testcases.json \
   --provider ollama \
@@ -100,7 +100,7 @@ Co the set:
 #### OpenAI-compatible
 
 ```bash
-python3 -m ai.src.rag_testgen.cli generate \
+python3.14 -m ai.src.rag_testgen.cli generate \
   --src backend \
   --out ai/generated-testcases.json \
   --provider openai \
