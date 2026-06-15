@@ -8,6 +8,7 @@ docker/.env
 .cursor/
 ai/.env
 tests/ui/.env
+tests/ui/node_modules/
 
 # Backend ignoring
 backend/vendor/
@@ -22,3 +23,9 @@ frontend/.env.local
 
 # OS
 .DS_Store
+
+# Generated caches
+__pycache__/
+*.pyc
+.venv/
+

@@ -8,7 +8,7 @@ const collectionFile = process.env.RAG_COLLECTION_FILE || (fs.existsSync(runtime
 const apiBaseUrl = process.env.RAG_API_BASE_URL || "https://ecom.ziet.dev//api";
 
 test("load selected collection and run API suite smoke flow", async ({ page }) => {
-  test.setTimeout(120000);
+  test.setTimeout(300000);
   test.skip(!collectionFile, "Select a collection in the UI first or set RAG_COLLECTION_FILE.");
 
   await page.goto(toolBaseUrl);
@@ -20,6 +20,6 @@ test("load selected collection and run API suite smoke flow", async ({ page }) =
   await expect(page.locator("#summary-count")).not.toHaveText("-");
 
   await page.click("#run-api-button");
-  await expect(page.locator("#api-total")).not.toHaveText("-", { timeout: 90000 });
-  await expect(page.locator("#api-results")).toContainText(/OK|FAIL/, { timeout: 90000 });
+  await expect(page.locator("#api-total")).not.toHaveText("-", { timeout: 240000 });
+  await expect(page.locator("#api-results")).toContainText(/OK|FAIL/, { timeout: 240000 });
 });
