@@ -8,7 +8,7 @@ class VnMarketTest extends TestCase
 {
     public function test_sepay_placeholder_returns_vn_market_message(): void
     {
-        $this->getJson('/api/v1/payments/sepay')
+        $this->getJson('/api/v1/payments/vietqr')
             ->assertOk()
             ->assertJsonPath('provider', 'sepay')
             ->assertJsonStructure(['webhook_post_url', 'configured_for_qr', 'checkout_field']);

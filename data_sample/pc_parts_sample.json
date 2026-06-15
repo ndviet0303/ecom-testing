@@ -1,0 +1,71 @@
+[
+  {
+    "category": "CPU",
+    "name": "Intel Core i9-14900K",
+    "sku": "CPU-INTEL-14900K",
+    "image_url": "https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?q=80&w=400&auto=format&fit=crop",
+    "specs": {
+      "socket": "LGA1700",
+      "tdp": 253
+    }
+  },
+  {
+    "category": "CPU",
+    "name": "AMD Ryzen 9 7950X",
+    "sku": "CPU-AMD-7950X",
+    "image_url": "https://images.unsplash.com/photo-1555616635-640953c3065d?q=80&w=400&auto=format&fit=crop",
+    "specs": {
+      "socket": "AM5",
+      "tdp": 170
+    }
+  },
+  {
+    "category": "Motherboard",
+    "name": "ASUS ROG STRIX Z790-E",
+    "sku": "MB-ASUS-Z790E",
+    "image_url": "https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=400&auto=format&fit=crop",
+    "specs": {
+      "socket": "LGA1700",
+      "ram_type": "DDR5"
+    }
+  },
+  {
+    "category": "Motherboard",
+    "name": "MSI MAG B650 TOMAHAWK",
+    "sku": "MB-MSI-B650",
+    "image_url": "https://images.unsplash.com/photo-1614624532983-4ce03382d63d?q=80&w=400&auto=format&fit=crop",
+    "specs": {
+      "socket": "AM5",
+      "ram_type": "DDR5"
+    }
+  },
+  {
+    "category": "RAM",
+    "name": "Corsair Vengeance 32GB (2x16GB)",
+    "sku": "RAM-CORSAIR-DDR5-6000",
+    "image_url": "https://images.unsplash.com/photo-1562976540-150ad118ae50?q=80&w=400&auto=format&fit=crop",
+    "specs": {
+      "ram_type": "DDR5"
+    }
+  },
+  {
+    "category": "GPU",
+    "name": "NVIDIA GeForce RTX 4090",
+    "sku": "GPU-NV-RTX4090",
+    "image_url": "https://images.unsplash.com/photo-1591488320449-011701bb6704?q=80&w=400&auto=format&fit=crop",
+    "specs": {
+      "tbp": 450,
+      "length_mm": 336
+    }
+  },
+  {
+    "category": "Case",
+    "name": "NZXT H7 Flow",
+    "sku": "CASE-NZXT-H7F",
+    "image_url": "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?q=80&w=400&auto=format&fit=crop",
+    "specs": {
+      "gpu_clearance_mm": 400,
+      "cooler_clearance_mm": 185
+    }
+  }
+]

@@ -14,7 +14,7 @@ const amount = ref(0)
 
 const fetchQrCode = async () => {
     try {
-        const response = await axios.get(`/api/v1/orders/${orderId}/sepay-qr`)
+        const response = await axios.get(`/api/v1/orders/${orderId}/vietqr-qr`)
         qrUrl.value = response.data.qr_image_url || ''
         transferContent.value = response.data.transfer_content || ''
         amount.value = response.data.amount || 0

@@ -299,6 +299,25 @@
               </div>
             </article>
           </section>
+
+          <!-- Terminal Console Section -->
+          <section id="terminal-section" class="glass-panel panel terminal-panel" data-screen="all">
+            <div class="terminal-header">
+              <div class="terminal-dots">
+                <span class="dot red"></span>
+                <span class="dot yellow"></span>
+                <span class="dot green"></span>
+              </div>
+              <span class="terminal-title" data-i18n="terminalTitle">Terminal Console - Live Output</span>
+              <div class="terminal-actions">
+                <button id="clear-terminal-btn" type="button" class="ghost-button terminal-action-btn" data-i18n="clearTerminal">Clear</button>
+                <button id="toggle-terminal-btn" type="button" class="ghost-button terminal-action-btn" data-i18n="minimizeTerminal">Minimize</button>
+              </div>
+            </div>
+            <div id="terminal-body-wrapper" class="terminal-body-wrapper">
+              <pre id="terminal-console" class="terminal-body">Ready to stream logs...</pre>
+            </div>
+          </section>
         </section>
       </section>
     </main>

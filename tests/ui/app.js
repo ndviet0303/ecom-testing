@@ -57,6 +57,12 @@ const sidebarTabs = Array.from(document.querySelectorAll("[data-sidebar-tab]"));
 const sidebarSections = Array.from(document.querySelectorAll("[data-sidebar-section]"));
 const screenScopedNodes = Array.from(document.querySelectorAll("[data-screen]"));
 
+// Terminal console elements
+const terminalSection = document.querySelector("#terminal-section");
+const clearTerminalBtn = document.querySelector("#clear-terminal-btn");
+const toggleTerminalBtn = document.querySelector("#toggle-terminal-btn");
+const terminalConsole = document.querySelector("#terminal-console");
+
 const allActionButtons = [scanButton, generateButton, saveAiSettingsButton, loadCollectionButton, runApiButton, runUiButton, analyzeResultButton];
 let cachedRoutes = [];
 let cachedApis = [];
@@ -144,6 +150,10 @@ const MESSAGES = {
     themeToDark: "Tối",
     screenToFocus: "Focus",
     screenToNormal: "Normal",
+    terminalTitle: "Terminal Console - Nhật ký chạy",
+    clearTerminal: "Xóa log",
+    minimizeTerminal: "Thu nhỏ",
+    expandTerminal: "Mở rộng",
   },
   en: {
     heroEyebrow: "Automation Suite",
@@ -217,6 +227,10 @@ const MESSAGES = {
     themeToDark: "Dark",
     screenToFocus: "Focus",
     screenToNormal: "Normal",
+    terminalTitle: "Terminal Console - Live Logs",
+    clearTerminal: "Clear",
+    minimizeTerminal: "Minimize",
+    expandTerminal: "Expand",
   },
 };
 
@@ -268,6 +282,10 @@ function applyTranslations() {
   if (screenToggleButton) {
     screenToggleButton.textContent =
       currentScreenMode === "focus" ? t("screenToNormal") : t("screenToFocus");
+  }
+  if (toggleTerminalBtn) {
+    const isCollapsed = terminalSection.classList.contains("collapsed");
+    toggleTerminalBtn.textContent = isCollapsed ? t("expandTerminal") : t("minimizeTerminal");
   }
 }
 
@@ -359,6 +377,113 @@ async function apiFetch(url, options = {}) {
   if (!response.ok) throw new Error(data.message || `Error ${response.status}`);
   return data;
 }
+
+async function streamFetch(url, options = {}, onLog = null, onResult = null) {
+  const response = await fetch(url, {
+    ...options,
+    headers: { "Content-Type": "application/json", ...(options.headers || {}) },
+  });
+
+  if (!response.ok) {
+    let errorMsg = `Error ${response.status}`;
+    try {
+      const err = JSON.parse(await response.text());
+      errorMsg = err.message || errorMsg;
+    } catch (e) {}
+    throw new Error(errorMsg);
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder("utf-8");
+  let buffer = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop(); // Keep remaining incomplete line in buffer
+
+    for (const line of lines) {
+      if (line.trim()) {
+        try {
+          const packet = JSON.parse(line);
+          if (packet.type === "log" && onLog) {
+            onLog(packet.content);
+          } else if (packet.type === "result" && onResult) {
+            onResult(packet);
+          }
+        } catch (e) {
+          console.error("Failed to parse NDJSON line:", line, e);
+        }
+      }
+    }
+  }
+
+  if (buffer.trim()) {
+    try {
+      const packet = JSON.parse(buffer);
+      if (packet.type === "log" && onLog) {
+        onLog(packet.content);
+      } else if (packet.type === "result" && onResult) {
+        onResult(packet);
+      }
+    } catch (e) {
+      console.error("Failed to parse final NDJSON line:", buffer, e);
+    }
+  }
+}
+
+function appendLog(content) {
+  if (content === undefined || content === null) return;
+  const escaped = escapeHtml(content);
+  let styled = escaped;
+
+  // Simple coloring rules for premium UX
+  if (content.startsWith("Command:") || content.startsWith("Executing:") || content.startsWith("Executing command:")) {
+    styled = `<span class="term-cmd">${escaped}</span>`;
+  } else if (content.includes("Failed") || content.includes("Error") || content.includes("FAIL")) {
+    styled = `<span class="term-error">${escaped}</span>`;
+  } else if (content.includes("Passed") || content.includes("Successfully") || content.includes("Success") || content.includes("OK")) {
+    styled = `<span class="term-success">${escaped}</span>`;
+  } else if (content.includes("Warning") || content.includes("Warn") || content.startsWith("  ->")) {
+    styled = `<span class="term-warn">${escaped}</span>`;
+  } else {
+    styled = `<span class="term-info">${escaped}</span>`;
+  }
+
+  terminalConsole.innerHTML += styled + "\n";
+  // Auto-scroll to bottom
+  terminalConsole.scrollTop = terminalConsole.scrollHeight;
+}
+
+function clearTerminal() {
+  terminalConsole.innerHTML = "";
+  appendLog("Ready to stream logs...");
+}
+
+function expandTerminal() {
+  if (terminalSection) {
+    terminalSection.classList.remove("collapsed");
+    updateTerminalToggleLabel();
+  }
+}
+
+function toggleTerminal() {
+  if (terminalSection) {
+    const isCollapsed = terminalSection.classList.toggle("collapsed");
+    updateTerminalToggleLabel();
+  }
+}
+
+function updateTerminalToggleLabel() {
+  if (toggleTerminalBtn) {
+    const isCollapsed = terminalSection.classList.contains("collapsed");
+    toggleTerminalBtn.textContent = isCollapsed ? t("expandTerminal") : t("minimizeTerminal");
+  }
+}
+
 
 function setBusy(isBusy, btn = null, loadingKey = null) {
   allActionButtons.forEach(b => b.disabled = isBusy);
@@ -902,15 +1027,29 @@ async function loadCollectionFile(file, sourceButton = null) {
 scanButton.addEventListener("click", async () => {
   setBusy(true, scanButton, "scanning");
   setStatus("running", "scanning", "Reading backend architecture...");
+  clearTerminal();
+  expandTerminal();
+  appendLog(">>> Starting route scan...");
   try {
-    const data = await apiFetch("/api/scan", {
+    let finalData = null;
+    await streamFetch("/api/scan", {
       method: "POST",
       body: JSON.stringify({ backend_src: backendInput.value.trim() }),
+    }, appendLog, (result) => {
+      finalData = result;
     });
-    renderRoutes(data.routes || []);
-    setStatus("success", "Scan Complete", `Found ${data.count} routes.`);
+
+    if (finalData && finalData.ok) {
+      renderRoutes(finalData.routes || []);
+      setStatus("success", "Scan Complete", `Found ${finalData.count} routes.`);
+      appendLog(`>>> Scan complete. Found ${finalData.count} routes.`);
+    } else {
+      setStatus("error", "Scan Error", finalData?.message || "Scan failed.");
+      appendLog(`>>> Scan failed: ${finalData?.message || "Unknown error."}`);
+    }
   } catch (e) {
     setStatus("error", "Scan Error", e.message);
+    appendLog(`>>> Scan Error: ${e.message}`);
   } finally {
     setBusy(false, scanButton);
   }
@@ -924,6 +1063,9 @@ document.querySelector("#generator-form").addEventListener("submit", async (e) =
   }
   setBusy(true, generateButton, "generating");
   setStatus("running", "generating", "Building test vectors...");
+  clearTerminal();
+  expandTerminal();
+  appendLog(">>> Starting testcase generation...");
   try {
     const payload = {
       backend_src: backendInput.value.trim(),
@@ -933,13 +1075,27 @@ document.querySelector("#generator-form").addEventListener("submit", async (e) =
       provider: aiProviderSelect.value,
       model: aiModelInput.value.trim(),
     };
-    const data = await apiFetch("/api/generate", { method: "POST", body: JSON.stringify(payload) });
-    const output = await apiFetch("/api/output");
-    renderSummary(output.summary, data.output_file || output.path);
-    renderCollection(output.preview || []);
-    setStatus("success", "Generation Complete", data.output_file || "Collection ready.");
+    let finalData = null;
+    await streamFetch("/api/generate", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }, appendLog, (result) => {
+      finalData = result;
+    });
+
+    if (finalData && finalData.ok) {
+      const output = await apiFetch("/api/output");
+      renderSummary(output.summary, finalData.output_file || output.path);
+      renderCollection(output.preview || []);
+      setStatus("success", "Generation Complete", finalData.output_file || "Collection ready.");
+      appendLog(`>>> Generation complete. Collection output: ${finalData.output_file}`);
+    } else {
+      setStatus("error", "Generation Error", finalData?.message || "Generation failed.");
+      appendLog(`>>> Generation failed: ${finalData?.message || "Unknown error."}`);
+    }
   } catch (e) {
     setStatus("error", "Generation Error", e.message);
+    appendLog(`>>> Generation Error: ${e.message}`);
   } finally {
     setBusy(false, generateButton);
   }
@@ -957,23 +1113,37 @@ runCollectionFileInput.addEventListener("change", async () => {
 runApiButton.addEventListener("click", async () => {
   setBusy(true, runApiButton, "runningApi");
   setStatus("running", "runningApi", "Executing test cases...");
+  clearTerminal();
+  expandTerminal();
+  appendLog(">>> Starting API test run...");
   try {
-    const data = await apiFetch("/api/run_api_tests", {
+    let finalData = null;
+    await streamFetch("/api/run_api_tests", {
       method: "POST",
       body: JSON.stringify({ base_url: apiBaseUrlInput.value.trim() }),
+    }, appendLog, (result) => {
+      finalData = result;
     });
-    renderApiResults(data.results || [], data.summary);
-    currentResultPath = data.result_file || "";
-    currentRawResult = data;
-    apiResultRaw.textContent = JSON.stringify(data, null, 2);
-    apiResultRaw.classList.add("screen-hidden");
-    apiResults.classList.remove("screen-hidden");
-    downloadResultButton.disabled = !currentResultPath;
-    toggleRawResultButton.disabled = false;
-    toggleRawResultButton.textContent = t("rawJson");
-    setStatus(data.summary?.failed > 0 ? "error" : "success", "API Suite Complete", `${data.summary?.passed}/${data.summary?.total} passed.`);
+
+    if (finalData && finalData.ok) {
+      renderApiResults(finalData.results || [], finalData.summary);
+      currentResultPath = finalData.result_file || "";
+      currentRawResult = finalData;
+      apiResultRaw.textContent = JSON.stringify(finalData, null, 2);
+      apiResultRaw.classList.add("screen-hidden");
+      apiResults.classList.remove("screen-hidden");
+      downloadResultButton.disabled = !currentResultPath;
+      toggleRawResultButton.disabled = false;
+      toggleRawResultButton.textContent = t("rawJson");
+      setStatus(finalData.summary?.failed > 0 ? "error" : "success", "API Suite Complete", `${finalData.summary?.passed}/${finalData.summary?.total} passed.`);
+      appendLog(`>>> API suite run complete. Passed ${finalData.summary?.passed}/${finalData.summary?.total}.`);
+    } else {
+      setStatus("error", "Execution Error", finalData?.message || "API suite execution failed.");
+      appendLog(`>>> API suite execution failed: ${finalData?.message || "Unknown error."}`);
+    }
   } catch (e) {
     setStatus("error", "Execution Error", e.message);
+    appendLog(`>>> API Execution Error: ${e.message}`);
   } finally {
     setBusy(false, runApiButton);
   }
@@ -1005,21 +1175,35 @@ downloadResultButton.addEventListener("click", async () => {
 analyzeResultButton.addEventListener("click", async () => {
   setBusy(true, analyzeResultButton, "analyzingResults");
   setStatus("running", "analyzingResults", "Building tester report from uploaded result JSON...");
+  clearTerminal();
+  expandTerminal();
+  appendLog(">>> Starting Groq results analysis...");
   try {
     const apiResult = await readJsonUpload(analysisApiResultFile, "api-test-results.json");
     const playwrightReport = await readJsonUpload(analysisPlaywrightResultFile, "playwright-results.json");
-    const data = await apiFetch("/api/analyze_results", {
+    
+    let finalData = null;
+    await streamFetch("/api/analyze_results", {
       method: "POST",
       body: JSON.stringify({
         api_result_file: apiResult,
         playwright_report_file: playwrightReport,
       }),
+    }, appendLog, (result) => {
+      finalData = result;
     });
-    if (!data.ok) throw new Error(data.message || "Cannot analyze result.");
-    renderAnalysis(data);
-    setStatus("success", "Analysis Complete", "Groq returned tester-style result report.");
+
+    if (finalData && finalData.ok) {
+      renderAnalysis(finalData);
+      setStatus("success", "Analysis Complete", "Groq returned tester-style result report.");
+      appendLog(">>> Analysis complete. Report rendered on screen.");
+    } else {
+      setStatus("error", "Analysis Error", finalData?.message || "Analysis failed.");
+      appendLog(`>>> Analysis failed: ${finalData?.message || "Unknown error."}`);
+    }
   } catch (e) {
     setStatus("error", "Analysis Error", e.message);
+    appendLog(`>>> Analysis Error: ${e.message}`);
   } finally {
     setBusy(false, analyzeResultButton);
   }
@@ -1042,7 +1226,7 @@ downloadAnalysisButton.addEventListener("click", async () => {
     link.click();
     link.remove();
     URL.revokeObjectURL(url);
-    setStatus("success", "Analysis Ready", "Downloaded analysis JSON.");
+    setStatus("success", "Result Ready", "Downloaded analysis JSON.");
   } catch (e) {
     setStatus("error", "Download Error", e.message);
   }
@@ -1060,25 +1244,40 @@ runUiButton.addEventListener("click", async () => {
   setBusy(true, runUiButton, "runningUi");
   setStatus("running", "runningUi", "Launching Playwright...");
   uiResults.textContent = ">>> PLAYWRIGHT EXECUTION STARTED...";
+  clearTerminal();
+  expandTerminal();
+  appendLog(">>> Starting Playwright UI smoke tests run...");
   try {
-    const data = await apiFetch("/api/run_ui_smoke", {
+    let finalData = null;
+    await streamFetch("/api/run_ui_smoke", {
       method: "POST",
       body: JSON.stringify({
         headed: showPlaywrightUiInput.checked,
         site_base_url: siteBaseUrlInput.value.trim(),
       }),
+    }, appendLog, (result) => {
+      finalData = result;
     });
-    const reportSummary = data.report
-      ? `\n\n>>> PLAYWRIGHT JSON REPORT\n${JSON.stringify(data.report.stats || data.report, null, 2)}\nReport file: ${data.report_file || "-"}`
-      : "";
-    const modeSummary = `Mode: ${data.headed ? "headed browser" : "headless"}\nCommand: ${data.command || "-"}`;
-    uiResults.textContent = [modeSummary, data.stdout, data.stderr, reportSummary].filter(Boolean).join("\n").trim();
-    currentPlaywrightReportPath = data.report_file || "";
-    downloadPlaywrightReportButton.disabled = !currentPlaywrightReportPath;
-    setStatus(data.ok ? "success" : "error", data.ok ? "UI Tests Passed" : "UI Tests Failed", "See output for details.");
+
+    if (finalData && finalData.ok) {
+      const reportSummary = finalData.report
+        ? `\n\n>>> PLAYWRIGHT JSON REPORT\n${JSON.stringify(finalData.report.stats || finalData.report, null, 2)}\nReport file: ${finalData.report_file || "-"}`
+        : "";
+      const modeSummary = `Mode: ${finalData.headed ? "headed browser" : "headless"}\nCommand: ${finalData.command || "-"}`;
+      uiResults.textContent = [modeSummary, finalData.stdout, finalData.stderr, reportSummary].filter(Boolean).join("\n").trim();
+      currentPlaywrightReportPath = finalData.report_file || "";
+      downloadPlaywrightReportButton.disabled = !currentPlaywrightReportPath;
+      setStatus(finalData.ok ? "success" : "error", finalData.ok ? "UI Tests Passed" : "UI Tests Failed", "See output for details.");
+      appendLog(`>>> Playwright UI run completed: ${finalData.ok ? 'SUCCESS' : 'FAILED'}`);
+    } else {
+      uiResults.textContent = `>>> ERROR: ${finalData?.message || "Unknown execution error."}`;
+      setStatus("error", "UI Automation Error", finalData?.message || "UI tests execution failed.");
+      appendLog(`>>> Playwright UI execution failed: ${finalData?.message || "Unknown error."}`);
+    }
   } catch (e) {
     uiResults.textContent = `>>> ERROR: ${e.message}`;
     setStatus("error", "UI Automation Error", e.message);
+    appendLog(`>>> Playwright UI Execution Error: ${e.message}`);
   } finally {
     setBusy(false, runUiButton);
   }
@@ -1106,6 +1305,20 @@ downloadPlaywrightReportButton.addEventListener("click", async () => {
     setStatus("error", "Download Error", e.message);
   }
 });
+
+// Terminal wire listeners
+if (clearTerminalBtn) {
+  clearTerminalBtn.addEventListener("click", clearTerminal);
+}
+if (toggleTerminalBtn) {
+  toggleTerminalBtn.addEventListener("click", toggleTerminal);
+}
+
+// Initialize terminal state to collapsed by default
+if (terminalSection) {
+  terminalSection.classList.add("collapsed");
+  updateTerminalToggleLabel();
+}
 
 applyTheme();
 applyTranslations();

@@ -58,8 +58,8 @@ Route::middleware(['throttle:120,1'])->prefix('v1')->group(function (): void {
     Route::post('newsletter/subscribe', [NewsletterController::class, 'subscribe']);
     Route::post('newsletter/unsubscribe', [NewsletterController::class, 'unsubscribe']);
 
-    Route::get('payments/sepay', SePayPlaceholderController::class);
-    Route::post('webhooks/sepay', SePayWebhookController::class);
+    Route::get('payments/vietqr', SePayPlaceholderController::class);
+    Route::post('webhooks/vietqr', SePayWebhookController::class);
 
     Route::get('cart', [CartController::class, 'show']);
     Route::post('cart/items', [CartController::class, 'addItem']);
@@ -72,7 +72,7 @@ Route::middleware(['throttle:120,1'])->prefix('v1')->group(function (): void {
 
         Route::get('orders', [OrderController::class, 'index']);
         Route::get('orders/{order}', [OrderController::class, 'show']);
-        Route::get('orders/{order}/sepay-qr', [OrderSePayQrController::class, 'show']);
+        Route::get('orders/{order}/vietqr-qr', [OrderSePayQrController::class, 'show']);
         Route::post('orders/{order}/cancel', [OrderCancelController::class, 'store']);
 
         Route::get('compare', [CompareController::class, 'index']);

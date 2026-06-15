@@ -321,12 +321,10 @@ class UiHandler(BaseHTTPRequestHandler):
         payload = json.loads(raw_body.decode("utf-8"))
 
         if parsed.path == "/api/scan":
-            response = self._scan(payload)
-            self._json_response(response)
+            self._stream_response(self._scan(payload))
             return
         if parsed.path == "/api/generate":
-            response = self._generate(payload)
-            self._json_response(response)
+            self._stream_response(self._generate(payload))
             return
         if parsed.path == "/api/load_collection":
             response = self._load_collection_payload(payload)
@@ -345,16 +343,13 @@ class UiHandler(BaseHTTPRequestHandler):
             self._json_response(response)
             return
         if parsed.path == "/api/run_api_tests":
-            response = self._run_api_tests(payload)
-            self._json_response(response)
+            self._stream_response(self._run_api_tests(payload))
             return
         if parsed.path == "/api/run_ui_smoke":
-            response = self._run_ui_smoke(payload)
-            self._json_response(response)
+            self._stream_response(self._run_ui_smoke(payload))
             return
         if parsed.path == "/api/analyze_results":
-            response = self._analyze_results(payload)
-            self._json_response(response)
+            self._stream_response(self._analyze_results(payload))
             return
         self.send_error(HTTPStatus.NOT_FOUND, "Not found")
 
@@ -376,6 +371,22 @@ class UiHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def _stream_response(self, generator) -> None:
+        self.send_response(HTTPStatus.OK)
+        self.send_header("Content-Type", "application/x-ndjson; charset=utf-8")
+        self.send_header("Cache-Control", "no-cache")
+        self.send_header("Connection", "close")
+        self.end_headers()
+
+        for chunk in generator:
+            line = json.dumps(chunk, ensure_ascii=False) + "\n"
+            try:
+                self.wfile.write(line.encode("utf-8"))
+                self.wfile.flush()
+            except (ConnectionResetError, BrokenPipeError):
+                break
+        self.close_connection = True
+
     def _download_output(self, target_path: str | None) -> None:
         if target_path:
             file_path = Path(target_path).expanduser().resolve()
@@ -392,19 +403,29 @@ class UiHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
-    def _scan(self, payload: dict) -> dict:
+    def _scan(self, payload: dict):
         backend_src = payload.get("backend_src") or "../backend"
+        yield {"type": "log", "content": f"Scanning routes from backend directory: {backend_src}"}
+
         process = _run_cli([PYTHON_BIN, "-m", "rag_testgen.cli", "scan", "--src", backend_src])
 
+        if process.stdout:
+            yield {"type": "log", "content": "Successfully scanned routes metadata."}
+        if process.stderr:
+            yield {"type": "log", "content": f"Warnings/Errors: {process.stderr}"}
+
         if process.returncode != 0:
-            return {
+            yield {
+                "type": "result",
                 "ok": False,
                 "stdout": process.stdout,
                 "stderr": process.stderr,
             }
+            return
 
         routes = json.loads(process.stdout)
-        return {
+        yield {
+            "type": "result",
             "ok": True,
             "count": len(routes),
             "routes": routes[:50],
@@ -412,7 +433,7 @@ class UiHandler(BaseHTTPRequestHandler):
             "stderr": process.stderr,
         }
 
-    def _generate(self, payload: dict) -> dict:
+    def _generate(self, payload: dict):
         backend_src = payload.get("backend_src") or "../backend"
         frontend_src = payload.get("frontend_src") or "../frontend"
         output_file = payload.get("output_file") or "./generated-testcases.json"
@@ -421,6 +442,12 @@ class UiHandler(BaseHTTPRequestHandler):
         settings = _ai_settings()
         provider = str(payload.get("provider") or settings["provider"]).strip()
         model = str(payload.get("model") or settings["model"] or DEFAULT_MODEL_BY_PROVIDER.get(provider, "")).strip()
+
+        yield {"type": "log", "content": "Generating testcases collection..."}
+        yield {"type": "log", "content": f"Backend source: {backend_src}"}
+        yield {"type": "log", "content": f"Frontend source: {frontend_src}"}
+        yield {"type": "log", "content": f"Provider: {provider} | Model: {model}"}
+        yield {"type": "log", "content": f"Dry Run: {dry_run} | Limit: {limit or 'None'}"}
 
         command = [
             PYTHON_BIN,
@@ -444,14 +471,46 @@ class UiHandler(BaseHTTPRequestHandler):
         if limit:
             command.extend(["--limit", limit])
 
-        process = _run_cli(command)
+        yield {"type": "log", "content": f"Command: {' '.join(command)}"}
+        yield {"type": "log", "content": "--- CLI OUTPUT START ---"}
+
+        env = os.environ.copy()
+        env["PYTHONPATH"] = "src"
+
+        process = subprocess.Popen(
+            command,
+            cwd=AI_DIR,
+            env=env,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+        )
+
+        full_output = []
+        while True:
+            line = process.stdout.readline()
+            if not line and process.poll() is not None:
+                break
+            if line:
+                full_output.append(line)
+                yield {"type": "log", "content": line.rstrip("\n")}
+
+        for line in process.stdout:
+            full_output.append(line)
+            yield {"type": "log", "content": line.rstrip("\n")}
+
+        yield {"type": "log", "content": "--- CLI OUTPUT END ---"}
+
         output_path = (AI_DIR / output_file).resolve() if not Path(output_file).is_absolute() else Path(output_file)
         output_data = self._load_output(output_path)
 
-        return {
-            "ok": process.returncode == 0,
-            "stdout": process.stdout,
-            "stderr": process.stderr,
+        ok = process.returncode == 0
+        yield {
+            "type": "result",
+            "ok": ok,
+            "stdout": "".join(full_output),
+            "stderr": "",
             "output_file": str(output_path),
             "summary": output_data.get("summary"),
         }
@@ -554,26 +613,38 @@ class UiHandler(BaseHTTPRequestHandler):
         collection["filename"] = filename
         return collection
 
-    def _run_api_tests(self, payload: dict) -> dict:
+    def _run_api_tests(self, payload: dict):
         collection_info = self._load_collection()
         if not collection_info["exists"]:
-            return {"ok": False, "message": "Chưa có collection được nạp."}
+            yield {"type": "result", "ok": False, "message": "Chưa có collection được nạp."}
+            return
 
-        _ensure_runtime()
         base_url = str(payload.get("base_url") or "").strip() or "http://127.0.0.1:8000/api"
+        yield {"type": "log", "content": f"Starting API test execution at: {base_url}"}
+
         collection = json.loads(UPLOADED_COLLECTION.read_text(encoding="utf-8"))
+        yield {"type": "log", "content": "Initializing test runtime context (authenticating & resolving defaults)..."}
+
         runtime_context = self._build_api_runtime_context(base_url)
+        yield {"type": "log", "content": f"Resolved auth roles: {list(runtime_context.get('tokens', {}).keys())}"}
+
         api_results: list[dict] = []
         total = 0
         passed = 0
         started_at = time.perf_counter()
 
-        for api in collection.get("apis", []):
+        apis = collection.get("apis", [])
+        yield {"type": "log", "content": f"Found {len(apis)} endpoints to test."}
+
+        for idx, api in enumerate(apis, 1):
             endpoint = api.get("endpoint", "/")
             method = str(api.get("method", "GET")).upper()
             testcase_results: list[dict] = []
+            testcases = api.get("testcases", [])
 
-            for testcase in api.get("testcases", []):
+            yield {"type": "log", "content": f"[{idx}/{len(apis)}] Running tests for {method} {endpoint} ({len(testcases)} cases)..."}
+
+            for t_idx, testcase in enumerate(testcases, 1):
                 total += 1
                 request_payload = testcase.get("request", {})
                 expected = testcase.get("expected", {})
@@ -628,6 +699,11 @@ class UiHandler(BaseHTTPRequestHandler):
 
                 if ok:
                     passed += 1
+                    status_log = "Passed"
+                else:
+                    status_log = f"Failed (Expected status {expected_status}, got {actual_status or 'Error'})"
+
+                yield {"type": "log", "content": f"  -> Test {t_idx}: {testcase.get('name')} | {status_log}"}
 
                 parsed_body = _safe_json_loads(actual_body)
                 testcase_results.append(
@@ -668,9 +744,18 @@ class UiHandler(BaseHTTPRequestHandler):
             },
             "results": api_results,
         }
+        _ensure_runtime()
         API_RESULT_FILE.write_text(json.dumps(report_payload, indent=2, ensure_ascii=False), encoding="utf-8")
         report_payload["result_file"] = str(API_RESULT_FILE)
-        return report_payload
+
+        yield {"type": "log", "content": f"API Test Suite finished. {passed}/{total} passed in {formatDuration(duration_ms)}."}
+        yield {
+            "type": "result",
+            "ok": True,
+            "summary": report_payload["summary"],
+            "results": report_payload["results"],
+            "result_file": report_payload["result_file"],
+        }
 
     def _build_api_runtime_context(self, base_url: str) -> dict:
         context: dict[str, object] = {
@@ -913,27 +998,58 @@ class UiHandler(BaseHTTPRequestHandler):
             return True
         return False
 
-    def _run_ui_smoke(self, payload: dict | None = None) -> dict:
+    def _run_ui_smoke(self, payload: dict | None = None):
         collection_info = self._load_collection()
         if not collection_info["exists"]:
-            return {"ok": False, "message": "Chưa có collection để chạy UI smoke."}
+            yield {"type": "result", "ok": False, "message": "Chưa có collection để chạy UI smoke."}
+            return
 
         _ensure_runtime()
         headed = bool((payload or {}).get("headed"))
+        site_base_url = str((payload or {}).get("site_base_url") or os.environ.get("RAG_SITE_BASE_URL") or "https://ecom.ziet.dev/")
+
+        yield {"type": "log", "content": "Starting Playwright UI smoke tests..."}
+        yield {"type": "log", "content": f"Target Site Base URL: {site_base_url}"}
+        yield {"type": "log", "content": f"Headed browser mode: {headed}"}
+
         env = {
             "RAG_UI_BASE_URL": f"http://127.0.0.1:{self.server.server_address[1]}",
             "RAG_COLLECTION_FILE": str(UPLOADED_COLLECTION),
-            "RAG_SITE_BASE_URL": str((payload or {}).get("site_base_url") or os.environ.get("RAG_SITE_BASE_URL") or "https://ecom.ziet.dev/"),
+            "RAG_SITE_BASE_URL": site_base_url,
         }
 
         if not (UI_DIR / "node_modules").exists():
-            npm_install = _run_shell(["npm", "install"], cwd=UI_DIR)
-            if npm_install.returncode != 0:
-                return {"ok": False, "message": npm_install.stderr or npm_install.stdout or "Không cài được dependency cho Playwright."}
+            yield {"type": "log", "content": "node_modules folder not found. Running npm install..."}
+            process = subprocess.Popen(
+                ["npm", "install"],
+                cwd=UI_DIR,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1,
+            )
+            for line in process.stdout:
+                yield {"type": "log", "content": f"[npm install] {line.rstrip()}"}
+            process.wait()
+            if process.returncode != 0:
+                yield {"type": "result", "ok": False, "message": "Không cài được dependency cho Playwright."}
+                return
 
-        install = _run_shell(["npx", "playwright", "install", "chromium"], cwd=UI_DIR)
-        if install.returncode != 0:
-            return {"ok": False, "message": install.stderr or install.stdout or "Không cài được Chromium cho Playwright."}
+        yield {"type": "log", "content": "Ensuring Playwright Chromium binary is installed..."}
+        process = subprocess.Popen(
+            ["npx", "playwright", "install", "chromium"],
+            cwd=UI_DIR,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+        )
+        for line in process.stdout:
+            yield {"type": "log", "content": f"[playwright install] {line.rstrip()}"}
+        process.wait()
+        if process.returncode != 0:
+            yield {"type": "result", "ok": False, "message": "Không cài được Chromium cho Playwright."}
+            return
 
         PLAYWRIGHT_RESULT_FILE.unlink(missing_ok=True)
         env["PLAYWRIGHT_JSON_OUTPUT_NAME"] = str(PLAYWRIGHT_RESULT_FILE)
@@ -941,14 +1057,46 @@ class UiHandler(BaseHTTPRequestHandler):
         if headed:
             command.append("--headed")
 
-        process = _run_shell(command, cwd=UI_DIR, env=env)
+        yield {"type": "log", "content": f"Executing: {' '.join(command)}"}
+        yield {"type": "log", "content": "--- PLAYWRIGHT LOGS START ---"}
+
+        process_env = os.environ.copy()
+        process_env.update(env)
+
+        process = subprocess.Popen(
+            command,
+            cwd=UI_DIR,
+            env=process_env,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+        )
+
+        full_stdout = []
+        while True:
+            line = process.stdout.readline()
+            if not line and process.poll() is not None:
+                break
+            if line:
+                full_stdout.append(line)
+                yield {"type": "log", "content": line.rstrip("\n")}
+
+        for line in process.stdout:
+            full_output_line = line
+            full_stdout.append(full_output_line)
+            yield {"type": "log", "content": full_output_line.rstrip("\n")}
+
+        yield {"type": "log", "content": "--- PLAYWRIGHT LOGS END ---"}
+
         playwright_report = self._load_playwright_report()
-        return {
+        yield {
+            "type": "result",
             "ok": process.returncode == 0,
             "headed": headed,
             "command": " ".join(command),
-            "stdout": process.stdout,
-            "stderr": process.stderr,
+            "stdout": "".join(full_stdout),
+            "stderr": "",
             "report_file": str(PLAYWRIGHT_RESULT_FILE) if PLAYWRIGHT_RESULT_FILE.exists() else None,
             "report": playwright_report,
         }
@@ -1000,33 +1148,45 @@ class UiHandler(BaseHTTPRequestHandler):
             "tests": tests[:12],
         }
 
-    def _analyze_results(self, payload: dict) -> dict:
+    def _analyze_results(self, payload: dict):
+        yield {"type": "log", "content": "Loading AI Settings and API keys..."}
         settings = _ai_settings()
         api_key = _read_env_file(AI_ENV_PATH).get("GROQ_API_KEY") or os.environ.get("GROQ_API_KEY")
         if not api_key:
-            return {"ok": False, "message": "Thiếu GROQ_API_KEY. Lưu Groq key trong Settings trước."}
+            yield {"type": "result", "ok": False, "message": "Thiếu GROQ_API_KEY. Lưu Groq key trong Settings trước."}
+            return
 
+        yield {"type": "log", "content": "Checking test execution result logs..."}
         try:
             api_result_source, playwright_source = self._load_analysis_sources(payload)
         except ValueError as exc:
-            return {"ok": False, "message": str(exc)}
+            yield {"type": "result", "ok": False, "message": str(exc)}
+            return
 
         if not api_result_source and not playwright_source:
-            return {"ok": False, "message": "Upload API result JSON hoặc Playwright report JSON, hoặc chạy suite trước."}
+            yield {"type": "result", "ok": False, "message": "Upload API result JSON hoặc Playwright report JSON, hoặc chạy suite trước."}
+            return
 
         collection_data = {}
         if UPLOADED_COLLECTION.exists():
             collection_data = json.loads(UPLOADED_COLLECTION.read_text(encoding="utf-8"))
 
+        yield {"type": "log", "content": "Compiling training context and constructing LLM prompt..."}
         prompt, training_stats = self._build_analysis_prompt(api_result_source, playwright_source, collection_data, DEFAULT_ANALYSIS_FOCUS)
         model = settings.get("model") if settings.get("provider") == "groq" else DEFAULT_MODEL_BY_PROVIDER["groq"]
+
+        yield {"type": "log", "content": f"Calling Groq Chat Completion API using model {model}..."}
         try:
             raw_output, rate_limit = self._call_groq_analysis(prompt, api_key, model or DEFAULT_MODEL_BY_PROVIDER["groq"])
         except HTTPError as exc:
             error_body = exc.read().decode("utf-8", errors="replace")
-            return {"ok": False, "message": f"Groq error {exc.code}: {_truncate_text(error_body, 800)}"}
+            yield {"type": "result", "ok": False, "message": f"Groq error {exc.code}: {_truncate_text(error_body, 800)}"}
+            return
         except Exception as exc:
-            return {"ok": False, "message": f"Groq analysis failed: {exc}"}
+            yield {"type": "result", "ok": False, "message": f"Groq analysis failed: {exc}"}
+            return
+
+        yield {"type": "log", "content": "Groq response received. Parsing JSON report..."}
         analysis = _safe_json_loads(raw_output)
         if not isinstance(analysis, dict):
             analysis = {
@@ -1046,8 +1206,20 @@ class UiHandler(BaseHTTPRequestHandler):
             "analysis": analysis,
             "analysis_file": str(API_ANALYSIS_FILE),
         }
+
+        _ensure_runtime()
         API_ANALYSIS_FILE.write_text(json.dumps(report_payload, indent=2, ensure_ascii=False), encoding="utf-8")
-        return report_payload
+
+        yield {"type": "log", "content": "Analysis report compiled successfully!"}
+        yield {
+            "type": "result",
+            "ok": True,
+            "model": report_payload["model"],
+            "training_stats": report_payload["training_stats"],
+            "rate_limit": report_payload["rate_limit"],
+            "analysis": report_payload["analysis"],
+            "analysis_file": report_payload["analysis_file"],
+        }
 
     def _load_analysis_sources(self, payload: dict) -> tuple[dict | None, dict | None]:
         api_result_source = self._load_uploaded_json_source(payload.get("api_result_file"), "api-test-results.json")

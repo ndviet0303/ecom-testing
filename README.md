@@ -6,11 +6,19 @@
 
 ## Thông Tin Nhóm
 
-| STT | Họ và tên       | MSSV     | Vai trò                                                         |
-| --- | --------------- | -------- | --------------------------------------------------------------- |
-| 1   | Nghiêm Đức Việt | 23010636 | Trưởng nhóm, Thiết kế và thực thi test backend/API, frontend/UI |
-| 2   | Nguyễn Duy Minh | MSSV 2   |                                                                 |
-| 3   | Đặng Nhất Nhất  | MSSV 3   |                                                                 |
+| STT | Họ và tên       | MSSV     | Vai trò                                                                                |
+| --- | --------------- | -------- | -------------------------------------------------------------------------------------- |
+| 1   | Nghiêm Đức Việt | 23010636 | Trưởng nhóm, Thiết kế và thực thi test backend/API, frontend/UI, tổng hợp báo cáo      |
+| 2   | Nguyễn Duy Minh | 23010359 | Kiểm thử viên Backend, viết và thực thi Unit Test & Feature Test                       |
+| 3   | Đặng Nhất Nhất  | 23010345 | Kiểm thử viên Frontend & API, chuẩn bị Postman collection, Playwright UI test          |
+
+## Phân Công Công Việc
+
+| Thành viên      | Công việc                                                                                               |
+| --------------- | ------------------------------------------------------------------------------------------------------- |
+| Nghiêm Đức Việt | Lập kế hoạch kiểm thử, thiết kế kịch bản test tổng thể, cấu hình môi trường kiểm thử (Docker), tổng hợp báo cáo và README. |
+| Nguyễn Duy Minh | Thiết kế và thực thi các ca kiểm thử đơn vị (Unit Test) và kiểm thử tích hợp (Feature Test) cho Laravel Backend bằng PHPUnit. |
+| Đặng Nhất Nhất  | Xây dựng và thực thi các ca kiểm thử giao diện tự động (E2E Test) bằng Playwright, chuẩn bị Postman Collection và thu thập minh chứng. |
 
 ## Mục Tiêu Báo Cáo
 
@@ -228,13 +236,7 @@ Biến môi trường cần thiết:
 | UI Test            | Playwright         | `tests/ui/e2e`                | Kiểm tra giao diện test runner   |
 | Generated Testcase | RAG Test Generator | `ai/generated-testcases.json` | Testcase API được sinh từ source |
 
-## Phân Công Công Việc
 
-| Thành viên   | Công việc                                                              |
-| ------------ | ---------------------------------------------------------------------- |
-| Thành viên 1 | Lập kế hoạch kiểm thử, tổng hợp README/báo cáo, kiểm tra kết quả cuối  |
-| Thành viên 2 | Viết và chạy Unit Test, Feature Test cho backend/API                   |
-| Thành viên 3 | Chuẩn bị Postman collection, Playwright UI test và ghi nhận minh chứng |
 
 ## Kết Luận
 

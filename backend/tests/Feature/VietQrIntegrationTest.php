@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Notification;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
-class SePayIntegrationTest extends TestCase
+class VietQrIntegrationTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -63,13 +63,13 @@ class SePayIntegrationTest extends TestCase
         $orderId = $res->json('order.id');
         $total = (int) $res->json('order.total_cents');
 
-        $qr = $this->getJson('/api/v1/orders/'.$orderId.'/sepay-qr')->assertOk();
+        $qr = $this->getJson('/api/v1/orders/'.$orderId.'/vietqr-qr')->assertOk();
         $this->assertStringContainsString('qr.sepay.vn', $qr->json('qr_image_url'));
         $this->assertStringContainsString('TTECOMDZ', $qr->json('qr_image_url'));
         $this->assertSame($total, $qr->json('amount'));
         $this->assertStringContainsString((string) $orderId, $qr->json('transfer_content'));
 
-        $this->postJson('/api/v1/webhooks/sepay', [
+        $this->postJson('/api/v1/webhooks/vietqr', [
             'notification_type' => 'ORDER_PAID',
             'order' => [
                 'order_id' => (string) $orderId,
@@ -94,7 +94,7 @@ class SePayIntegrationTest extends TestCase
     {
         config(['sepay.secret_key' => 'secret']);
 
-        $this->postJson('/api/v1/webhooks/sepay', ['id' => 1], [
+        $this->postJson('/api/v1/webhooks/vietqr', ['id' => 1], [
             'X-Secret-Key' => 'wrong',
         ])->assertUnauthorized();
     }

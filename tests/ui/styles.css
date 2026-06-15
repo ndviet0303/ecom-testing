@@ -1135,3 +1135,125 @@ input[type="checkbox"] {
     flex-wrap: wrap;
   }
 }
+
+/* Terminal Console Styles */
+.terminal-panel {
+  padding: 0 !important;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  margin-top: 10px;
+}
+
+.terminal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--panel-border);
+  background: var(--panel-raised);
+}
+
+.terminal-dots {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.terminal-dots .dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.terminal-dots .dot.red { background: #ff5f56; }
+.terminal-dots .dot.yellow { background: #ffbd2e; }
+.terminal-dots .dot.green { background: #27c93f; }
+
+.terminal-title {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-soft);
+  user-select: none;
+}
+
+.terminal-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.terminal-action-btn {
+  min-height: 28px !important;
+  height: 28px !important;
+  padding: 4px 10px !important;
+  font-size: 0.75rem !important;
+}
+
+.terminal-body-wrapper {
+  max-height: 280px;
+  transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.terminal-panel.collapsed .terminal-body-wrapper {
+  max-height: 0;
+}
+
+.terminal-body {
+  margin: 0;
+  padding: 14px 16px;
+  height: 280px;
+  overflow-y: auto;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  background: #050811 !important; /* Retain retro-terminal deep black contrast */
+  color: #e2e8f0 !important;
+  white-space: pre-wrap;
+  word-break: break-all;
+  border: none !important;
+  border-radius: 0 !important;
+}
+
+/* Custom Scrollbar for Terminal */
+.terminal-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.terminal-body::-webkit-scrollbar-track {
+  background: #050811;
+}
+
+.terminal-body::-webkit-scrollbar-thumb {
+  background: #273449;
+  border-radius: 4px;
+}
+
+.terminal-body::-webkit-scrollbar-thumb:hover {
+  background: #38bdf8;
+}
+
+/* Color codes inside terminal logs */
+.term-cmd {
+  color: #38bdf8; /* Cyan */
+  font-weight: 600;
+}
+
+.term-success {
+  color: #34d399; /* Emerald Green */
+}
+
+.term-error {
+  color: #f87171; /* Coral Red */
+}
+
+.term-warn {
+  color: #fbbf24; /* Amber Yellow */
+}
+
+.term-info {
+  color: #9ca3af; /* Gray */
+}
+
