@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Slide Thuyết Trình | Kiểm Thử Tự Động ECM Project</title>
+    <link rel="stylesheet" href="/slides.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <!-- Main Presentation Container -->
+    <div class="presentation-wrapper">
+      <div class="slides-container">
+        
+        <!-- SLIDE 1: Title -->
+        <section class="slide active" id="slide-1">
+          <div class="slide-content title-slide-layout">
+            <div class="glowing-orb"></div>
+            <div class="eyebrow-badge">Báo Cáo Giữa Kỳ</div>
+            <h1 class="main-title">ĐÁNH GIÁ VÀ KIỂM ĐỊNH CHẤT LƯỢNG PHẦN MỀM</h1>
+            <p class="slide-subtitle">Xây dựng hệ thống kiểm thử tự động cho ứng dụng E-commerce tích hợp Authentication với hỗ trợ AI</p>
+            
+            <div class="meta-grid">
+              <div class="meta-item">
+                <span class="meta-label">Nhóm thực hiện</span>
+                <span class="meta-val">Nghiêm Đức Việt (23010636)<br>Nguyễn Duy Minh (23010359)<br>Đặng Nhất Nhất (23010345)</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-label">Giảng viên hướng dẫn</span>
+                <span class="meta-val font-semibold text-purple">TS. Trịnh Thanh Bình</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-label">Thời gian</span>
+                <span class="meta-val">Tháng 06 năm 2026</span>
+              </div>
+            </div>
+          </div>
+          <div class="slide-notes">
+            Chào mừng Thầy và các bạn đến với buổi thuyết trình giữa kỳ môn Đánh giá và kiểm định chất lượng phần mềm của nhóm. Đề tài của nhóm là "Xây dựng hệ thống kiểm thử tự động cho ứng dụng E-commerce tích hợp Authentication với hỗ trợ AI" dựa trên dự án ECM Project.
+          </div>
+        </section>
+
+        <!-- SLIDE 2: System Overview -->
+        <section class="slide" id="slide-2">
+          <div class="slide-header">
+            <h2>Tổng Quan Hệ Thống (ECM Project)</h2>
+            <span class="slide-number">02/12</span>
+          </div>
+          <div class="slide-content grid-2">
+            <div class="card glassmorphism border-blue">
+              <h3 class="text-blue"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-inline"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg> Nghiệp Vụ Cốt Lõi</h3>
+              <ul class="features-list">
+                <li><strong>Thương mại điện tử:</strong> Tìm kiếm, giỏ hàng động, tự động gộp giỏ hàng vãng lai sau đăng nhập, áp dụng mã giảm giá (coupon).</li>
+                <li><strong>PC Builder:</strong> Lắp ráp linh kiện máy tính, tự động kiểm tra tương thích Socket CPU/Mainboard, chuẩn RAM và công suất nguồn điện (PSU).</li>
+                <li><strong>Thanh toán VietQR:</strong> Tạo mã QR động tự động, tích hợp Webhook phản hồi trạng thái thanh toán thành công (IPN).</li>
+                <li><strong>Bảo hành & RMA:</strong> Quản lý số Serial, hạn bảo hành, quy trình đổi trả hàng lỗi đa trạng thái (RMA).</li>
+              </ul>
+            </div>
+            <div class="card glassmorphism border-purple flex-col-justify">
+              <h3 class="text-purple"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-inline"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg> Phân Quyền Vận Hành</h3>
+              <div class="roles-container">
+                <div class="role-badge customer">Khách Hàng (Customer)</div>
+                <div class="role-badge staff">Nhân Viên (Staff)</div>
+                <div class="role-badge admin">Quản Trị Viên (Admin)</div>
+              </div>
+              <div class="image-placeholder">Ảnh sơ đồ: Phân quyền truy cập và vai trò người dùng trong hệ thống</div>
+              <p class="text-sm text-muted">Hệ thống phân quyền chi tiết dựa trên Token cá nhân (Laravel Sanctum) và Middleware quản lý tài nguyên nghiêm ngặt ở API Backend.</p>
+            </div>
+          </div>
+          <div class="slide-notes">
+            ECM Project là hệ thống e-commerce bán linh kiện máy tính, điểm đặc trưng là bộ PC Builder kiểm tra tương thích phần cứng, cổng thanh toán VietQR quét mã QR, và phân hệ bảo hành RMA. Hệ thống vận hành dựa trên 3 vai trò: Customer, Staff, Admin.
+          </div>
+        </section>
+
+        <!-- SLIDE 3: Tech Stack & Architecture -->
+        <section class="slide" id="slide-3">
+          <div class="slide-header">
+            <h2>Công Nghệ & Kiến Trúc Kiểm Thử</h2>
+            <span class="slide-number">03/12</span>
+          </div>
+          <div class="slide-content grid-2">
+            <div class="card glassmorphism border-blue">
+              <h3 class="text-blue">Hệ Sinh Thái Công Nghệ</h3>
+              <table class="tech-table">
+                <tr>
+                  <td><strong>Backend</strong></td>
+                  <td>Laravel 12, PHP 8.2+, SQLite (in-memory test DB)</td>
+                </tr>
+                <tr>
+                  <td><strong>Frontend</strong></td>
+                  <td>Vue 3, Vite, Pinia, Vanilla CSS</td>
+                </tr>
+                <tr>
+                  <td><strong>Testing Suite</strong></td>
+                  <td>PHPUnit 10+, Playwright E2E, Postman / Newman CLI</td>
+                </tr>
+                <tr>
+                  <td><strong>AI Generator</strong></td>
+                  <td>Python, RAG, Ollama / OpenAI API (Qwen2.5-Coder:7b)</td>
+                </tr>
+                <tr>
+                  <td><strong>Môi trường</strong></td>
+                  <td>Docker Compose (5 containers: Nginx, Frontend, Backend, MySQL, Redis)</td>
+                </tr>
+              </table>
+            </div>
+            <div class="card glassmorphism border-purple">
+              <h3 class="text-purple">Mô Hình Luồng QA</h3>
+              <div class="image-placeholder" style="margin-top: 10px; height: 260px;">Ảnh sơ đồ: Sơ đồ kiến trúc luồng kiểm định chất lượng (QA System Architecture)</div>
+              <p class="text-xs text-muted" style="margin-top: 10px; text-align: center;">Môi trường test backend được tự động khởi tạo bằng SQLite in-memory kết hợp RefreshDatabase Trait giúp test suite chạy cực nhanh (dưới 4s cho 111 test cases).</p>
+            </div>
+          </div>
+          <div class="slide-notes">
+            Dự án sử dụng Laravel 12 cho backend, Vue 3 cho frontend. Bộ kiểm thử gồm PHPUnit chạy Unit/Feature, Playwright chạy E2E UI, Postman chạy API suite. Module AI RAG scan source code Laravel và sinh test case JSON tự động chạy trên giao diện Test Runner.
+          </div>
+        </section>
+
+        <!-- SLIDE 4: Testing Scope & Objectives -->
+        <section class="slide" id="slide-4">
+          <div class="slide-header">
+            <h2>Mục Tiêu & Phạm Vi Kiểm Thử</h2>
+            <span class="slide-number">04/12</span>
+          </div>
+          <div class="slide-content grid-2">
+            <div class="card glassmorphism border-green">
+              <h3 class="text-green">Phạm Vi Thực Hiện (In-Scope)</h3>
+              <ul class="check-list">
+                <li><strong>Unit Test:</strong> Kiểm tra logic tính thuế VAT, phí vận chuyển cước, áp dụng coupon và đối khớp linh kiện PC Builder cô lập.</li>
+                <li><strong>Feature / API Test:</strong> Kiểm tra tính hợp lệ dữ liệu đầu vào (Validation Rules), phân quyền người dùng API, và DB transactions.</li>
+                <li><strong>E2E UI Test:</strong> Giả lập toàn bộ hành trình mua sắm và dựng PC của người dùng trên browser qua Playwright.</li>
+                <li><strong>Postman API Test:</strong> Tự động hóa kiểm thử tích hợp hộp đen bằng Collection Runner.</li>
+              </ul>
+            </div>
+            <div class="card glassmorphism border-orange">
+              <h3 class="text-orange">Ngoài Phạm Vi (Out-of-Scope)</h3>
+              <ul class="x-list">
+                <li>Kiểm thử bảo mật hạ tầng mạng, chống tấn công DDoS quy mô lớn.</li>
+                <li>Kết nối API thực tế với các đơn vị giao vận thứ ba (GHN, GHTK...) và ngân hàng.</li>
+                <li>Hệ thống thực hiện giả lập (Mocking) hoặc dùng sandbox/stub để đối chiếu kết quả thanh toán.</li>
+              </ul>
+            </div>
+          </div>
+          <div class="slide-notes">
+            Về phạm vi kiểm thử, nhóm tập trung sâu vào Unit Test các thuật toán độc lập, Feature API Test các API Laravel, E2E UI Test với Playwright và API Suite. Các phần bảo mật mạng hoặc cổng thanh toán thật, vận chuyển thật nằm ngoài phạm vi và được mock.
+          </div>
+        </section>
+
+        <!-- SLIDE 5: Testing Strategy -->
+        <section class="slide" id="slide-5">
+          <div class="slide-header">
+            <h2>Chiến Lược Kiểm Thử (4 Giai Đoạn)</h2>
+            <span class="slide-number">05/12</span>
+          </div>
+          <div class="slide-content">
+            <div class="timeline-container">
+              <div class="timeline-step">
+                <div class="step-num">1</div>
+                <h4>Unit Testing Stage</h4>
+                <p>Kiểm tra các hàm tính toán cô lập, không gọi database hay API. Chạy với tốc độ cực nhanh.</p>
+                <span class="badge bg-blue">PHPUnit Unit</span>
+              </div>
+              <div class="timeline-step">
+                <div class="step-num">2</div>
+                <h4>Feature / API Stage</h4>
+                <p>Kiểm tra tích hợp logic đa bảng, API routing, Sanctum token, DB Transactions và kiểm soát phân quyền.</p>
+                <span class="badge bg-purple">PHPUnit Feature</span>
+              </div>
+              <div class="timeline-step">
+                <div class="step-num">3</div>
+                <h4>System & E2E UI Stage</h4>
+                <p>Kiểm thử toàn bộ hành trình người dùng trên trình duyệt thực tế, đồng bộ giữa Vue 3 SPA và Laravel API.</p>
+                <span class="badge bg-green">Playwright E2E</span>
+              </div>
+              <div class="timeline-step">
+                <div class="step-num">4</div>
+                <h4>AI Regression Stage</h4>
+                <p>Quét mã nguồn và sinh test case API tự động bằng RAG + LLM để gia tăng độ bao phủ mã nguồn (coverage).</p>
+                <span class="badge bg-orange">RAG Testgen</span>
+              </div>
+            </div>
+          </div>
+          <div class="slide-notes">
+            Chiến lược kiểm thử chia làm 4 giai đoạn rõ rệt: Bắt đầu từ Unit Test các hàm cô lập; tiếp theo là Feature Test tích hợp dữ liệu và API; thứ ba là E2E UI Test kiểm thử giao diện thực tế; và cuối cùng là Regression Test tự động hóa bằng AI RAG.
+          </div>
+        </section>
+
+        <!-- SLIDE 6: White-Box Testing -->
+        <section class="slide" id="slide-6">
+          <div class="slide-header">
+            <h2>Kiểm Thử Hộp Trắng (Unit Tests)</h2>
+            <span class="slide-number">06/12</span>
+          </div>
+          <div class="slide-content grid-2">
+            <div class="card glassmorphism border-blue">
+              <h3 class="text-blue"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-inline"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg> Domain Calculators Logic</h3>
+              <ul class="bullet-list-sm">
+                <li><strong>ShoppingCart:</strong> Kiểm tra các hàm thêm/sửa/xóa sản phẩm, tự động cộng dồn số lượng khi trùng sản phẩm.</li>
+                <li><strong>ShippingCalculator:</strong> Tính phí vận chuyển theo cân nặng thực tế (làm tròn lên kg) và vùng giao hàng. Miễn phí ship khi đạt ngưỡng đơn hàng.</li>
+                <li><strong>TaxCalculator:</strong> Tính đúng thuế suất VAT dựa trên điểm cơ bản (basis points) và làm tròn lên toán học.</li>
+                <li><strong>CouponApplicator:</strong> Áp dụng giảm giá và khống chế giới hạn giảm tối đa bằng tổng tiền đơn hàng, chặn coupon nếu chưa đạt giá trị đơn tối thiểu.</li>
+              </ul>
+            </div>
+            <div class="card glassmorphism border-purple">
+              <h3 class="text-purple"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-inline"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg> PC Builder & State Machines</h3>
+              <ul class="bullet-list-sm">
+                <li><strong>Socket Compatibility:</strong> CPU Intel LGA1700 ghép với Mainboard AM5 phải ném lỗi không tương thích.</li>
+                <li><strong>RAM Type Match:</strong> Chặn việc cắm RAM DDR4 vào khe cắm RAM DDR5 trên Mainboard.</li>
+                <li><strong>PSU Wattage Check:</strong> Tính tổng công suất TDP tối đa của cấu hình + 50W mặc định, nhân 1.2 dung sai dự phòng. Nguồn PSU phải đáp ứng ngưỡng này.</li>
+                <li><strong>Order & RMA State Machines:</strong> Đảm bảo đơn hàng đi đúng vòng đời trạng thái và chặn các bước chuyển đổi phi logic (ví dụ: RMA chuyển thẳng từ Pending sang Refunded).</li>
+              </ul>
+            </div>
+          </div>
+          <div class="slide-notes">
+            Kiểm thử hộp trắng tập trung vào logic tính toán cô lập ở backend: từ giỏ hàng, phí ship làm tròn kg, thuế, coupon, đến độ tương thích phần cứng của PC Builder (socket, loại RAM, công suất PSU vượt ngưỡng 20% dung sai), và vòng đời trạng thái đơn hàng/RMA.
+          </div>
+        </section>
+
+        <!-- SLIDE 7: Black-Box Testing -->
+        <section class="slide" id="slide-7">
+          <div class="slide-header">
+            <h2>Kiểm Thử Hộp Đen (Feature & Integration)</h2>
+            <span class="slide-number">07/12</span>
+          </div>
+          <div class="slide-content grid-2">
+            <div class="card glassmorphism border-blue">
+              <h3 class="text-blue">Xác Thực & Phân Quyền</h3>
+              <ul class="bullet-list-sm">
+                <li><strong>Sanctum Auth API:</strong> Đăng ký tài khoản (cấp Sanctum token), Đăng nhập (verify bcrypt hash), Đăng xuất (thu hồi token trong bảng personal_access_tokens).</li>
+                <li><strong>Access Control:</strong> Phân quyền nghiêm ngặt, chặn staff và customer CRUD sản phẩm của Admin (trả lỗi 403 Forbidden).</li>
+                <li><strong>Cart Merging:</strong> Tự động gộp giỏ hàng tạm vãng lai (guest_token UUID) sang tài khoản người dùng chính thức ngay sau khi đăng nhập thành công.</li>
+              </ul>
+            </div>
+            <div class="card glassmorphism border-purple">
+              <h3 class="text-purple">Checkout & Thanh Toán VietQR</h3>
+              <ul class="bullet-list-sm">
+                <li><strong>Database Transaction:</strong> Checkout đơn hàng bao bọc bởi Transaction. Khóa dòng dữ liệu tồn kho bằng <code>lockForUpdate()</code> (Lock bi quan) để tránh race condition bán quá số lượng.</li>
+                <li><strong>VietQR Webhook Checksum:</strong> Webhook POST nhận thông tin chuyển khoản phải xác thực chữ ký HMAC SHA256 với Secret Key. Giao dịch sai key bị chặn 401.</li>
+                <li><strong>Idempotency:</strong> Tra cứu bảng <code>processed_webhook_events</code> để chống xử lý trùng lặp giao dịch khi webhook gửi lặp.</li>
+              </ul>
+              <div class="image-placeholder">Ảnh chụp giao diện: Mã QR VietQR động hiển thị lúc checkout và Webhook đối soát IPN</div>
+            </div>
+          </div>
+          <div class="slide-notes">
+            Kiểm thử hộp đen kiểm tra tích hợp API: Hệ thống xác thực Sanctum, phân quyền người dùng, tự động gộp giỏ hàng khi đăng nhập. Đặc biệt, luồng checkout dùng lockForUpdate để chặn Race Condition, webhook VietQR dùng HMAC SHA256 và Idempotent để chống xử lý trùng.
+          </div>
+        </section>
+
+        <!-- SLIDE 8: Playwright E2E UI Testing -->
+        <section class="slide" id="slide-8">
+          <div class="slide-header">
+            <h2>Kiểm Thử Giao Diện E2E (Playwright)</h2>
+            <span class="slide-number">08/12</span>
+          </div>
+          <div class="slide-content grid-2">
+            <div class="card glassmorphism border-blue">
+              <h3 class="text-blue">Kịch Bản E2E Trình Duyệt</h3>
+              <ul class="bullet-list-sm">
+                <li><strong>Hành trình mua hàng đầy đủ:</strong> Giả lập người dùng đăng ký -> Đăng nhập -> Tìm kiếm sản phẩm -> Lắp ráp cấu hình PC Builder tương thích -> Thêm vào giỏ -> Điền thông tin giao hàng -> Checkout đơn hàng -> Kiểm tra mã QR.</li>
+                <li><strong>Quy trình bảo hành RMA:</strong> Giả lập khách hàng tạo yêu cầu đổi trả linh kiện lỗi -> Đăng nhập tài khoản Staff phê duyệt -> Kiểm tra tồn kho kho hàng tự động cộng trả lại.</li>
+                <li><strong>Hiệu năng UI:</strong> Đánh giá thời gian tải trang SPA (Vue 3) dưới 1.0 giây và hiển thị Responsive.</li>
+              </ul>
+              <div class="image-placeholder">Ảnh chụp giao diện: Trang dựng cấu hình máy tính PC Builder của ECM Project</div>
+            </div>
+            <div class="card glassmorphism-code border-purple">
+              <h3 class="text-purple">Mã Kiểm Thử Playwright Mẫu</h3>
+              <pre class="code-block"><code><span class="keyword">const</span> { test, expect } = require(<span class="str">'@playwright/test'</span>);
+
+test(<span class="str">'User checkout flow'</span>, <span class="keyword">async</span> ({ page }) => {
+  <span class="keyword">await</span> page.goto(<span class="str">'/login'</span>);
+  <span class="keyword">await</span> page.fill(<span class="str">'#email'</span>, <span class="str">'customer@ziet.dev'</span>);
+  <span class="keyword">await</span> page.fill(<span class="str">'#password'</span>, <span class="str">'password'</span>);
+  <span class="keyword">await</span> page.click(<span class="str">'#btn-submit'</span>);
+  
+  <span class="comment">// Navigate to PC Builder</span>
+  <span class="keyword">await</span> page.click(<span class="str">'text=PC Builder'</span>);
+  <span class="keyword">await</span> page.click(<span class="str">'.select-cpu-btn'</span>);
+  <span class="keyword">await</span> page.click(<span class="str">'text=Add to Cart'</span>);
+  <span class="comment">...</span>
+  <span class="keyword">await</span> expect(page.locator(<span class="str">'.qr-image'</span>)).toBeVisible();
+});</code></pre>
+            </div>
+          </div>
+          <div class="slide-notes">
+            Playwright E2E UI testing mô phỏng chính xác hành vi người dùng trên Chrome, Firefox và Webkit. K kịch bản chính giả lập mua sắm, dựng cấu hình tương thích, checkout, tạo đơn hàng và toàn bộ quy trình gửi yêu cầu đổi trả RMA sau giao hàng.
+          </div>
+        </section>
+
+        <!-- SLIDE 9: AI-Assisted Test Generation -->
+        <section class="slide" id="slide-9">
+          <div class="slide-header">
+            <h2>Sinh Testcase Bằng AI RAG Generator</h2>
+            <span class="slide-number">09/12</span>
+          </div>
+          <div class="slide-content grid-2">
+            <div class="card glassmorphism border-blue">
+              <h3 class="text-blue">Nguyên Lý Hoạt Động</h3>
+              <ul class="bullet-list-sm">
+                <li><strong>Scanner CLI:</strong> Bộ parser quét source Laravel trích xuất các Route, định dạng Validation rules, Database Migration và seeders.</li>
+                <li><strong>Context Retrieval:</strong> Xây dựng ngữ cảnh cục bộ có cấu trúc để cung cấp tri thức cho LLM (không bị ảo tưởng).</li>
+                <li><strong>LLM Generation:</strong> Gọi mô hình Qwen2.5-Coder hoặc GPT-4o-mini dịch ngữ cảnh thành các kịch bản test API JSON.</li>
+                <li><strong>Automation UI:</strong> Giao diện Web cổng <code>8765</code> giúp người dùng tùy chỉnh model, chạy sinh file JSON và bấm nút thực thi API suite trực quan.</li>
+              </ul>
+            </div>
+            <div class="card glassmorphism border-purple">
+              <h3 class="text-purple">Cấu Trúc Test Case Được Sinh</h3>
+              <pre class="code-block" style="font-size: 0.72rem; line-height: 1.3;"><code>{
+  <span class="key">"endpoint"</span>: <span class="str">"/v1/checkout"</span>,
+  <span class="key">"method"</span>: <span class="str">"POST"</span>,
+  <span class="key">"testcases"</span>: [
+    {
+      <span class="key">"name"</span>: <span class="str">"Checkout giỏ hàng hợp lệ"</span>,
+      <span class="key">"request"</span>: {
+        <span class="key">"body"</span>: {
+          <span class="key">"address_id"</span>: 1,
+          <span class="key">"payment_method"</span>: <span class="str">"vietqr"</span>
+        }
+      },
+      <span class="key">"expected"</span>: {
+        <span class="key">"status"</span>: 200,
+        <span class="key">"body_contains"</span>: [<span class="str">"order_id"</span>, <span class="str">"qr_code"</span>]
+      }
+    }
+  ]
+}</code></pre>
+              <div class="image-placeholder" style="margin-top: 10px;">Ảnh chụp giao diện: Danh sách testcase được AI sinh hiển thị trên Automation UI Runner</div>
+            </div>
+          </div>
+          <div class="slide-notes">
+            RAG Test Generator là tính năng thông minh của dự án: Tự quét route Laravel và validate rules, tạo context gửi lên LLM sinh test case dạng file JSON. Tester có thể load file này vào UI Test Runner để chạy kiểm thử API tự động mà không cần code tay.
+          </div>
+        </section>
+
+        <!-- SLIDE 10: Defect Tracking & Bug Resolution -->
+        <section class="slide" id="slide-10">
+          <div class="slide-header">
+            <h2>Quản Lý Lỗi & Xử Lý Sự Cố (Defect Reports)</h2>
+            <span class="slide-number">10/12</span>
+          </div>
+          <div class="slide-content grid-2">
+            <div class="card glassmorphism border-red">
+              <h3 class="text-red">Phân Loại Lỗi (Defect Levels)</h3>
+              <table class="bug-table">
+                <thead>
+                  <tr>
+                    <th>Cấp độ</th>
+                    <th>Nghiêm trọng</th>
+                    <th>Ví dụ phát hiện</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="level-blocker">
+                    <td>Level 1</td>
+                    <td>Blocker</td>
+                    <td>Sập database, lỗi build compiler.</td>
+                  </tr>
+                  <tr class="level-critical">
+                    <td>Level 2</td>
+                    <td>Critical</td>
+                    <td>Sai tổng tiền, lỗi thanh toán webhook.</td>
+                  </tr>
+                  <tr class="level-major">
+                    <td>Level 3</td>
+                    <td>Major</td>
+                    <td>Wishlist lỗi, giao diện bị chậm.</td>
+                  </tr>
+                  <tr class="level-minor">
+                    <td>Level 4</td>
+                    <td>Minor</td>
+                    <td>Sai font chữ, lệch margin, chính tả.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="card glassmorphism border-blue">
+              <h3 class="text-blue">Các Lỗi Phát Hiện & Khắc Phục</h3>
+              <ul class="bullet-list-sm">
+                <li><strong>Bug 01: Thiếu dữ liệu Seeder (Critical)</strong>
+                  <br><span class="text-sm"><em>Mô tả:</em> Chạy Playwright bị 401/404 liên tục do thiếu tài khoản mặc định.</span>
+                  <br><span class="text-sm"><em>Khắc phục:</em> Cập nhật DatabaseSeeder tự động nạp UserRoleSeeder để khởi tạo các tài khoản test.</span>
+                </li>
+                <li><strong>Bug 02: Playwright API Timeout (Major)</strong>
+                  <br><span class="text-sm"><em>Mô tả:</em> Chạy tuần tự hơn 50 API tốn 110s, vượt quá timeout 90s mặc định của Playwright.</span>
+                  <br><span class="text-sm"><em>Khắc phục:</em> Tăng timeout test lên 300,000ms (5 phút) và locator lên 240,000ms.</span>
+                </li>
+              </ul>
+              <div class="image-placeholder">Ảnh chụp màn hình: Log lỗi timeout của Playwright API suite khi chưa fix</div>
+            </div>
+          </div>
+          <div class="slide-notes">
+            Hệ thống defect tracking định nghĩa 4 mức độ lỗi từ Blocker đến Minor. Trong quá trình chạy thử nghiệm, nhóm đã phát hiện và vá thành công 2 lỗi lớn: Lỗi thiếu seeder tài khoản test dẫn đến lỗi 401, và lỗi timeout khi chạy API test suite trên Playwright.
+          </div>
+        </section>
+
+        <!-- SLIDE 11: Test Execution Summary -->
+        <section class="slide" id="slide-11">
+          <div class="slide-header">
+            <h2>Kết Quả Thực Thi Kiểm Thử</h2>
+            <span class="slide-number">11/12</span>
+          </div>
+          <div class="slide-content grid-2">
+            <div class="card glassmorphism border-blue flex-center-all">
+              <h3 class="text-blue" style="margin-bottom: 20px;">Thống Kê Tổng Hợp</h3>
+              <div class="results-visual">
+                <div class="bar-chart-container">
+                  <div class="bar-wrapper">
+                    <span class="bar-label">PHPUnit (Backend)</span>
+                    <div class="bar-background">
+                      <div class="bar-fill bg-green-fill" style="width: 100%;">111/111 Tests (100%)</div>
+                    </div>
+                  </div>
+                  <div class="bar-wrapper">
+                    <span class="bar-label">Playwright (E2E)</span>
+                    <div class="bar-background">
+                      <div class="bar-fill bg-green-fill" style="width: 100%;">2/2 Specs (100%)</div>
+                    </div>
+                  </div>
+                  <div class="bar-wrapper">
+                    <span class="bar-label">Postman (API Suite)</span>
+                    <div class="bar-background">
+                      <div class="bar-fill bg-green-fill" style="width: 100%;">100% Passed</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="image-placeholder" style="width: 100%;">Ảnh chụp terminal: Log chạy thành công 111 PHPUnit test cases</div>
+            </div>
+            <div class="card glassmorphism border-purple">
+              <h3 class="text-purple">Chi Tiết Thông Số</h3>
+              <ul class="results-metrics">
+                <li>
+                  <span class="metric-name">Tổng Số Assertions (PHPUnit)</span>
+                  <strong class="metric-val text-green">311</strong>
+                </li>
+                <li>
+                  <span class="metric-name">Thời gian thực thi Backend</span>
+                  <strong class="metric-val text-blue">3.20 giây</strong>
+                </li>
+                <li>
+                  <span class="metric-name">Thời gian thực thi Playwright UI</span>
+                  <strong class="metric-val text-blue">2.1 phút</strong>
+                </li>
+                <li>
+                  <span class="metric-name">Tỷ lệ lỗi tồn dư (Critical/Blocker)</span>
+                  <strong class="metric-val text-green">0%</strong>
+                </li>
+              </ul>
+              <div class="alert-success-box text-sm">
+                <strong>Tiêu chí bàn giao (Exit Criteria) đạt chuẩn:</strong> Toàn bộ 111 ca test backend và 2 file E2E UI test đều chạy thành công 100%. Không còn lỗi nghiêm trọng chưa xử lý.
+              </div>
+            </div>
+          </div>
+          <div class="slide-notes">
+            Slide này tổng hợp kết quả chạy test thực tế: Bộ test backend PHPUnit chạy thành công 111/111 tests (311 assertions) chỉ trong 3.20 giây. Playwright chạy E2E thành công 100% trong vòng 2.1 phút. Đạt tiêu chí hoàn thành kiểm thử (Exit Criteria).
+          </div>
+        </section>
+
+        <!-- SLIDE 12: QA Evaluation & Conclusions -->
+        <section class="slide" id="slide-12">
+          <div class="slide-header">
+            <h2>Đánh Giá Quy Trình & Kết Luận</h2>
+            <span class="slide-number">12/12</span>
+          </div>
+          <div class="slide-content grid-2">
+            <div class="card glassmorphism border-blue">
+              <h3 class="text-blue">Ưu Điểm Quy Trình QA</h3>
+              <ul class="bullet-list-sm">
+                <li><strong>Độ bao phủ cao (High Coverage):</strong> Kết hợp chặt chẽ giữa Unit Test (logic nghiệp vụ), Feature Test (tích hợp API, bảo mật) và Playwright UI E2E.</li>
+                <li><strong>Tính độc lập & Tốc độ:</strong> Ứng dụng kỹ thuật Mocking (như <code>Notification::fake()</code>, <code>Event::fake()</code>) giúp chạy test độc lập không phụ thuộc SMTP và bên thứ ba.</li>
+                <li><strong>Bảo mật vững vàng:</strong> Viết test bảo vệ chặt chẽ webhook HMAC SHA256 và rate limits tránh tấn công Brute-force.</li>
+              </ul>
+            </div>
+            <div class="card glassmorphism border-purple">
+              <h3 class="text-purple">Vai Trò Của AI Hỗ Trợ</h3>
+              <ul class="bullet-list-sm">
+                <li><strong>Tăng tốc thiết kế test:</strong> Generator tự động sinh dữ liệu test case (phân vùng tương đương, giá trị biên) giúp tiết kiệm thời gian viết tay.</li>
+                <li><strong>Cải thiện chất lượng:</strong> RAG scan mã nguồn bảo đảm testcase luôn bám sát theo các ràng buộc Validation thay đổi trong code Laravel.</li>
+                <li><strong>Đúc kết:</strong> Kiểm thử tự động giúp rút ngắn thời gian bàn giao và giảm thiểu tối đa lỗi Regression của dự án.</li>
+              </ul>
+            </div>
+          </div>
+          <div class="slide-notes">
+            Về ưu điểm, quy trình QA đạt độ bao phủ cao và tốc độ chạy test nhanh nhờ SQLite in-memory và Mocking. AI RAG đóng vai trò then chốt giúp sinh nhanh test case biên và validate dữ liệu. Kết luận kiểm thử tự động là cốt lõi cho chất lượng phần mềm.
+          </div>
+        </section>
+
+      </div>
+
+      <!-- Presentation Controls -->
+      <div class="presentation-controls">
+        <div class="controls-left">
+          <button id="prev-slide" class="control-btn" title="Slide trước (Mũi tên Trái)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          </button>
+          <span class="slide-indicator" id="slide-index-label">1 / 12</span>
+          <button id="next-slide" class="control-btn" title="Slide sau (Mũi tên Phải hoặc Phím Space)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+          </button>
+        </div>
+        
+        <!-- Interactive Progress Bar -->
+        <div class="progress-container">
+          <div class="progress-bar" id="progress-bar"></div>
+        </div>
+
+        <div class="controls-right">
+          <!-- Timer Display -->
+          <div class="presentation-timer" id="presentation-timer" title="Nhấp để đặt lại bộ đếm">00:00</div>
+          
+          <button id="toggle-autoplay" class="control-btn" title="Tự động phát">
+            <svg id="play-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+            <svg id="pause-icon" class="hidden" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+          </button>
+          
+          <button id="toggle-notes" class="control-btn" title="Xem ghi chú (N)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+          </button>
+          
+          <button id="fullscreen-slides" class="control-btn" title="Toàn màn hình (F)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
+          </button>
+        </div>
+      </div>
+      
+      <!-- Speaker Notes Panel -->
+      <div class="speaker-notes-panel" id="speaker-notes-panel">
+        <div class="notes-header">
+          <h3>Ghi chú của thuyết trình viên</h3>
+          <button id="close-notes" class="close-btn">&times;</button>
+        </div>
+        <div class="notes-content" id="notes-content">
+          Ghi chú cho slide đầu tiên ở đây.
+        </div>
+      </div>
+    </div>
+
+    <script src="/slides.js"></script>
+  </body>
+</html>

@@ -298,6 +298,15 @@ class UiHandler(BaseHTTPRequestHandler):
         if parsed.path == "/styles.css":
             self._serve_file("styles.css", "text/css; charset=utf-8")
             return
+        if parsed.path in ("/slides", "/slides.html"):
+            self._serve_file("slides.html", "text/html; charset=utf-8")
+            return
+        if parsed.path == "/slides.js":
+            self._serve_file("slides.js", "application/javascript; charset=utf-8")
+            return
+        if parsed.path == "/slides.css":
+            self._serve_file("slides.css", "text/css; charset=utf-8")
+            return
         if parsed.path == "/api/state":
             self._json_response(self._build_state())
             return
@@ -313,6 +322,7 @@ class UiHandler(BaseHTTPRequestHandler):
             self._json_response(self._load_collection())
             return
         self.send_error(HTTPStatus.NOT_FOUND, "Not found")
+
 
     def do_POST(self) -> None:
         parsed = urlparse(self.path)

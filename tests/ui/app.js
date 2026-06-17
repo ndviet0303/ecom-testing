@@ -154,6 +154,9 @@ const MESSAGES = {
     clearTerminal: "Xóa log",
     minimizeTerminal: "Thu nhỏ",
     expandTerminal: "Mở rộng",
+    slidesTab: "Slides",
+    slidesPanelTitle: "Slide Thuyết Trình",
+    slidesPanelDesc: "Slide thuyết trình tương tác phục vụ môn đánh giá & kiểm định chất lượng.",
   },
   en: {
     heroEyebrow: "Automation Suite",
@@ -231,6 +234,9 @@ const MESSAGES = {
     clearTerminal: "Clear",
     minimizeTerminal: "Minimize",
     expandTerminal: "Expand",
+    slidesTab: "Slides",
+    slidesPanelTitle: "Presentation Slides",
+    slidesPanelDesc: "Interactive slide presentation for the software testing course.",
   },
 };
 
