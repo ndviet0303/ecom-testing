@@ -20,12 +20,20 @@ def log_test_case(name, passed, message=""):
     detail = f" - {message}" if message else ""
     print(f"{Colors.BOLD}[{name}]{Colors.END}: {status}{detail}")
 
+def take_screenshot(driver, filename):
+    """Hàm bổ trợ chụp ảnh màn hình và lưu vào thư mục screenshots"""
+    dir_path = "selenium-assignment/screenshots"
+    os.makedirs(dir_path, exist_ok=True)
+    full_path = os.path.join(dir_path, filename)
+    driver.save_screenshot(full_path)
+    print(f"   -> [SCREENSHOT] Đã chụp giao diện lưu tại: {full_path}")
+
 def run_tests():
     print(f"\n{Colors.BLUE}{Colors.BOLD}=== BẮT ĐẦU CHẠY THỬ NGHIỆM AUTOMATION TESTING TRÊN ECOM.ZIET.DEV ==={Colors.END}\n")
     
     # Thiết lập Chrome Options
     chrome_options = Options()
-    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--headless") # Chạy headless trên server
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--start-maximized")
@@ -40,6 +48,9 @@ def run_tests():
         # ----------------------------------------------------
         print("Đang thực hiện Test Case 1: Đăng nhập vào hệ thống...")
         driver.get("https://ecom.ziet.dev/login")
+        
+        # Chụp ảnh trang đăng nhập trước khi điền thông tin
+        take_screenshot(driver, "01_login_page.png")
         
         # Tìm ô nhập email và password
         email_field = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "input[type='email']")))
@@ -62,6 +73,9 @@ def run_tests():
         
         tc1_passed = "hi, " in user_greeting.text.lower()
         log_test_case("TC01 - Đăng nhập tài khoản", tc1_passed, f"Đăng nhập thành công. Lời chào hiển thị: '{user_greeting.text}'")
+        
+        # Chụp ảnh giao diện sau khi đăng nhập thành công (Trang Checkout)
+        take_screenshot(driver, "02_login_success.png")
         
         if not tc1_passed:
             return
@@ -91,7 +105,9 @@ def run_tests():
                 tc2_passed = True
                 found_product_name = p.text
                 break
-                
+        
+        # Chụp ảnh trang sản phẩm hiển thị kết quả tìm kiếm Ryzen
+        take_screenshot(driver, "03_search_ryzen.png")
         log_test_case("TC02 - Tìm kiếm sản phẩm", tc2_passed, f"Tìm thấy sản phẩm phù hợp: '{found_product_name}'")
         
         if not tc2_passed:
@@ -113,13 +129,44 @@ def run_tests():
         tc3_passed = int(cart_count) >= 1
         log_test_case("TC03 - Thêm sản phẩm vào giỏ", tc3_passed, f"Số lượng sản phẩm trong giỏ hàng hiển thị: {cart_count}")
         
+        # Chụp ảnh giỏ hàng hiển thị badge số lượng sản phẩm mới cập nhật
+        take_screenshot(driver, "04_added_to_cart.png")
+        
         if not tc3_passed:
             return
 
         # ----------------------------------------------------
-        # TEST CASE 4: Đăng xuất khỏi hệ thống
+        # TEST CASE 4: Minh họa phát hiện lỗi đặt hàng (Checkout Defect Validation)
         # ----------------------------------------------------
-        print("\nĐang thực hiện Test Case 4: Đăng xuất khỏi hệ thống...")
+        print("\nĐang thực hiện Test Case 4: Kiểm thử lỗi Xác nhận Đặt hàng (Bug Demonstration)...")
+        driver.get("https://ecom.ziet.dev/checkout")
+        
+        # Chọn hình thức "Tự đến lấy" (pickup) để kích hoạt nút Xác nhận Đặt hàng
+        pickup_option = wait.until(EC.presence_of_element_located((By.XPATH, "//div[contains(@class, 'zone-item') and .//strong[text()='Tự đến lấy']]")))
+        driver.execute_script("arguments[0].click();", pickup_option)
+        time.sleep(3)
+        
+        # Tìm nút đặt hàng
+        confirm_btn = wait.until(EC.presence_of_element_located((By.XPATH, "//div[contains(@class, 'order-summary-sidebar')]//button[contains(@class, 'btn-primary')]")))
+        wait.until(lambda d: confirm_btn.is_enabled())
+        
+        # Click đặt hàng qua Javascript
+        driver.execute_script("arguments[0].click();", confirm_btn)
+        
+        # Chờ thông điệp báo lỗi từ Toast (lỗi 422 validation trường shipping_zone_id) xuất hiện trên màn hình
+        error_toast = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".toast-item.error")))
+        error_message = error_toast.find_element(By.CLASS_NAME, "toast-message").text
+        
+        # Chụp ảnh minh chứng lỗi xuất hiện trên giao diện
+        take_screenshot(driver, "05_checkout_validation_error.png")
+        
+        tc4_passed = "dữ liệu không hợp lệ" in error_message.lower() or "bắt buộc" in error_message.lower() or "shipping" in error_message.lower()
+        log_test_case("TC04 - Phát hiện lỗi API Checkout (Bug Demonstration)", tc4_passed, f"Tìm thấy bug xác thực: '{error_message}'")
+
+        # ----------------------------------------------------
+        # TEST CASE 5: Đăng xuất khỏi hệ thống
+        # ----------------------------------------------------
+        print("\nĐang thực hiện Test Case 5: Đăng xuất khỏi hệ thống...")
         
         # Click nút Logout nằm ở Navbar bên phải
         logout_btn = wait.until(EC.element_to_be_clickable((By.XPATH, "//div[contains(@class, 'user-actions')]/button")))
@@ -130,31 +177,21 @@ def run_tests():
         time.sleep(2)
         
         user_actions_present = len(driver.find_elements(By.CLASS_NAME, "user-actions")) == 0
-        tc4_passed = user_actions_present
-        log_test_case("TC04 - Đăng xuất thành công", tc4_passed, "Session đã được xóa sạch và quay lại trang chủ khách.")
+        tc5_passed = user_actions_present
+        log_test_case("TC05 - Đăng xuất thành công", tc5_passed, "Session đã được xóa sạch và quay lại trang chủ khách.")
+        
+        # Chụp ảnh trang chủ sau khi đã logout
+        take_screenshot(driver, "06_logout_success.png")
 
     except Exception as e:
         import traceback
-        print(f"\n{Colors.RED}Đã xảy ra lỗi trong quá trình chạy test:{Colors.END}")
+        print(f"\n{Colors.RED}Đã xảy ra lỗi hệ thống trong quá trình chạy test:{Colors.END}")
         traceback.print_exc()
         
-        # In các logs của trình duyệt để gỡ lỗi
-        try:
-            print("\n=== BROWSER CONSOLE LOGS ===")
-            browser_logs = driver.get_log('browser')
-            if browser_logs:
-                for entry in browser_logs:
-                    print(entry)
-            else:
-                print("(Không có log nào trong browser console)")
-            print("============================\n")
-        except Exception as e_logs:
-            print(f"Không lấy được console logs: {str(e_logs)}")
-        
-        # Chụp ảnh màn hình khi lỗi xảy ra để debug
-        os.makedirs("screenshots", exist_ok=True)
-        driver.save_screenshot("screenshots/ecom_error_screenshot.png")
-        print("Đã lưu ảnh lỗi tại 'screenshots/ecom_error_screenshot.png'")
+        # Chụp ảnh màn hình khi lỗi đột xuất để gỡ lỗi
+        os.makedirs("selenium-assignment/screenshots", exist_ok=True)
+        driver.save_screenshot("selenium-assignment/screenshots/unexpected_error.png")
+        print("Đã lưu ảnh lỗi đột xuất tại 'selenium-assignment/screenshots/unexpected_error.png'")
         
     finally:
         # Tắt trình duyệt
